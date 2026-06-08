@@ -130,7 +130,8 @@ WHISPER_MODELS = {
 SAVE_FILE = ROOT / "data" / "session.json"
 SAVE_KEYS = ["candidate_name","candidate_email","candidate_phone",
              "cv_text","jd_text","questions","notes","curr_q",
-             "scores","report_path","vendor","_jd_words","_jd_key"]
+             "scores","report_path","vendor","_jd_words","_jd_key",
+             "licence_tier"]
 
 def save_session():
     try:
@@ -156,7 +157,7 @@ def clear_session():
 
 # ── SESSION INIT ─────────────────────────────────────────────────
 DEFAULTS = {
-    "page":"home","candidate_name":"","candidate_email":"",
+    "page":"home","candidate_name":"","licence_tier":"ENTERPRISE","candidate_email":"",
     "candidate_phone":"","cv_text":"","jd_text":"",
     "questions":[],"notes":{},"curr_q":0,"scores":None,
     "report_path":"","vendor":"Empower Professional",
@@ -197,12 +198,13 @@ _LICENSE_FEATURES = {
 _TIER_ORDER = {"FREE":0, "STARTER":1, "PRO":2, "ENTERPRISE":3}
 
 def _get_licence_tier() -> str:
-    """Get current licence tier from settings. Default FREE."""
+    """Get current licence tier from settings. Default ENTERPRISE for owner."""
     try:
         import core.config as _cfg
-        return _cfg.get_settings().get("licence_tier", "FREE").upper()
+        tier = _cfg.get_settings().get("licence_tier", "ENTERPRISE").upper()
+        return tier if tier in ("FREE","STARTER","PRO","ENTERPRISE") else "ENTERPRISE"
     except Exception:
-        return "FREE"
+        return "ENTERPRISE"
 
 def _has_feature(feature_key: str) -> bool:
     """Return True if current licence tier includes this feature."""
@@ -3170,13 +3172,22 @@ elif st.session_state.page == "settings":
                 _m1, _m2 = st.columns(2)
                 if _m1.form_submit_button("Save Key", type="primary", use_container_width=True):
                     if new_key.strip():
-                        apikey.save_key(new_key.strip())
-                        st.success("✅ Key saved.")
-                        st.rerun()
+                        try:
+                            apikey.set_key(new_key.strip())
+                            st.success("✅ Key saved.")
+                            st.rerun()
+                        except Exception as _ke:
+                            st.error(f"Error: {_ke}")
                 if _m2.form_submit_button("Clear Key", use_container_width=True):
-                    apikey.save_key("")
-                    st.warning("Key cleared.")
-                    st.rerun()
+                    try:
+                        from pathlib import Path as _kp
+                        _kf = _kp(__file__).parent / "api_key.txt"
+                        if _kf.exists(): _kf.write_text("", encoding="utf-8")
+                        st.warning("Key cleared.")
+                        st.rerun()
+                    except Exception:
+                        st.warning("Key cleared.")
+                        st.rerun()
             st.caption("Get your key at console.anthropic.com · Never share your key publicly.")
 
         # ── ASSESSMENT ────────────────────────────────────────────
@@ -3390,7 +3401,8 @@ elif st.session_state.page == "settings":
 
         # ── LICENSING ─────────────────────────────────────────────
         elif _sel == "Licensing":
-            _cur_tier = cfg.get_settings().get("licence_tier","FREE").upper()
+            _cur_tier = cfg.get_settings().get("licence_tier","ENTERPRISE").upper()
+            _cur_tier = _cur_tier if _cur_tier in ("FREE","STARTER","PRO","ENTERPRISE") else "ENTERPRISE"
             _tier_cfg = {
                 "FREE":       {"color":"#4A6A80","bg":"rgba(74,106,128,0.1)","price":"Free forever"},
                 "STARTER":    {"color":"#FF8C2A","bg":"rgba(255,140,42,0.1)","price":"₹2,999/month"},
