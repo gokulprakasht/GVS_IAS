@@ -381,7 +381,23 @@ def _generate_questions(cv, jd, name, n_total=15, level="senior"):
             try: s1 = json.loads(m.group())
             except: pass
     if not s1 or not s1.get("questions"):
-        return {"error": "Could not generate questions. Try again.", "raw": t1[:300]}
+        # Try one more time with simpler prompt
+        try:
+            r1b = client.messages.create(model=model, max_tokens=3000, messages=[{"role":"user","content":
+                f"Generate {n_total} interview questions for: {name}\nRole: {jd[:500]}\nCV: {cv[:500]}\n"
+                f"Return JSON only: {{\"questions\":[{{\"num\":1,\"skill\":\"skill\",\"type\":\"scenario\",\"gap_question\":false,\"question\":\"question text here\"}}]}}"
+            }])
+            t1b = _clean_json(r1b.content[0].text)
+            try: s1 = json.loads(t1b)
+            except:
+                m2 = re.search(r'\{.*\}', t1b, re.DOTALL)
+                if m2:
+                    try: s1 = json.loads(m2.group())
+                    except: pass
+        except Exception as _retry_e:
+            return {"error": f"API error: {_retry_e}", "raw": t1[:300]}
+        if not s1 or not s1.get("questions"):
+            return {"error": f"Could not parse AI response. Raw: {t1[:200]}", "raw": t1[:300]}
 
     qs = s1["questions"]
     existing = {q.get("num") for q in qs}
@@ -2150,6 +2166,43 @@ elif st.session_state.page=="workflow":
             else:
                 st.caption("Upload .eml or fill CV + JD in Step 1 first")
 
+    # ── PERSISTENT QUESTION DOWNLOAD BAR (visible on all tabs) ─────────────
+    if st.session_state.get("questions"):
+        import json as _jdlp
+        _qdl1, _qdl2, _qdl3, _qdl4 = st.columns(4)
+        _cn_dl = st.session_state.candidate_name.replace(" ","_")
+        # TXT
+        _ql = ["IAS Questions — "+st.session_state.candidate_name, "="*50, ""]
+        for _q in st.session_state.questions:
+            _ak2 = _q.get("answer_key",{})
+            _ql += [f"Q{_q.get('num','')}. [{_q.get('type','').upper()}] {_q.get('skill','')}",
+                    f"   {_q.get('question','')}",
+                    f"   Expected: {_ak2.get('ideal_answer',_q.get('expected_answer',_q.get('expected','')))[:200]}", ""]
+        _qdl1.download_button("📥 Questions TXT", data="\n".join(_ql).encode(),
+            file_name=f"Questions_{_cn_dl}.txt", mime="text/plain", use_container_width=True)
+        # JSON
+        _qj = _jdlp.dumps({"candidate":st.session_state.candidate_name,
+            "date":date.today().isoformat(),"questions":st.session_state.questions},
+            indent=2, ensure_ascii=False)
+        _qdl2.download_button("📥 Questions JSON", data=_qj.encode(),
+            file_name=f"Questions_{_cn_dl}.json", mime="application/json", use_container_width=True)
+        # Answer keys TXT
+        _al = ["IAS Q+A Keys — "+st.session_state.candidate_name, "="*50, ""]
+        for _q in st.session_state.questions:
+            _ak2 = _q.get("answer_key",{})
+            _al += [f"Q{_q.get('num','')}. {_q.get('question','')}",
+                    f"IDEAL: {_ak2.get('ideal_answer','')}", f"5★: {_ak2.get('score_5','')}",
+                    f"3★: {_ak2.get('score_3','')}",""]
+        _qdl3.download_button("📥 Q + Answer Keys", data="\n".join(_al).encode(),
+            file_name=f"QA_Keys_{_cn_dl}.txt", mime="text/plain", use_container_width=True)
+        # Status
+        _qdl4.markdown(
+            f'<div style="background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2);'
+            f'border-radius:6px;padding:8px 12px;font-size:11px;color:#00C9A7;text-align:center">'
+            f'<b>{len(st.session_state.questions)} Questions Ready</b><br>'
+            f'<span style="color:#8AABBF">{st.session_state.candidate_name[:20]}</span></div>',
+            unsafe_allow_html=True)
+
     st.divider()
 
     tab1,tab2,tab3,tab4=st.tabs([
@@ -2479,6 +2532,7 @@ elif st.session_state.page=="workflow":
                 if _folder_saved:
                     st.info(f"📁 Saved to: output/candidates/{_today_str}_{_cname_safe}/")
                 st.balloons()
+                st.rerun()
 
         if st.session_state.questions:
             # ── DOWNLOAD BUTTONS ─────────────────────────────────────────
@@ -2716,9 +2770,13 @@ elif st.session_state.page=="workflow":
                 f'<div style="border:2px solid #00C9A7;border-top:none;'
                 f'border-radius:0 0 10px 10px;padding:16px 20px;'
                 f'font-size:15px;font-weight:500;color:#E8F2FF;background:#0D2A3A;'
-                f'line-height:1.6;margin-bottom:10px">{q.get("question","")}</div>',
+                f'line-height:1.6;margin-bottom:10px">{q.get("question",q.get("q","No question text"))}</div>',
                 unsafe_allow_html=True
             )
+
+            # Backup visible question text (in case HTML not rendering)
+            st.markdown(f"**Question {num}:** {q.get('question', q.get('q', ''))}")
+            st.markdown("")
 
             left,right=st.columns(2,gap="large")
             with left:
