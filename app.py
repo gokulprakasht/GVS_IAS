@@ -2559,7 +2559,7 @@ elif st.session_state.page=="workflow":
             q=questions[idx]
             num=q.get("num",idx+1)
             ak=q.get("answer_key") or {}
-            kps=ak.get("key_points",q.get("key_points",[]))
+            kps=ak.get("key_points",q.get("key_points",[])) or [s.strip() for s in ak.get("ideal_answer","").split(".") if len(s.strip())>20][:4]
             nk=str(num)
             qt=q.get("type","scenario")
 
@@ -2703,19 +2703,20 @@ elif st.session_state.page=="workflow":
             gl="🔴 GAP" if q.get("gap_question") else "🟢 VALIDATE"
             tl="💻 CODING" if qt=="coding" else "🔵 SCENARIO"
             st.markdown(
-                f'<div style="background:#1F3864;padding:10px 18px;'
-                f'border-radius:10px 10px 0 0;color:#fff">'
-                f'<span style="background:#fff;color:#1F3864;padding:2px 12px;'
-                f'border-radius:12px;font-weight:700">Q{num}/{total}</span>'
-                f'&nbsp;<span style="background:#e8f5e9;color:#2e7d32;padding:2px 10px;'
-                f'border-radius:8px;font-size:12px">{tl}</span>'
-                f'&nbsp;<span style="color:#aac;font-size:12px">{gl} · {q.get("skill","")}</span>'
-                f'&nbsp;<span style="color:#f90;font-size:11px">⚡ Practical / Scenario-based</span>'
+                f'<div style="background:linear-gradient(135deg,#0D2A3A,#0E3A4A);'
+                f'padding:12px 18px;border-radius:10px 10px 0 0;border:2px solid #00C9A7;'
+                f'border-bottom:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+                f'<span style="background:#00C9A7;color:#0D1B2A;padding:3px 14px;'
+                f'border-radius:12px;font-weight:700;font-size:13px">Q{num}/{total}</span>'
+                f'<span style="background:rgba(0,201,167,0.15);color:#00C9A7;padding:2px 10px;'
+                f'border-radius:8px;font-size:12px;border:1px solid rgba(0,201,167,0.3)">{tl}</span>'
+                f'<span style="color:#8AABBF;font-size:12px">{gl} · {q.get("skill","")}</span>'
+                f'<span style="color:#FF8C2A;font-size:11px;margin-left:auto">⚡ Practical / Scenario-based</span>'
                 f'</div>'
-                f'<div style="border:2px solid #1F3864;border-top:none;'
-                f'border-radius:0 0 10px 10px;padding:14px 18px;'
-                f'font-size:15px;font-weight:500;background:#fff;'
-                f'margin-bottom:10px">{q.get("question","")}</div>',
+                f'<div style="border:2px solid #00C9A7;border-top:none;'
+                f'border-radius:0 0 10px 10px;padding:16px 20px;'
+                f'font-size:15px;font-weight:500;color:#E8F2FF;background:#0D2A3A;'
+                f'line-height:1.6;margin-bottom:10px">{q.get("question","")}</div>',
                 unsafe_allow_html=True
             )
 
