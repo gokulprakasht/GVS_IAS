@@ -136,7 +136,7 @@ def save_session():
     try:
         d = {k: st.session_state.get(k) for k in SAVE_KEYS
              if st.session_state.get(k) not in (None,"",[],{})}
-        SAVE_FILE.parent.mkdir(exist_ok=True)
+        SAVE_FILE.parent.mkdir(parents=True, exist_ok=True)
         SAVE_FILE.write_text(json.dumps(d, ensure_ascii=False, default=str), encoding="utf-8")
     except Exception: pass
 
@@ -255,6 +255,21 @@ try:
 except Exception:
     pass
 # ─────────────────────────────────────────────────────────────────
+# ── RUNTIME FIX: ensure data/ dir exists on Render before any cfg.save ──────
+import pathlib as _pl
+_DATA_DIR = _pl.Path(__file__).parent / "data"
+_OUT_DIR  = _pl.Path(__file__).parent / "output"
+_DATA_DIR.mkdir(parents=True, exist_ok=True)
+_OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Monkey-patch cfg._save to always mkdir first (fixes Render FileNotFoundError)
+import core.config as _cfg_module
+_orig_cfg_save = _cfg_module._save
+def _safe_cfg_save(name, data):
+    (_pl.Path(__file__).parent / "data").mkdir(parents=True, exist_ok=True)
+    _orig_cfg_save(name, data)
+_cfg_module._save = _safe_cfg_save
+
 # ── KEEP-ALIVE: inline (no external file needed) ────────────────────────────
 import threading as _kat, time as _kati, urllib.request as _kau, os as _kao
 def _ka_ping():
@@ -264,6 +279,22 @@ def _ka_ping():
         _kati.sleep(600)
 if _kao.environ.get("PORT"):
     _kat.Thread(target=_ka_ping, daemon=True).start()
+
+# ── GMAIL MONITOR: auto-start if credentials configured ──────────────────────
+try:
+    import core.gmail_monitor as _gm
+    _gm_settings = {}
+    try:
+        import core.config as _gm_cfg
+        _gm_settings = _gm_cfg.get_settings()
+    except Exception:
+        pass
+    _gm_email = _gm_settings.get("sender_email","") or os.environ.get("SENDER_EMAIL","")
+    _gm_pass  = _gm_settings.get("gmail_app_password","") or os.environ.get("GMAIL_APP_PASSWORD","")
+    if _gm_email and _gm_pass and not _gm.is_running():
+        _gm.start(_gm_email, _gm_pass, interval=60)
+except Exception as _gm_err:
+    pass  # Monitor is optional — silently skip if not configured
 # ─────────────────────────────────────────────────────────────────
 
 # ════════════════════════════════════════════════════════════════
@@ -1943,6 +1974,11 @@ elif st.session_state.page=="workflow":
 
     # ── AUTO-SESSION FROM GMAIL MONITOR ──────────────────────────
     try:
+        import core.gmail_monitor as _gm_wf
+        _gm_running = _gm_wf.is_running()
+    except Exception:
+        _gm_running = False
+    try:
         from auto_session import check_auto_session
         if check_auto_session(ROOT, st.session_state):
             cname = st.session_state.get("candidate_name","")
@@ -3248,22 +3284,97 @@ elif st.session_state.page == "settings":
 
         # ── NOTIFICATIONS ─────────────────────────────────────────
         elif _sel == "Notifications":
-            st.markdown("#### 📲 Notification Settings")
+            st.markdown("#### 📲 Gmail Monitor — Continuous Email Watching")
+            st.caption("IAS watches your Gmail inbox every 60 seconds. When an interview email arrives, candidate details, CV, JD, and Zoom link are auto-loaded into the Interview Workflow — zero manual entry.")
+
+            # Monitor status
+            try:
+                import core.gmail_monitor as _gm_ui
+                _mon_running = _gm_ui.is_running()
+            except Exception:
+                _mon_running = False
+
+            _ms_color = "#00C9A7" if _mon_running else "#4A6A80"
+            _ms_label = "🟢 RUNNING — watching inbox every 60s" if _mon_running else "⭕ STOPPED"
+            st.markdown(
+                f'<div style="background:rgba(0,201,167,0.06);border:1px solid {_ms_color};border-radius:8px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">'                f'<div><div style="font-size:13px;font-weight:700;color:{_ms_color}">Gmail Monitor Status</div>'                f'<div style="font-size:12px;color:#8AABBF;margin-top:4px">{_ms_label}</div></div>'                f'<div style="font-size:10px;color:#4A6A80">Auto-starts if credentials saved</div></div>',
+                unsafe_allow_html=True)
+
+            # Gmail credentials
             with st.form("notif_form"):
+                st.markdown("**Gmail Credentials**")
                 _n1, _n2 = st.columns(2)
-                email_notif = _n1.toggle("Email notifications", value=settings.get("email_notif", False))
-                whatsapp_notif = _n2.toggle("WhatsApp notifications", value=settings.get("wa_notif", False))
-                sender_email = _n1.text_input("Sender email (Gmail)",
-                    value=settings.get("sender_email",""), placeholder="your@gmail.com")
+                sender_email = _n1.text_input("Your Gmail address",
+                    value=settings.get("sender_email",""),
+                    placeholder="yourname@gmail.com")
                 app_pw = _n2.text_input("Gmail App Password", type="password",
-                    value=settings.get("gmail_app_password",""))
-                wa_to = st.text_input("WhatsApp recipient number",
+                    value=settings.get("gmail_app_password",""),
+                    placeholder="xxxx xxxx xxxx xxxx")
+                st.caption("Get App Password: myaccount.google.com → Security → 2-Step Verification → App Passwords")
+                st.divider()
+                st.markdown("**Monitor Settings**")
+                _nm1, _nm2 = st.columns(2)
+                poll_interval = _nm1.selectbox("Check inbox every",
+                    ["30 seconds","60 seconds","2 minutes","5 minutes"],
+                    index=1)
+                email_notif = _nm2.toggle("Send email alert on new candidate", value=settings.get("email_notif", False))
+                st.divider()
+                st.markdown("**WhatsApp Alerts (optional)**")
+                _nw1, _nw2 = st.columns(2)
+                whatsapp_notif = _nw1.toggle("WhatsApp alert on new candidate", value=settings.get("wa_notif", False))
+                wa_to = _nw2.text_input("WhatsApp number",
                     value=settings.get("wa_to",""), placeholder="+91XXXXXXXXXX")
-                if st.form_submit_button("Save Notifications", type="primary", use_container_width=True):
-                    cfg.save_settings({"email_notif":email_notif,"wa_notif":whatsapp_notif,
-                        "sender_email":sender_email,"gmail_app_password":app_pw,"wa_to":wa_to})
-                    st.success("✅ Saved")
-            st.caption("Gmail: use App Password from myaccount.google.com/apppasswords")
+                _interval_map = {"30 seconds":30,"60 seconds":60,"2 minutes":120,"5 minutes":300}
+                if st.form_submit_button("💾 Save & Start Monitor", type="primary", use_container_width=True):
+                    cfg.save_settings({
+                        "email_notif":email_notif,"wa_notif":whatsapp_notif,
+                        "sender_email":sender_email,"gmail_app_password":app_pw,
+                        "wa_to":wa_to,"monitor_interval":_interval_map.get(poll_interval,60)
+                    })
+                    if sender_email and app_pw:
+                        try:
+                            import core.gmail_monitor as _gm_save
+                            if not _gm_save.is_running():
+                                _gm_save.start(sender_email, app_pw,
+                                    interval=_interval_map.get(poll_interval,60))
+                            st.success("✅ Saved — Gmail monitor started. Interview emails will auto-load.")
+                        except Exception as _gme:
+                            st.success("✅ Credentials saved. Monitor will start on next app restart.")
+                    else:
+                        st.success("✅ Settings saved.")
+                    st.rerun()
+
+            # Stop monitor button
+            if _mon_running:
+                st.divider()
+                if st.button("⏹ Stop Monitor", use_container_width=True):
+                    try:
+                        import core.gmail_monitor as _gm_stop
+                        _gm_stop.stop()
+                        st.warning("Monitor stopped.")
+                        st.rerun()
+                    except Exception:
+                        st.warning("Could not stop monitor.")
+
+            # How it works
+            st.divider()
+            st.markdown("#### How the Gmail Monitor Works")
+            _steps = [
+                ("1","Email arrives","Interview email from Empower/eTeki/any sender arrives in Gmail"),
+                ("2","Auto-detected","Monitor checks inbox every 60s · detects interview emails by subject keywords"),
+                ("3","CV extracted","CV attachment (PDF/DOCX) extracted and text parsed automatically"),
+                ("4","Details parsed","Candidate name · email · phone · Zoom link · skills · interview time extracted"),
+                ("5","Folder created","output/candidates/YYYY-MM-DD_Name/ created with cv_snapshot.txt + jd_snapshot.txt"),
+                ("6","Workflow loaded","Interview Workflow page auto-populates with all candidate details — click Generate Questions"),
+            ]
+            for _sn,_st,_sd in _steps:
+                st.markdown(
+                    f'<div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(0,201,167,0.06)">'                    f'<div style="width:24px;height:24px;border-radius:50%;background:rgba(0,201,167,0.15);border:1px solid #00C9A7;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#00C9A7;flex-shrink:0">{_sn}</div>'                    f'<div><div style="font-size:13px;font-weight:500;color:#E8F2FF">{_st}</div>'                    f'<div style="font-size:11px;color:#4A6A80">{_sd}</div></div></div>',
+                    unsafe_allow_html=True)
+
+            st.divider()
+            st.markdown("**Email subject keywords detected automatically:**")
+            st.code("video interview · interview empower · eteki interview · interview scheduled · zoom interview · interview invitation")
 
         # ── LICENSING ─────────────────────────────────────────────
         elif _sel == "Licensing":
@@ -5134,7 +5245,7 @@ elif st.session_state.page == "portfolio":
                 rp_project   = st.text_input("Project / Programme Name",
                                               placeholder="e.g. 5G OSS Transformation Wave 3")
                 rp_client    = st.text_input("Client / Business Unit",
-                                              placeholder="e.g. Nokia Networks / DSS Team")
+                                              placeholder="e.g. Your Organisation / Team")
                 rp_hc        = st.number_input("Total Headcount Required", 1, 500, 15)
                 rp_start     = st.date_input("Target Onboard Date")
                 rp_budget    = st.number_input("Total Budget ($)", 0, 5000000, 200000, 5000)
@@ -5359,7 +5470,7 @@ elif st.session_state.page == "portfolio":
             {"name":"Sunil Halasangi",     "vs":"CM", "role":"Sr. Engineer", "cap":70,"alloc":50,"skills":"CM, Java, OSS, Linux",        "status":"Available"},
             {"name":"Jitendra M",          "vs":"Operations Mgmt","role":"OMA Lead",     "cap":60,"alloc":50,"skills":"OMA, Network Mgmt, Java",     "status":"Partially Busy"},
             {"name":"Apurba Mukherjee",    "vs":"Operations Mgmt","role":"Sr. Engineer", "cap":70,"alloc":55,"skills":"OMA, Analytics, Python",      "status":"Available"},
-            {"name":"Gokul Prakash T",     "vs":"PeT","role":"Sr. PM/AI",   "cap":80,"alloc":60,"skills":"OSS/BSS, AI/ML, NetAct, 5G",  "status":"Available"},
+            {"name":"",     "vs":"PeT","role":"Sr. PM/AI",   "cap":80,"alloc":60,"skills":"OSS/BSS, AI/ML, NetAct, 5G",  "status":"Available"},
             {"name":"Venugopal Iyer",      "vs":"PeT","role":"Perf. Lead",  "cap":70,"alloc":50,"skills":"JMeter, Load, Performance",   "status":"Available"},
             {"name":"Tony Brooks",         "vs":"Network Verification","role":"NeVe Lead",   "cap":75,"alloc":55,"skills":"NeVe, OSS, Verification",     "status":"Available"},
             {"name":"Srivatsa Srinath",    "vs":"UX Engineering", "role":"UX Lead",      "cap":65,"alloc":45,"skills":"Figma, UX Research, Design",  "status":"Available"},
@@ -7065,7 +7176,7 @@ elif st.session_state.page == "offerletter":
         ol_company    = st.text_input("Company Name *",
             value=settings_ol.get("brand_company","Your Organisation"))
         ol_signatory  = st.text_input("Signatory Name & Title",
-            value=settings_ol.get("interviewer_name","Gokul Prakash T") + " · Director")
+            value=settings_ol.get("interviewer_name","") + " · Director")
         ol_extra      = st.text_area("Additional clauses (optional)",
             height=60,
             placeholder="e.g. Stock options, travel allowance, relocation assistance...")
@@ -9131,7 +9242,7 @@ elif st.session_state.page == "users":
     USERS_FILE = ROOT / "data" / "users.json"
     def _load_users():
         DEFAULT = [
-            {"id":"u001","name":"Gokul Prakash T","email":"admin@yourorg.com",
+            {"id":"u001","name":"","email":"admin@yourorg.com",
              "role":"Admin","team":"All","status":"Active",
              "created":date.today().strftime("%d-%b-%Y"),
              "interviews":0,"last_active":"Today"},
@@ -9352,7 +9463,7 @@ elif st.session_state.page == "users":
         st.markdown("#### 📊 Team Activity")
         results_act = cfg.load_results("",True)
         act_data = [
-            {"User": "Gokul Prakash T",
+            {"User": "",
              "Action": f"Interview: {r.get('candidate','')}",
              "Result": r.get("verdict",""),
              "Score":  r.get("overall_score",""),
@@ -10871,7 +10982,7 @@ elif st.session_state.page == "videointerview":
       <div style="position:absolute;bottom:8px;left:8px;
                   background:rgba(0,0,0,.6);color:#fff;
                   font-size:11px;padding:2px 8px;border-radius:8px">
-        🎤 Interviewer · {settings_vi.get("interviewer_name","Gokul Prakash T")}</div>
+        🎤 Interviewer · {settings_vi.get("interviewer_name","")}</div>
     </div>
     <div style="flex:1;background:#1F3864;border-radius:10px;
                 min-height:240px;display:flex;align-items:center;
