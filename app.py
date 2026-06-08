@@ -2037,80 +2037,92 @@ elif st.session_state.page=="workflow":
 
         # ── LICENCE GATE: Email Intake — show upgrade if not licensed ──
         if _has_feature("email_intake"):
-            eml_col1, eml_col2 = st.columns([2,1])
-            with eml_col1:
+            # ── AUTO-ACTION: Process immediately on file drop ─────────────
+            _ec1, _ec2 = st.columns([3, 1])
+            with _ec1:
                 eml_file = st.file_uploader(
-                    "Upload interview email (.eml file from Gmail/Outlook)",
-                    type=["eml"],
-                    key="eml_upload",
-                    label_visibility="collapsed"
-                )
-            with eml_col2:
-                st.markdown("""
-                **How to save email as .eml:**
-                - **Gmail:** Open email → ⋮ menu → *Download message*
-                - **Outlook:** File → Save As → *.eml*
-                """)
-    
+                    "⚡ Drop .eml file — auto-processes instantly, no button needed",
+                    type=["eml"], key="eml_upload", label_visibility="collapsed")
+            with _ec2:
+                st.markdown(
+                    '<div style="background:rgba(0,201,167,0.06);border:1px solid rgba(0,201,167,0.2);'
+                    'border-radius:6px;padding:10px 12px;font-size:11px;color:#8AABBF">'
+                    '<b style="color:#00C9A7">Save as .eml:</b><br>'
+                    '<b>Gmail:</b> ⋮ → Download message<br>'
+                    '<b>Outlook:</b> File → Save As → .eml'
+                    '</div>', unsafe_allow_html=True)
+
             if eml_file:
                 if st.session_state.get("_eml_loaded") != eml_file.name:
-                    with st.spinner("Parsing email — extracting CV, skills, JD, candidate details..."):
-                        parsed = _parse_email_file(eml_file)
-    
-                    # Populate session state
-                    if parsed["candidate_name"]:
-                        st.session_state.candidate_name  = parsed["candidate_name"]
-                    if parsed["candidate_email"]:
-                        st.session_state.candidate_email = parsed["candidate_email"]
-                    if parsed["candidate_phone"]:
-                        st.session_state.candidate_phone = parsed["candidate_phone"]
-                    if parsed["cv_text"]:
-                        st.session_state.cv_text = parsed["cv_text"]
+                    _p = st.progress(0, text="⚡ Auto-processing...")
+                    _p.progress(25, text="📨 Reading email...")
+                    parsed = _parse_email_file(eml_file)
+                    _p.progress(60, text="📄 Extracting candidate details...")
+                    if parsed["candidate_name"]: st.session_state.candidate_name = parsed["candidate_name"]
+                    if parsed["candidate_email"]: st.session_state.candidate_email = parsed["candidate_email"]
+                    if parsed["candidate_phone"]: st.session_state.candidate_phone = parsed["candidate_phone"]
+                    if parsed["cv_text"]: st.session_state.cv_text = parsed["cv_text"]
                     if parsed["jd_text"]:
-                        st.session_state.jd_text    = parsed["jd_text"]
+                        st.session_state.jd_text = parsed["jd_text"]
                         st.session_state["_jd_words"] = parsed["jd_text"]
                     if parsed["dl_bytes"]:
-                        st.session_state["photo_id_ok"]    = True
-                        st.session_state["photo_id_src"]   = "Email attachment (DL)"
+                        st.session_state["photo_id_ok"] = True
+                        st.session_state["photo_id_src"] = "Email attachment (DL)"
                         st.session_state["photo_id_bytes"] = parsed["dl_bytes"]
-    
-                    st.session_state["_parsed_email"]  = parsed
-                    st.session_state["_eml_loaded"]    = eml_file.name
-                    save_session()
-    
-                parsed = st.session_state.get("_parsed_email", {})
-                if parsed:
-                    # Summary card
-                    st.markdown(
-                        f'<div style="background:#e8f5e9;border:1.5px solid #00B050;'
-                        f'border-radius:10px;padding:14px 18px;margin:8px 0">'
-                        f'<b style="color:#1F3864">✅ Email parsed successfully</b><br>'
-                        f'<span style="font-size:13px;color:#333">'
-                        f'👤 <b>{parsed.get("candidate_name","")}</b> &nbsp;·&nbsp; '
-                        f'📧 {parsed.get("candidate_email","")} &nbsp;·&nbsp; '
-                        f'📞 {parsed.get("candidate_phone","")}<br>'
-                        f'🕐 <b>Interview:</b> {parsed.get("interview_time","TBC")} &nbsp;·&nbsp; '
-                        f'🔗 <a href="{parsed.get("zoom_link","#")}" target="_blank">Zoom Link</a><br>'
-                        f'🛠 <b>Skills:</b> {", ".join(parsed.get("skills",[]))}<br>'
-                        + (f'📄 CV extracted: {len(parsed.get("cv_text","").split())} words' if parsed.get("cv_text") else "⚠️ CV not found in attachments")
-                        + (f' &nbsp;·&nbsp; 🪪 Driver\'s License: ✅' if parsed.get("dl_bytes") else "")
-                        + f'</span></div>',
-                        unsafe_allow_html=True
-                    )
-    
-                    # Special instructions
-                    if parsed.get("special_instructions"):
-                        with st.expander("⚠️ Special Interview Instructions from Empower"):
-                            for instr in parsed["special_instructions"]:
-                                st.markdown(f"• {instr}")
-    
-                    # Zoom link button
-                    if parsed.get("zoom_link"):
-                        st.link_button("🔗 Open Zoom Interview Room", parsed["zoom_link"])
-    
-                    if parsed.get("errors"):
-                        st.warning("Parsing warnings: " + "; ".join(parsed["errors"]))
-    
+                    st.session_state["_parsed_email"] = parsed
+                    st.session_state["_eml_loaded"] = eml_file.name
+                    try:
+                        import re as _re2, json as _jse2
+                        _csafe = _re2.sub(r'[^\w\s-]','',parsed.get("candidate_name","Candidate")).strip().replace(' ','_')
+                        _cdir2 = ROOT / "output" / "candidates" / f"{date.today().strftime('%Y-%m-%d')}_{_csafe}"
+                        _cdir2.mkdir(parents=True, exist_ok=True)
+                        if parsed.get("cv_text"): (_cdir2/"cv_snapshot.txt").write_text(parsed["cv_text"][:5000],encoding="utf-8")
+                        if parsed.get("jd_text"): (_cdir2/"jd_snapshot.txt").write_text(parsed["jd_text"][:3000],encoding="utf-8")
+                        (_cdir2/"email_meta.json").write_text(_jse2.dumps(
+                            {k:v for k,v in parsed.items() if k not in ("dl_bytes","cv_text")},
+                            indent=2,ensure_ascii=False,default=str),encoding="utf-8")
+                        st.session_state["_candidate_folder"] = str(_cdir2)
+                    except Exception: pass
+                    _p.progress(95, text="💾 Saving..."); save_session()
+                    _p.progress(100, text="✅ Done!"); import time as _ti; _ti.sleep(0.3); _p.empty()
+                    st.rerun()
+
+            parsed = st.session_state.get("_parsed_email", {})
+            if parsed and st.session_state.get("_eml_loaded"):
+                _cn = parsed.get("candidate_name",""); _zm = parsed.get("zoom_link","")
+                _it = parsed.get("interview_time","TBC"); _sk = parsed.get("skills",[])
+                st.markdown(
+                    f'<div style="background:rgba(0,176,80,0.06);border:1.5px solid #00B050;border-radius:10px;padding:14px 18px;margin:4px 0">'
+                    f'<div style="font-size:13px;font-weight:700;color:#00B050;margin-bottom:10px">✅ Email Processed — Ready for Interview</div>'
+                    f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
+                    f'<div style="background:rgba(0,0,0,0.15);border-radius:4px;padding:8px 10px">'
+                    f'<div style="font-size:10px;color:#4A6A80">CANDIDATE</div>'
+                    f'<div style="font-size:13px;font-weight:700;color:#E8F2FF">{_cn}</div>'
+                    f'<div style="font-size:11px;color:#8AABBF">{parsed.get("candidate_email","")}</div></div>'
+                    f'<div style="background:rgba(0,0,0,0.15);border-radius:4px;padding:8px 10px">'
+                    f'<div style="font-size:10px;color:#4A6A80">INTERVIEW TIME</div>'
+                    f'<div style="font-size:12px;font-weight:600;color:#00C9A7">{_it}</div>'
+                    f'<div style="font-size:11px;color:#8AABBF">{parsed.get("candidate_phone","")}</div></div>'
+                    f'<div style="background:rgba(0,0,0,0.15);border-radius:4px;padding:8px 10px">'
+                    f'<div style="font-size:10px;color:#4A6A80">CV STATUS</div>'
+                    f'<div style="font-size:12px;color:#E8F2FF">{"✅ CV extracted" if parsed.get("cv_text") else "⚠️ No CV"}</div>'
+                    f'<div style="font-size:11px;color:#8AABBF">{"✅ DL attached" if parsed.get("dl_bytes") else ""}</div></div></div>'
+                    + (f'<div style="font-size:11px;color:#8AABBF;margin-bottom:8px"><b style="color:#00C9A7">Skills:</b> {", ".join(_sk[:8])}</div>' if _sk else '')
+                    + (f'<a href="{_zm}" target="_blank" style="background:#1565C0;color:#fff;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;margin-right:8px">🔗 Open Zoom Room</a>' if _zm else '')
+                    + (f'<span style="font-size:10px;color:#00C9A7">📁 {st.session_state.get("_candidate_folder","")}</span>' if st.session_state.get("_candidate_folder") else '')
+                    + '</div>', unsafe_allow_html=True)
+                if parsed.get("special_instructions"):
+                    with st.expander("⚠️ Special Instructions from Empower"):
+                        for _instr in parsed["special_instructions"]: st.markdown(f"• {_instr}")
+                _ba1,_ba2 = st.columns(2)
+                if _ba1.button("🗑 Clear & Load New Email", use_container_width=True):
+                    for _kk in ["_parsed_email","_eml_loaded","_candidate_folder"]:
+                        st.session_state.pop(_kk, None)
+                    st.session_state.candidate_name=""; st.session_state.cv_text=""; st.session_state.jd_text=""
+                    st.rerun()
+                if _ba2.button("👇 Go to Generate Questions", use_container_width=True, type="primary"):
+                    st.info("Scroll down to 'Interview Configuration' → click Generate Questions")
+
             st.divider()
         else:
             _licence_gate("email_intake")  # shows upgrade prompt
@@ -2337,6 +2349,67 @@ elif st.session_state.page=="workflow":
                 st.balloons()
 
         if st.session_state.questions:
+            # ── DOWNLOAD BUTTONS ─────────────────────────────────────────
+            _dl1, _dl2, _dl3 = st.columns(3)
+
+            # Download as TXT
+            _q_lines = [
+                f"IAS Question Bank — {st.session_state.candidate_name}",
+                f"Generated: {date.today().strftime('%d %b %Y')} | Questions: {len(st.session_state.questions)}",
+                "="*60, ""
+            ]
+            for _qq in st.session_state.questions:
+                _q_lines += [
+                    f"Q{_qq.get('num','')}. [{_qq.get('type','').upper()}] {_qq.get('skill','')}",
+                    f"   {_qq.get('question','')}",
+                    f"   Expected: {_qq.get('expected_answer',_qq.get('expected',''))[:150]}",
+                    ""
+                ]
+            _q_txt = "\n".join(_q_lines)
+            _dl1.download_button(
+                "📥 Download Questions TXT",
+                data=_q_txt.encode(),
+                file_name=f"Questions_{st.session_state.candidate_name.replace(' ','_')}.txt",
+                mime="text/plain", use_container_width=True)
+
+            # Download as JSON
+            import json as _jdl
+            _q_json = _jdl.dumps({
+                "candidate": st.session_state.candidate_name,
+                "generated": date.today().isoformat(),
+                "questions": st.session_state.questions
+            }, indent=2, ensure_ascii=False)
+            _dl2.download_button(
+                "📥 Download Questions JSON",
+                data=_q_json.encode(),
+                file_name=f"Questions_{st.session_state.candidate_name.replace(' ','_')}.json",
+                mime="application/json", use_container_width=True)
+
+            # Download with answer keys
+            _qa_lines = [
+                f"IAS Full Question Bank + Answer Keys — {st.session_state.candidate_name}",
+                f"Generated: {date.today().strftime('%d %b %Y')}",
+                "="*60, ""
+            ]
+            for _qq in st.session_state.questions:
+                _ak = _qq.get("answer_key", {})
+                _qa_lines += [
+                    f"Q{_qq.get('num','')}. [{_qq.get('type','').upper()}] {_qq.get('skill','')}",
+                    f"QUESTION: {_qq.get('question','')}",
+                    f"IDEAL ANSWER: {_ak.get('ideal_answer',_qq.get('expected_answer',_qq.get('expected','')))}",
+                    f"KEY POINTS: {' | '.join(_ak.get('key_points',[])[:4])}",
+                    f"5★: {_ak.get('score_5','')}",
+                    f"3★: {_ak.get('score_3','')}",
+                    f"1★: {_ak.get('score_1','')}",
+                    ""
+                ]
+            _dl3.download_button(
+                "📥 Download Q + Answer Keys",
+                data="\n".join(_qa_lines).encode(),
+                file_name=f"QA_Keys_{st.session_state.candidate_name.replace(' ','_')}.txt",
+                mime="text/plain", use_container_width=True)
+
+            # Preview expander
             with st.expander(f"📋 Preview {len(st.session_state.questions)} questions"):
                 for q in st.session_state.questions:
                     t="💻" if q.get("type")=="coding" else "🔵"
@@ -2563,10 +2636,20 @@ elif st.session_state.page=="workflow":
                 if kps:
                     st.markdown("**✅ Practical points to cover:**")
                     for kp in kps:
-                        st.markdown(
-                            f'<div style="background:#f0f7ff;border-left:3px solid #00B0F0;'
-                            f'padding:4px 10px;margin:2px 0;border-radius:0 4px 4px 0;'
-                            f'font-size:12px">✓ {kp}</div>',unsafe_allow_html=True)
+                        if kp and str(kp).strip():
+                            st.markdown(
+                                f'<div style="background:rgba(0,176,240,0.08);border-left:3px solid #00B0F0;'
+                                f'padding:6px 12px;margin:3px 0;border-radius:0 6px 6px 0;'
+                                f'font-size:12px;color:#E8F2FF">✓ {kp}</div>',unsafe_allow_html=True)
+                elif ak.get("ideal_answer"):
+                    # fallback: show ideal answer points if kps empty
+                    _ia_pts = ak["ideal_answer"].split(".")
+                    for _iap in _ia_pts[:4]:
+                        if _iap.strip():
+                            st.markdown(
+                                f'<div style="background:rgba(0,176,240,0.08);border-left:3px solid #00B0F0;'
+                                f'padding:6px 12px;margin:3px 0;border-radius:0 6px 6px 0;'
+                                f'font-size:12px;color:#E8F2FF">✓ {_iap.strip()}</div>',unsafe_allow_html=True)
                 if qt=="coding" and ak.get("sample_solution"):
                     st.code(ak["sample_solution"],language="python")
                 r1,r2,r3=st.columns(3)
