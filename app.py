@@ -1982,30 +1982,73 @@ elif st.session_state.page=="workflow":
         _gm_running = False
     try:
         from auto_session import check_auto_session
-        if check_auto_session(ROOT, st.session_state):
-            cname = st.session_state.get("candidate_name","")
-            etime = st.session_state.get("_interview_time","")
-            zlink = st.session_state.get("_zoom_link","")
-            skills= st.session_state.get("_email_skills",[])
-            cfolder = st.session_state.get("_candidate_folder","")
-            st.markdown(
-                f'<div style="background:#e6f9ee;border:2px solid #00B050;'
-                f'border-radius:10px;padding:14px 18px;margin-bottom:10px">'
-                f'<b style="color:#1F3864">📧 Gmail Monitor — New Interview Email Auto-Loaded!</b><br>'
-                f'<span style="font-size:13px;color:#333">'
-                f'👤 <b>{cname}</b> &nbsp;·&nbsp; '
-                f'🕐 {etime} &nbsp;·&nbsp; '
-                f'🛠 {", ".join(skills)}<br>'
-                f'📁 Candidate folder: <code>{cfolder}</code><br>'
-                f'CV, DL and attachments downloaded automatically.'
-                f'</span>'
-                + (f'<br><a href="{zlink}" target="_blank" style="color:#00B0F0;font-size:13px">'
-                   f'🔗 Open Zoom Interview Room</a>' if zlink else "")
-                + f'</div>',
-                unsafe_allow_html=True
+        _new_session_loaded = check_auto_session(ROOT, st.session_state)
+        if _new_session_loaded:
+            cname  = st.session_state.get("candidate_name","")
+            etime  = st.session_state.get("_interview_time","")
+            zlink  = st.session_state.get("_zoom_link","")
+            skills = st.session_state.get("_email_skills",[])
+            cfolder= st.session_state.get("_candidate_folder","")
+
+            # ── AUTO-GENERATE QUESTIONS immediately ───────────────────────
+            _can_autogen = (
+                st.session_state.get("cv_text","") and
+                st.session_state.get("jd_text","") and
+                cname and
+                apikey.is_valid() and
+                not st.session_state.get("questions")
             )
+
+            # Banner
+            st.markdown(
+                f'<div style="background:linear-gradient(135deg,rgba(0,176,80,0.1),rgba(0,201,167,0.05));'
+                f'border:2px solid #00B050;border-radius:10px;padding:16px 20px;margin-bottom:12px">'
+                f'<div style="font-size:14px;font-weight:700;color:#00B050;margin-bottom:8px">'
+                f'📧 Gmail Monitor — New Interview Email Auto-Loaded!</div>'
+                f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'
+                f'<div style="background:rgba(0,0,0,0.2);border-radius:4px;padding:8px 10px">'
+                f'<div style="font-size:10px;color:#4A6A80">CANDIDATE</div>'
+                f'<div style="font-size:13px;font-weight:700;color:#E8F2FF">{cname}</div></div>'
+                f'<div style="background:rgba(0,0,0,0.2);border-radius:4px;padding:8px 10px">'
+                f'<div style="font-size:10px;color:#4A6A80">INTERVIEW TIME</div>'
+                f'<div style="font-size:12px;color:#00C9A7;font-weight:600">{etime or "TBC"}</div></div>'
+                f'<div style="background:rgba(0,0,0,0.2);border-radius:4px;padding:8px 10px">'
+                f'<div style="font-size:10px;color:#4A6A80">STATUS</div>'
+                f'<div style="font-size:12px;color:#00C9A7">{"⚡ Generating questions..." if _can_autogen else "✅ Ready"}</div></div></div>'
+                + (f'<div style="font-size:11px;color:#8AABBF;margin-bottom:8px">🛠 Skills: {", ".join(skills[:6])}</div>' if skills else '')
+                + (f'<a href="{zlink}" target="_blank" style="background:#1565C0;color:#fff;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none">🔗 Open Zoom Room</a>' if zlink else '')
+                + (f'<div style="font-size:10px;color:#4A6A80;margin-top:6px">📁 {cfolder}</div>' if cfolder else '')
+                + f'</div>',
+                unsafe_allow_html=True)
+
+            # ── AUTO-GENERATE ─────────────────────────────────────────────
+            if _can_autogen:
+                _ag_settings = cfg.get_settings()
+                _ag_num_q = _ag_settings.get("default_questions", 10)
+                _ag_level = _ag_settings.get("default_level", "Senior")
+                _level_map = {
+                    "Junior (0-2 yrs)": "junior", "Mid-Level (3-5 yrs)": "mid",
+                    "Senior (6-9 yrs)": "senior", "Senior / Lead (7-10 yrs)": "senior",
+                    "Lead (8-12 yrs)": "lead", "Principal / Architect (12+ yrs)": "principal"
+                }
+                _ag_level_key = _level_map.get(_ag_level, "senior")
+                with st.spinner(f"⚡ Auto-generating {_ag_num_q} questions for {cname}..."):
+                    _ag_res = _generate_questions(
+                        st.session_state.cv_text,
+                        st.session_state.jd_text,
+                        cname, _ag_num_q, _ag_level_key)
+                if "error" not in _ag_res:
+                    st.session_state.questions = _ag_res.get("questions", [])
+                    st.session_state.notes = {}
+                    st.session_state.curr_q = 0
+                    save_session()
+                    _n = len(st.session_state.questions)
+                    st.success(f"✅ {_n} questions auto-generated for {cname} — go to Step 2 to start interview!")
+                else:
+                    st.warning("⚠️ Auto-generate failed — click Generate Questions in Step 1 manually.")
+
             save_session()
-    except Exception:
+    except Exception as _ase:
         pass
 
 
