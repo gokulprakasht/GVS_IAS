@@ -3110,7 +3110,13 @@ elif st.session_state.page=="analytics":
 # ════════════════════════════════════════════════════════════════
 elif st.session_state.page == "settings":
     import datetime as _dts
-    cfg_s = cfg.get_settings()
+    # Ensure data dir exists before any read/write
+    import pathlib as _spl
+    (_spl.Path(__file__).parent / "data").mkdir(parents=True, exist_ok=True)
+    try:
+        cfg_s = cfg.get_settings()
+    except Exception:
+        cfg_s = {}
 
     # ── LEFT-MENU NAVIGATION PATTERN ─────────────────────────────
     # Used as the global pattern for all feature-rich pages in IAS
@@ -3123,6 +3129,7 @@ elif st.session_state.page == "settings":
         ("📲", "Notifications"),
         ("🔒", "Licensing"),
     ]
+    settings = cfg_s  # alias for use throughout settings page
     if "_settings_menu" not in st.session_state:
         st.session_state["_settings_menu"] = "API Key"
     _sel = st.session_state["_settings_menu"]
@@ -3326,6 +3333,11 @@ elif st.session_state.page == "settings":
                     value=settings.get("wa_to",""), placeholder="+91XXXXXXXXXX")
                 _interval_map = {"30 seconds":30,"60 seconds":60,"2 minutes":120,"5 minutes":300}
                 if st.form_submit_button("💾 Save & Start Monitor", type="primary", use_container_width=True):
+                    try:
+                        import pathlib as _npl
+                        (_npl.Path(__file__).parent / "data").mkdir(parents=True, exist_ok=True)
+                    except Exception:
+                        pass
                     cfg.save_settings({
                         "email_notif":email_notif,"wa_notif":whatsapp_notif,
                         "sender_email":sender_email,"gmail_app_password":app_pw,
