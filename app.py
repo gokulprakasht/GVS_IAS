@@ -2063,6 +2063,95 @@ elif st.session_state.page=="workflow":
             for k in DEFAULTS: st.session_state[k]=DEFAULTS[k]
             clear_session(); st.session_state["_loaded"]=True; st.rerun()
 
+    # ── ON-DEMAND EMAIL CHECK + AUTO-GENERATE ───────────────────────────────
+    with st.container():
+        _od1, _od2, _od3 = st.columns([2, 2, 3])
+        with _od1:
+            if st.button("📬 Check Gmail Now", use_container_width=True,
+                help="Manually check Gmail inbox for new interview emails right now — no need to wait 60s"):
+                with st.spinner("Checking Gmail inbox..."):
+                    try:
+                        import core.gmail_monitor as _gm_od
+                        _od_settings = cfg.get_settings()
+                        _od_email = _od_settings.get("sender_email","")
+                        _od_pass  = _od_settings.get("gmail_app_password","")
+                        if _od_email and _od_pass:
+                            import imaplib, email as _emod
+                            from email import policy as _epol
+                            with imaplib.IMAP4_SSL("imap.gmail.com", 993) as _imap:
+                                _imap.login(_od_email, _od_pass)
+                                _imap.select("INBOX")
+                                _, _msgs = _imap.search(None, "UNSEEN")
+                                _uids = _msgs[0].split() if _msgs[0] else []
+                                _found = 0
+                                for _uid in _uids:
+                                    _, _data = _imap.fetch(_uid, "(RFC822)")
+                                    _raw = _data[0][1]
+                                    _msg = _emod.message_from_bytes(_raw, policy=_epol.default)
+                                    _subj = _msg.get("Subject","")
+                                    if _gm_od._is_interview_email(_subj):
+                                        _gm_od._process_message(_msg, _subj)
+                                        _imap.store(_uid, "+FLAGS", "\\Seen")
+                                        _found += 1
+                                if _found:
+                                    st.success(f"✅ {_found} interview email(s) found and loaded!")
+                                    st.rerun()
+                                else:
+                                    st.info("📭 No new interview emails found.")
+                        else:
+                            st.warning("⚠️ Configure Gmail in Settings → Notifications first.")
+                    except Exception as _od_err:
+                        st.error(f"Gmail check failed: {_od_err}")
+
+        with _od2:
+            if st.button("⚡ Auto-Generate Questions", use_container_width=True,
+                type="primary" if (st.session_state.get("cv_text") and st.session_state.get("jd_text") and st.session_state.get("candidate_name") and not st.session_state.get("questions")) else "secondary",
+                help="Generate questions now from loaded CV + JD — triggered automatically or on demand",
+                disabled=not(st.session_state.get("cv_text") and st.session_state.get("jd_text") and st.session_state.get("candidate_name") and apikey.is_valid())):
+                _od_settings2 = cfg.get_settings()
+                _od_num_q = _od_settings2.get("default_questions", 10)
+                _od_level = _od_settings2.get("default_level", "Senior")
+                _od_level_map = {
+                    "Junior (0-2 yrs)":"junior","Mid-Level (3-5 yrs)":"mid",
+                    "Senior (6-9 yrs)":"senior","Senior / Lead (7-10 yrs)":"senior",
+                    "Lead (8-12 yrs)":"lead","Principal / Architect (12+ yrs)":"principal"
+                }
+                _od_level_key = _od_level_map.get(_od_level,"senior")
+                with st.spinner(f"Generating {_od_num_q} questions for {st.session_state.candidate_name}..."):
+                    _od_res = _generate_questions(
+                        st.session_state.cv_text, st.session_state.jd_text,
+                        st.session_state.candidate_name, _od_num_q, _od_level_key)
+                if "error" not in _od_res:
+                    st.session_state.questions = _od_res.get("questions",[])
+                    st.session_state.notes = {}
+                    st.session_state.curr_q = 0
+                    save_session()
+                    st.success(f"✅ {len(st.session_state.questions)} questions ready — go to Step 2!")
+                    st.rerun()
+                else:
+                    st.error(f"Generation failed: {_od_res.get('error','Unknown error')}")
+
+        with _od3:
+            # Status indicators
+            _od_has_cv   = bool(st.session_state.get("cv_text"))
+            _od_has_jd   = bool(st.session_state.get("jd_text"))
+            _od_has_name = bool(st.session_state.get("candidate_name"))
+            _od_has_q    = bool(st.session_state.get("questions"))
+            _od_status = []
+            if _od_has_name: _od_status.append(f"👤 {st.session_state.candidate_name[:20]}")
+            if _od_has_cv:   _od_status.append("📄 CV ✅")
+            if _od_has_jd:   _od_status.append("📋 JD ✅")
+            if _od_has_q:    _od_status.append(f"❓ {len(st.session_state.questions)} questions ✅")
+            if _od_status:
+                st.markdown(
+                    '<div style="background:rgba(0,201,167,0.06);border:1px solid rgba(0,201,167,0.15);border-radius:6px;padding:8px 12px;font-size:11px;color:#8AABBF">' +
+                    ' &nbsp;·&nbsp; '.join(_od_status) +
+                    '</div>', unsafe_allow_html=True)
+            else:
+                st.caption("Upload .eml or fill CV + JD in Step 1 first")
+
+    st.divider()
+
     tab1,tab2,tab3,tab4=st.tabs([
         "📋 Step 1 — Intake & Config",
         "🎤 Step 2 — Live Interview",
