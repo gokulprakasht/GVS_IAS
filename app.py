@@ -131,6 +131,9 @@ hr{border-color:var(--bd)!important;margin:16px 0!important;}
 [data-testid="stDownloadButton"]>button:hover{background:rgba(255,107,0,0.18)!important;border-color:var(--o5)!important;}
 div[data-testid="stMetricValue"]{font-size:2rem;font-weight:700}
 #MainMenu{visibility:hidden!important;}footer{visibility:hidden!important;}
+[data-testid="stSidebarHeader"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;}
+[data-testid="stSidebar"] .stButton>button{margin-bottom:0!important;margin-top:0!important;}
+[data-testid="stSidebar"] .stButton{margin:0!important;padding:1px 0!important;}
 </style>""", unsafe_allow_html=True)
 
 # ── VENDOR REGISTRY ──────────────────────────────────────────────
@@ -1257,13 +1260,6 @@ def _install_ffmpeg():
 # ════════════════════════════════════════════════════════════════
 with st.sidebar:
     brand=cfg.get_active_client()
-    st.markdown(f"""<div style="text-align:center;padding:14px 0 8px">
-    <div style="font-size:32px">🎯</div>
-    <div style="font-size:18px;font-weight:700">IAS v9.0</div>
-    <div style="font-size:10px;opacity:.7;letter-spacing:1px">ZERO TOUCH · RUN ANYWHERE</div>
-    <div style="font-size:11px;opacity:.6">{brand.get('company_name','GVS Technologies')}</div>
-    </div>""",unsafe_allow_html=True)
-    st.divider()
 
     # ── QUICK ACTION BUTTONS IN SIDEBAR ─────────────────────────
     if st.session_state.get("page") == "workflow":
@@ -1314,11 +1310,17 @@ with st.sidebar:
         </style>""", unsafe_allow_html=True)
 
     st.sidebar.markdown(
-        f'<div style="background:{_wl_color};padding:12px 14px;border-radius:8px;'
-        f'margin-bottom:12px;text-align:center">' 
-        f'<div style="font-size:22px">{_wl_icon}</div>'
-        f'<div style="color:#fff;font-size:13px;font-weight:700;margin-top:4px">{_wl_name}</div>'
-        f'<div style="color:rgba(255,255,255,.5);font-size:9px">GVS Technologies</div>'
+        f'<div style="background:linear-gradient(135deg,#0D1B3E,#0A2540);'
+        f'padding:10px 12px;border-radius:8px;margin-bottom:8px;'
+        f'border:1px solid rgba(0,201,167,0.2);text-align:center">'
+        f'<div style="display:flex;align-items:center;justify-content:center;gap:8px">'
+        f'<span style="font-size:20px">{_wl_icon}</span>'
+        f'<div>'
+        f'<div style="color:#fff;font-size:13px;font-weight:700;letter-spacing:0.5px">{_wl_name}</div>'
+        f'<div style="color:#00C9A7;font-size:9px;letter-spacing:1px;opacity:.8">ZERO TOUCH · RUN ANYWHERE</div>'
+        f'</div></div>'
+        f'<div style="color:rgba(255,255,255,.35);font-size:9px;margin-top:3px">'
+        f'{brand.get("company_name","GVS Technologies")}</div>'
         f'</div>', unsafe_allow_html=True)
 
     # ── CxO-grade categorised navigation ─────────────────────────
@@ -1478,14 +1480,17 @@ with st.sidebar:
 
         # Sub-items — only shown when group is expanded
         if is_expanded:
+            # Inject CSS to tighten button gaps for sub-items
+            st.sidebar.markdown(
+                '<style>[data-testid="stSidebar"] .stButton{margin:0!important;padding:0!important;}</style>',
+                unsafe_allow_html=True)
             for icon, label, key in group["pages"]:
                 active = st.session_state.page == key
-                # Indent sub-items with left padding via markdown
                 st.sidebar.markdown(
-                    f'<div style="padding-left:12px">',
+                    '<div style="margin:1px 0 1px 10px;">',
                     unsafe_allow_html=True)
                 if st.sidebar.button(
-                    f"  {icon}  {label}",
+                    f"{icon} {label}",
                     key=f"nav_{key}",
                     use_container_width=True,
                     type="primary" if active else "secondary",
