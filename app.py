@@ -1511,654 +1511,290 @@ with st.sidebar:
 # ════════════════════════════════════════════════════════════════
 # HOME
 # ════════════════════════════════════════════════════════════════
-if st.session_state.page=="home":
+if st.session_state.page == "home":
     import pandas as _pd_home, json as _json_home
     from datetime import datetime as _dth, timedelta as _tdhome
+    import random as _rnd_home
 
-    # ── load data ─────────────────────────────────────────────
-    results_h = cfg.load_results("", True)
-    stats_h   = cfg.get_stats(results_h)
-    kpi_path_h= ROOT / "data" / "kpi_data.json"
-    KPI_H     = _json_home.loads(kpi_path_h.read_text(encoding="utf-8")) if kpi_path_h.exists() else {}
-    src_h     = KPI_H.get("source_performance", {})
-    settings_h= cfg.get_settings()
+    # ── Load real data ─────────────────────────────────────────
+    results_h  = cfg.load_results("", True)
+    stats_h    = cfg.get_stats(results_h)
+    settings_h = cfg.get_settings()
+    kpi_path_h = ROOT / "data" / "kpi_data.json"
+    KPI_H      = _json_home.loads(kpi_path_h.read_text(encoding="utf-8")) if kpi_path_h.exists() else {}
+    _now_h     = _dth.now()
+    _today_str = _now_h.strftime("%A, %d %B %Y  ·  %H:%M")
+    _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
 
-    nav=brand.get("primary_color","0D1B3E")
-    acc=brand.get("accent_color","00B0F0")
+    # ── Derived metrics ─────────────────────────────────────────
+    _total_interviews = stats_h.get("total", len(results_h))
+    _selected   = stats_h.get("selected", sum(1 for r in results_h if "GO" in str(r.get("verdict","")).upper() and "NO" not in str(r.get("verdict","")).upper()))
+    _rejected   = stats_h.get("rejected", sum(1 for r in results_h if "REJECT" in str(r.get("verdict","")).upper() or "NO-GO" in str(r.get("verdict","")).upper()))
+    _pending    = max(0, _total_interviews - _selected - _rejected)
+    _avg_score  = stats_h.get("avg_score", 0)
+    _accept_rate= round(_selected / _total_interviews * 100, 1) if _total_interviews else 0
 
-    # ── Generic industry-aware hero header ──────────────────────────
-    _dash_industry = settings_h.get("industry","General Recruitment")
-    _dash_company  = settings_h.get("company_name","GVS Technologies")
-    _dash_user     = settings_h.get("interviewer_name","Recruiter")
-    _dash_tagline  = settings_h.get("dashboard_tagline","AI-Powered · Zero Touch · Multi-Industry")
-    _industry_icons = {
-        "General Recruitment":"🎯","Telecom / 5G":"📡","Manufacturing / Automotive":"🏭",
-        "Insurance / Finance":"🏦","Medical / Healthcare":"🏥","Technology / IT":"💻",
-        "Consulting / Advisory":"💼","Government / Public Sector":"🏛️","Education":"🎓","Retail / FMCG":"🛒"
-    }
-    _dash_icon = _industry_icons.get(_dash_industry,"🎯")
-    st.markdown(
-        f'<div style="background:linear-gradient(135deg,#0D1B3E 0%,#1A2F5E 55%,#0E6655 100%);'
-        f'padding:20px 28px 16px;border-radius:14px;color:#fff;margin-bottom:14px">'
-        f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-        f'<div>'
-        f'<h2 style="margin:0;font-size:26px">{_dash_icon} IAS — Executive Recruitment Dashboard</h2>'
-        f'<p style="margin:5px 0 0;opacity:.75;font-size:12px">'
-        f'{_dash_tagline} · {_dth.now().strftime("%d %b %Y %H:%M")}</p>'
-        f'<p style="margin:4px 0 0;opacity:.55;font-size:11px">Industry: {_dash_industry} · Platform: IAS</p>'
-        f'</div>'
-        f'<div style="text-align:right;font-size:11px;opacity:.6">'
-        f'{_dash_company}<br>{_dash_user}</div>'
-        f'</div></div>',
-        unsafe_allow_html=True)
+    # Simulate pipeline data (replace with real data when available)
+    _pipeline   = KPI_H.get("pipeline", {"applied":1250,"screened":640,"interviewed":_total_interviews or 192,"shortlisted":_selected or 58,"offered":19,"joined":12})
+    _open_roles = KPI_H.get("open_roles", 48)
+    _tth        = KPI_H.get("time_to_hire", 18)
+    _offers_pending = KPI_H.get("offers_pending", 11)
 
-    # API key warning
-    if not apikey.is_valid():
-        st.error("⚠️ API key not set. Go to **⚙️ Settings → API Key** to configure.")
+    # ── CSS injection for world-class dashboard ─────────────────
+    st.markdown("""
+<style>
+.exec-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 16px;border-bottom:1px solid rgba(0,201,167,0.15);margin-bottom:16px}
+.exec-greeting h2{font-size:20px;font-weight:700;color:#E8F2FF;margin:0}
+.exec-greeting p{font-size:12px;color:#4A6A80;margin:3px 0 0}
+.health-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(0,176,80,0.12);border:1px solid rgba(0,176,80,0.3);color:#00B050;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px}
+.exec-btns{display:flex;gap:8px;flex-wrap:wrap}
+.exec-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.3);background:rgba(0,201,167,0.06);color:#00C9A7;cursor:pointer;font-weight:600;letter-spacing:0.04em}
+.exec-btn-primary{background:rgba(0,201,167,0.15);border-color:rgba(0,201,167,0.5)}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi-box{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 14px}
+.kpi-lbl{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.kpi-num{font-size:24px;font-weight:700;color:#E8F2FF;line-height:1}
+.kpi-delta{font-size:11px;margin-top:5px}
+.delta-g{color:#00B050}.delta-r{color:#CC0000}.delta-w{color:#F5A623}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.dash-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px 16px}
+.dash-card-title{font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.dash-card-title a{font-size:10px;color:#00C9A7;text-decoration:none;font-weight:600}
+.priority-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.priority-row:last-child{border-bottom:none}
+.priority-name{font-size:12px;color:#C8D8E4}
+.badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px}
+.bw{background:rgba(245,166,35,0.12);color:#F5A623}
+.bi{background:rgba(55,138,221,0.12);color:#378ADD}
+.br{background:rgba(204,0,0,0.12);color:#CC0000}
+.bg{background:rgba(0,176,80,0.12);color:#00B050}
+.funnel-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.funnel-lbl{font-size:11px;color:#4A6A80;width:70px}
+.funnel-wrap{flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:14px;overflow:hidden}
+.funnel-fill{height:100%;border-radius:3px}
+.funnel-cnt{font-size:11px;font-weight:600;color:#C8D8E4;width:36px;text-align:right}
+.activity-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.activity-row:last-child{border-bottom:none}
+.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.act-text{font-size:12px;color:#C8D8E4;line-height:1.4}
+.act-time{font-size:10px;color:#4A6A80;margin-top:2px}
+.insight-box{background:rgba(255,255,255,0.03);border-radius:8px;padding:9px 12px;margin-bottom:7px}
+.insight-dept{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
+.insight-txt{font-size:12px;color:#C8D8E4;line-height:1.5}
+.insight-ai{font-size:11px;color:#00C9A7;margin-top:4px}
+.support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.sup-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:10px;padding:12px;text-align:center;cursor:pointer}
+.sup-card:hover{border-color:rgba(0,201,167,0.35);background:#0D1F35}
+.sup-icon{font-size:22px;margin-bottom:5px}
+.sup-label{font-size:11px;color:#4A6A80}
+.cop-fab{position:fixed;bottom:24px;right:24px;z-index:999}
+.cop-fab-btn{width:48px;height:48px;border-radius:50%;background:#00C9A7;border:none;color:#0D1B3E;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,201,167,0.3)}
+.cop-popup{display:none;position:absolute;bottom:58px;right:0;width:250px;background:#0A1628;border:1px solid rgba(0,201,167,0.3);border-radius:12px;padding:14px}
+.cop-popup.open{display:block}
+.cop-hdr{font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:10px}
+.cop-chip{font-size:11px;color:#C8D8E4;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:6px;margin-bottom:6px;cursor:pointer}
+.cop-chip:hover{background:rgba(0,201,167,0.1);color:#00C9A7}
+.row2-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.metric-mini{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.metric-mini:last-child{border-bottom:none}
+.mm-label{font-size:12px;color:#4A6A80}
+.mm-val{font-size:13px;font-weight:700;color:#E8F2FF}
+</style>
+""", unsafe_allow_html=True)
 
-    # Active session banner
-    if st.session_state.candidate_name and st.session_state.questions:
-        noted = sum(1 for k,v in st.session_state.notes.items()
-                    if not k.startswith("score_") and isinstance(v,str) and v.strip())
-        bc1,bc2 = st.columns([5,2])
-        bc1.info(f"📌 **Session active:** {st.session_state.candidate_name} · "
-                 f"{len(st.session_state.questions)} Qs · {noted} notes saved")
-        with bc2:
-            if st.button("▶ Resume Interview",type="primary",use_container_width=True):
-                st.session_state.page="workflow"; st.rerun()
+    # ── EXECUTIVE HEADER ────────────────────────────────────────
+    _health_pct = min(100, max(0, round((_accept_rate * 0.4) + (min(_total_interviews, 100) / 100 * 30) + 30)))
+    _health_label = "🟢 Healthy" if _health_pct >= 80 else "🟡 Attention" if _health_pct >= 60 else "🔴 At Risk"
+    st.markdown(f"""
+<div class="exec-header">
+  <div class="exec-greeting">
+    <h2>Good {"morning" if _now_h.hour < 12 else "afternoon" if _now_h.hour < 17 else "evening"}, {_interviewer}</h2>
+    <p>{_today_str}</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span class="health-pill">Hiring health: {_health_pct}% {_health_label}</span>
+    <div class="exec-btns">
+      <span class="exec-btn exec-btn-primary">+ New Interview</span>
+      <span class="exec-btn">📅 Schedule</span>
+      <span class="exec-btn">📊 Report</span>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
+    # ── KPI ROW ─────────────────────────────────────────────────
+    st.markdown(f"""
+<div class="kpi-row">
+  <div class="kpi-box">
+    <div class="kpi-lbl">🎯 Interviews done</div>
+    <div class="kpi-num">{_total_interviews}</div>
+    <div class="kpi-delta delta-g">↑ {max(1,_total_interviews//10)} this week</div>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-lbl">✅ Selected</div>
+    <div class="kpi-num">{_selected}</div>
+    <div class="kpi-delta delta-g">Accept rate: {_accept_rate}%</div>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-lbl">📋 Offers pending</div>
+    <div class="kpi-num">{_offers_pending}</div>
+    <div class="kpi-delta delta-w">⚠ 2 expiring today</div>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-lbl">⏱ Avg time-to-hire</div>
+    <div class="kpi-num">{_tth}d</div>
+    <div class="kpi-delta delta-g">↓ 5d vs last month</div>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-lbl">⭐ Avg score</div>
+    <div class="kpi-num">{round(_avg_score,1) if _avg_score else "—"}</div>
+    <div class="kpi-delta delta-g">Out of 10.0</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-    # ── FIX 2: QUICK START WIZARD ────────────────────────────────────────
-    if not st.session_state.candidate_name and not st.session_state.questions:
-        st.markdown("---")
-        _qs_col1, _qs_col2 = st.columns([3, 2])
-        with _qs_col1:
-            st.markdown("#### 🚀 Quick Start — 5 Steps to Your First Interview")
-            _steps_done = [
-                bool(apikey.is_valid()),
-                bool(st.session_state.get("jd_text","")),
-                bool(st.session_state.get("cv_text","")),
-                bool(st.session_state.get("questions",[])),
-                bool(st.session_state.get("scores")),
-            ]
-            _step_labels = [
-                ("🔑", "Set API Key", "Settings → API Key → Enter your Anthropic key"),
-                ("📋", "Paste Job Description", "Interview Workflow → Paste JD"),
-                ("📄", "Upload Candidate CV", "Interview Workflow → Paste CV"),
-                ("❓", "Generate Questions", "Interview Workflow → Generate AI Questions"),
-                ("📊", "Score & Report", "Interview Workflow → Complete → Generate Report"),
-            ]
-            for _si, ((_icon, _title, _hint), _done) in enumerate(zip(_step_labels, _steps_done)):
-                _c = "#00C9A7" if _done else "#4A6A80"
-                _mark = "✅" if _done else f"{_si+1}"
-                st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,201,167,0.06)">'
-                    f'<div style="width:28px;height:28px;border-radius:50%;background:{_c}22;border:1.5px solid {_c};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:{_c};flex-shrink:0">{_mark}</div>'
-                    f'<div><div style="font-size:13px;color:#E8F2FF;font-weight:500">{_icon} {_title}</div>'
-                    f'<div style="font-size:11px;color:#4A6A80">{_hint}</div></div></div>',
-                    unsafe_allow_html=True)
-            st.markdown("")
-            if st.button("▶ Go to Interview Workflow", type="primary", use_container_width=True):
-                st.session_state.page = "workflow"; st.rerun()
-        with _qs_col2:
-            # ── FIX 4: DEMO DATA ─────────────────────────────────────────────
-            st.markdown("#### 🎬 Try a Demo Interview")
-            st.caption("Load sample data to see IAS in action — no setup needed")
-            st.markdown(
-                '<div style="background:#112236;border:1px solid rgba(0,201,167,0.15);border-radius:8px;padding:14px;margin-bottom:12px">'
-                '<div style="font-size:12px;font-weight:700;color:#00C9A7;margin-bottom:6px">Demo: 5G Network Architect</div>'
-                '<div style="font-size:11px;color:#8AABBF;line-height:1.7">Candidate: Rajesh Kumar<br>Role: Senior 5G OSS Architect<br>10 pre-generated technical questions<br>Full scoring & report demo</div>'
-                '</div>', unsafe_allow_html=True)
-            if st.button("🎬 Load Demo Interview", type="primary", use_container_width=True):
-                st.session_state.candidate_name = "Rajesh Kumar (Demo)"
-                st.session_state.candidate_email = "demo@example.com"
-                st.session_state.jd_text = "Senior 5G OSS Architect with Nokia NetAct experience, 5G SA/NSA architecture, OSS/BSS integration, TM Forum ODA, FCAPS, ZTP. 10+ years telecom domain."
-                st.session_state.cv_text = "Rajesh Kumar, 14 years Nokia Solutions & Networks. Led NetAct NMS deployments for T-Mobile US, Vodafone Germany. Expert in 5G SA/NSA, OSS/BSS, FCAPS, YANG/NETCONF. PMP certified."
-                st.session_state.questions = [
-                    {"num":1,"skill":"5G Architecture","type":"scenario","question":"Design a 5G SA core deployment with ZTP for 500 sites. Walk me through your approach.","expected":"Should cover AMF/SMF/UPF placement, ZTP workflow, rollback strategy"},
-                    {"num":2,"skill":"Nokia NetAct","type":"technical","question":"How do you configure FCAPS in NetAct for a multi-vendor environment?","expected":"FCAPS layers, NBI/SBI interfaces, multi-vendor adapters"},
-                    {"num":3,"skill":"OSS/BSS Integration","type":"architecture","question":"Design the OSS-to-BSS northbound interface for Order-to-Activate. What are the key failure points?","expected":"TM Forum APIs, async processing, idempotency, error handling"},
-                    {"num":4,"skill":"Cloud Native","type":"scenario","question":"How would you migrate a legacy NetAct deployment to cloud-native microservices?","expected":"Strangler fig pattern, containerisation, Kubernetes, CI/CD pipeline"},
-                    {"num":5,"skill":"Problem Solving","type":"behavioural","question":"Tell me about a time you resolved a P1 network outage that impacted a Tier-1 customer.","expected":"STAR format, clear problem ownership, systematic diagnosis, measurable outcome"},
-                ]
-                st.session_state.notes = {}
-                st.session_state.curr_q = 0
-                st.success("Demo loaded! Click 'Go to Interview Workflow' to start.")
-                st.rerun()
-            st.markdown("---")
-            st.markdown(
-                '<div style="background:#112236;border:1px solid rgba(255,140,42,0.15);border-radius:8px;padding:12px 14px">'
-                '<div style="font-size:11px;font-weight:700;color:#FF8C2A;margin-bottom:6px">Other demo scenarios</div>'
-                '<div style="font-size:11px;color:#8AABBF;line-height:1.9">'
-                '📡 Telecom — 5G OSS Architect<br>'
-                '🏭 Manufacturing — Plant Manager<br>'
-                '🏥 Healthcare — Clinical Lead<br>'
-                '💼 Consulting — PMO Director<br>'
-                '💻 Technology — AI Platform Eng'
-                '</div></div>', unsafe_allow_html=True)
-        st.markdown("---")
+    # ── ROW 1: Priorities + Funnel + Activity ───────────────────
+    st.markdown(f"""
+<div class="dash-grid">
+  <div class="dash-card">
+    <div class="dash-card-title">Today's priorities <a href="#">View all</a></div>
+    <div class="priority-row"><span class="priority-name">📝 Evaluations pending</span><span class="badge bw">{max(1,_pending)}</span></div>
+    <div class="priority-row"><span class="priority-name">👔 Manager feedback awaited</span><span class="badge bi">3</span></div>
+    <div class="priority-row"><span class="priority-name">⚠ Offers expiring today</span><span class="badge br">2</span></div>
+    <div class="priority-row"><span class="priority-name">📅 Interviews unconfirmed</span><span class="badge bw">4</span></div>
+    <div class="priority-row"><span class="priority-name">📄 Reports not submitted</span><span class="badge bi">6</span></div>
+  </div>
+  <div class="dash-card">
+    <div class="dash-card-title">Candidate funnel <a href="#">Analytics →</a></div>
+    <div class="funnel-row"><span class="funnel-lbl">Applied</span><div class="funnel-wrap"><div class="funnel-fill" style="width:100%;background:#378ADD"></div></div><span class="funnel-cnt">{_pipeline.get('applied',1250)}</span></div>
+    <div class="funnel-row"><span class="funnel-lbl">Screened</span><div class="funnel-wrap"><div class="funnel-fill" style="width:51%;background:#378ADD"></div></div><span class="funnel-cnt">{_pipeline.get('screened',640)}</span></div>
+    <div class="funnel-row"><span class="funnel-lbl">Interviewed</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('interviewed',192)/12.5):.0f}%;background:#1D9E75"></div></div><span class="funnel-cnt">{_pipeline.get('interviewed',192)}</span></div>
+    <div class="funnel-row"><span class="funnel-lbl">Shortlisted</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('shortlisted',58)/12.5):.0f}%;background:#1D9E75"></div></div><span class="funnel-cnt">{_pipeline.get('shortlisted',58)}</span></div>
+    <div class="funnel-row"><span class="funnel-lbl">Offered</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('offered',19)/12.5):.0f}%;background:#F5A623"></div></div><span class="funnel-cnt">{_pipeline.get('offered',19)}</span></div>
+    <div class="funnel-row"><span class="funnel-lbl">Joined</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('joined',12)/12.5):.0f}%;background:#00B050"></div></div><span class="funnel-cnt">{_pipeline.get('joined',12)}</span></div>
+  </div>
+  <div class="dash-card">
+    <div class="dash-card-title">Live activity <a href="#">View all</a></div>
+    {"".join([f'<div class="activity-row"><div class="act-dot" style="background:{"#1D9E75" if i%3==0 else "#378ADD" if i%3==1 else "#7F77DD"}"></div><div><div class="act-text">{r.get("candidate_name","Candidate")[:20]} — {r.get("verdict","Assessment complete")}</div><div class="act-time">{r.get("date","Today")}</div></div></div>' for i, r in enumerate(sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:5])]) if results_h else '<div style="font-size:12px;color:#4A6A80;padding:20px 0;text-align:center">No activity yet.<br>Start your first interview to see live data.</div>'}
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-    # ── 4 DASHBOARD TABS ─────────────────────────────────────
-    db1,db2,db3,db4 = st.tabs([
-        "🌐 Overall Recruitment View",
-        "📊 Recruitment KPI Metrics",
-        "💰 Recruitment Revenue",
-        "📁 Recruitment Portfolio",
-    ])
+    # ── ROW 2: AI Insights + Velocity + Metrics ─────────────────
+    st.markdown(f"""
+<div class="row2-grid">
+  <div class="dash-card">
+    <div class="dash-card-title">AI hiring insights <a href="#">Refresh</a></div>
+    <div class="insight-box">
+      <div class="insight-dept">Interview pipeline</div>
+      <div class="insight-txt">{_total_interviews} interviews completed · {_selected} selected · {_rejected} rejected</div>
+      <div class="insight-ai">🤖 Selection rate: {_accept_rate}% {"— above benchmark ✅" if _accept_rate >= 20 else "— review screening criteria"}</div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-dept">Assessment quality</div>
+      <div class="insight-txt">Average score {round(_avg_score,1) if _avg_score else "N/A"} / 10 across all interviews</div>
+      <div class="insight-ai">🤖 {"Strong quality signal" if _avg_score >= 7 else "Consider raising bar" if _avg_score >= 5 else "Calibrate scoring rubric"}</div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-dept">Offer pipeline</div>
+      <div class="insight-txt">{_offers_pending} offers pending · 2 expiring in 24 hours</div>
+      <div class="insight-ai">🤖 Action required: follow up on expiring offers today</div>
+    </div>
+  </div>
+  <div class="dash-card">
+    <div class="dash-card-title">Performance metrics</div>
+    <div class="metric-mini"><span class="mm-label">Total interviews</span><span class="mm-val">{_total_interviews}</span></div>
+    <div class="metric-mini"><span class="mm-label">Selected candidates</span><span class="mm-val" style="color:#00B050">{_selected}</span></div>
+    <div class="metric-mini"><span class="mm-label">Rejected candidates</span><span class="mm-val" style="color:#CC0000">{_rejected}</span></div>
+    <div class="metric-mini"><span class="mm-label">Pending review</span><span class="mm-val" style="color:#F5A623">{_pending}</span></div>
+    <div class="metric-mini"><span class="mm-label">Accept rate</span><span class="mm-val">{_accept_rate}%</span></div>
+    <div class="metric-mini"><span class="mm-label">Avg interview score</span><span class="mm-val">{round(_avg_score,1) if _avg_score else "—"}/10</span></div>
+    <div class="metric-mini"><span class="mm-label">Open roles</span><span class="mm-val">{_open_roles}</span></div>
+    <div class="metric-mini"><span class="mm-label">Avg time-to-hire</span><span class="mm-val">{_tth} days</span></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-    # ══════════════════════════════════════════════════════════
-    # TAB 1 — OVERALL RECRUITMENT VIEW
-    # ══════════════════════════════════════════════════════════
-    with db1:
-        # Top KPI strip
-        total_i  = max(stats_h["total"], 1)
-        sel_i    = stats_h["selected"]
-        rej_i    = stats_h["rejected"]
-        avg_sc   = stats_h["avg_score"]
-        sel_pct  = round(sel_i/total_i*100)
-        rej_pct  = round(rej_i/total_i*100)
-        open_rrs = sum(s.get("open",0) for s in KPI_H.get("streams",[]) if isinstance(s,dict))
-        tgt      = KPI_H.get("monthly_targets",{})
-
-        k1,k2,k3,k4,k5,k6 = st.columns(6)
-        k1.metric("🎯 Interviews",  stats_h["total"],
-                  delta=f"Target {tgt.get('interviews_target',50)}")
-        k2.metric("✅ Selected",    sel_i,
-                  delta=f"{sel_pct}% rate")
-        k3.metric("❌ Rejected",    rej_i,
-                  delta=f"{rej_pct}% rate")
-        k4.metric("⭐ Avg Score",   f"{avg_sc}/5")
-        k5.metric("📂 Open RRs",    open_rrs if open_rrs else 61)
-        k6.metric("⏱ Avg TTH",     "42 days")
-        st.divider()
-
-        col_funnel, col_pipeline = st.columns([2,3])
-
-        with col_funnel:
-            st.markdown("#### 🔽 Hiring Funnel")
-            funnel_stages = [
-                ("Open Positions",   61,               "#0D1B3E", 100),
-                ("CVs Sourced",      768,              "#1F3864",  90),
-                ("Shortlisted",      207,              "#00B0F0",  60),
-                ("TCON Completed",   42,               "#F5A623",  30),
-                ("F2F Interviews",   stats_h["total"], "#6B4EAA",  20),
-                ("Selected",         sel_i,            "#00B050",  15),
-                ("Offers Extended",  KPI_H.get("offered_total",89), "#00B050", 12),
-                ("Joined",           KPI_H.get("joined_total",55),  "#004D20",  9),
-            ]
-            for label, count, color, pct in funnel_stages:
-                bar = max(4, pct)
-                st.markdown(
-                    f'<div style="margin:4px 0">'
-                    f'<div style="display:flex;justify-content:space-between;'
-                    f'font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">'
-                    f'<span>{label}</span>'
-                    f'<span style="font-weight:700;color:{color}">{count:,}</span></div>'
-                    f'<div style="background:var(--color-background-secondary);'
-                    f'border-radius:6px;height:18px">'
-                    f'<div style="background:{color};width:{bar}%;height:18px;'
-                    f'border-radius:6px;display:flex;align-items:center;padding-left:6px">'
-                    f'<span style="color:white;font-size:10px;font-weight:700">{pct}%</span>'
-                    f'</div></div></div>',
-                    unsafe_allow_html=True)
-
-        with col_pipeline:
-            st.markdown("#### ⚡ 9-Stage Recruitment Pipeline — IAS Status")
-            stages_status = [
-                ("01","Workforce Planning", "#1565C0","✅ Active"),
-                ("02","Sourcing",           "#00838F","✅ Active"),
-                ("03","CV Screening",       "#558B2F","✅ Active"),
-                ("04","TCON Interview",     "#E65100","🔵 In Progress"),
-                ("05","F2F Interview",      "#AD1457","🔵 In Progress"),
-                ("06","Assessment",         "#6A1B9A","⬜ Pending"),
-                ("07","Reference Check",    "#00695C","⬜ Pending"),
-                ("08","Job Offer",          "#BF360C","⬜ Pending"),
-                ("09","Onboarding",         "#1A237E","⬜ Pending"),
-            ]
-            scols = st.columns(9)
-            for i,(num,name,color,status) in enumerate(stages_status):
-                with scols[i]:
-                    done = "✅" in status
-                    ip   = "🔵" in status
-                    bg   = "#E6F9EE" if done else ("#E3F2FD" if ip else "var(--color-background-secondary)")
-                    st.markdown(
-                        f'<div style="border:1.5px solid {color};border-radius:8px;'
-                        f'background:{bg};padding:6px 3px;text-align:center;min-height:90px">'
-                        f'<div style="font-size:14px;font-weight:700;color:{color}">{num}</div>'
-                        f'<div style="font-size:8px;font-weight:700;color:{color};'
-                        f'line-height:1.2;margin:2px 0">{name}</div>'
-                        f'<div style="font-size:10px;margin-top:4px">{status.split()[0]}</div>'
-                        f'</div>',
-                        unsafe_allow_html=True)
-
-            st.divider()
-            st.markdown("#### 📅 Hiring Velocity — Joined by Month")
-            vel_months = ["May'17","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
-                          "Jan'18","Mar","Apr","May","Jun","Jul","Aug","Sep"]
-            vel_joined = [1,2,3,18,3,8,3,1,4,4,3,3,2,24,1,4]
-            vel_offered= [1,2,3,18,3,8,3,1,4,4,3,3,7,24,1,4]
-            vel_df = _pd_home.DataFrame({
-                "Month":vel_months,"Joined":vel_joined,"Offered":vel_offered})
-            st.bar_chart(vel_df.set_index("Month"), use_container_width=True, height=200)
-
-        st.divider()
-        # Gender diversity + source mix
-        gd1, gd2 = st.columns(2)
-        with gd1:
-            st.markdown("#### 👥 Gender Diversity")
-            g = KPI_H.get("gender", {"F_joined":3,"M_joined":11,"F_offered":9,"M_offered":21})
-            tf = g.get("F_joined",3)+g.get("F_offered",9)
-            tm = g.get("M_joined",11)+g.get("M_offered",21)
-            tt = tf+tm
-            fp = round(tf/tt*100)
-            st.markdown(
-                f'<div style="background:var(--color-background-secondary);'
-                f'border-radius:8px;height:28px;margin:6px 0">'
-                f'<div style="display:flex;height:28px;border-radius:8px;overflow:hidden">'
-                f'<div style="background:#6B4EAA;width:{fp}%;display:flex;align-items:center;'
-                f'justify-content:center;color:white;font-size:12px;font-weight:700">F {fp}%</div>'
-                f'<div style="background:#00B0F0;width:{100-fp}%;display:flex;align-items:center;'
-                f'justify-content:center;color:white;font-size:12px;font-weight:700">M {100-fp}%</div>'
-                f'</div></div>',unsafe_allow_html=True)
-            gc1,gc2,gc3,gc4 = st.columns(4)
-            gc1.metric("F Joined",  g.get("F_joined",3))
-            gc2.metric("M Joined",  g.get("M_joined",11))
-            gc3.metric("F Offered", g.get("F_offered",9))
-            gc4.metric("M Offered", g.get("M_offered",21))
-            target_f = 35
-            gap = target_f - fp
-            if gap > 0:
-                st.warning(f"⚠️ {gap}% below {target_f}% diversity target")
-            else:
-                st.success(f"✅ Diversity target met ({fp}% F)")
-
-        with gd2:
-            st.markdown("#### 🔍 Source Mix")
-            sources_h = KPI_H.get("sources", [
-                {"name":"LinkedIn","submissions":210,"hired":38},
-                {"name":"Naukri","submissions":310,"hired":28},
-                {"name":"Referral","submissions":80,"hired":45},
-                {"name":"Indeed","submissions":120,"hired":22},
-                {"name":"IJM","submissions":42,"hired":8},
-            ])
-            src_df_h = _pd_home.DataFrame([
-                {"Source":s["name"],"Submissions":s["submissions"],"Hired":s["hired"],
-                 "Conv%":f'{round(s["hired"]/max(s["submissions"],1)*100)}%'}
-                for s in sources_h])
-            st.dataframe(src_df_h, use_container_width=True, hide_index=True, height=200)
-
-        st.divider()
-        q1,q2,q3,q4 = st.columns(4)
-        with q1:
-            if st.button("🎯 New Interview",type="primary",use_container_width=True):
-                for k in DEFAULTS: st.session_state[k]=DEFAULTS[k]
-                clear_session(); st.session_state["_loaded"]=True
-                st.session_state.page="workflow"; st.rerun()
-        with q2:
-            if st.button("📂 Bulk CV Review",use_container_width=True):
-                st.session_state.page="bulkcv"; st.rerun()
-        with q3:
-            if st.button("📜 Compliance Hub",use_container_width=True):
-                st.session_state.page="compliance"; st.rerun()
-        with q4:
-            if st.button("🚀 Hiring Intel 2026",use_container_width=True):
-                st.session_state.page="hiring2026"; st.rerun()
-
-    # ══════════════════════════════════════════════════════════
-    # TAB 2 — RECRUITMENT KPI METRICS
-    # ══════════════════════════════════════════════════════════
-    with db2:
-        st.markdown("#### 📊 Recruitment KPI Metrics — Real-Time")
-
-        # KPI configuration
-        kc1,kc2 = st.columns([3,1])
-        with kc2:
-            kpi_period = st.selectbox("Period",
-                ["This Month","Last 3 Months","Last 6 Months","Year to Date","All Time"],
-                key="kpi_period_home")
-
-        tgt = KPI_H.get("monthly_targets",{})
-        # Core KPIs in 2×3 grid
-        row1 = st.columns(3)
-        row2 = st.columns(3)
-
-        kpi_cards = [
-            ("Time-to-Fill",          "42 days",     "38 days",    "Target 45 days",  "#00B050", "#E6F9EE"),
-            ("CV-to-Shortlist Rate",  f"{round(207/768*100)}%","25%","Industry avg 20%","#00B0F0","#E6F0FB"),
-            ("Offer Acceptance Rate", f"{round(55/89*100)}%",  "+5%","Target 75%",     "#6B4EAA","#EDE7F6"),
-            ("Cost per Hire",         "$1,240",      "-$180",      "Budget $1,500",   "#00B050", "#E6F9EE"),
-            ("Interview-to-Offer",    f"{round(sel_i/max(stats_h['total'],1)*100)}%",
-                                      f"{sel_pct}%", "Target 30%",                    "#F5A623","#FFF3D6"),
-            ("Quality of Hire",       f"{avg_sc}/5", "+0.3",       "Target 3.5/5",    "#00B050", "#E6F9EE"),
-        ]
-        for idx, (label,val,delta,note,color,bg) in enumerate(kpi_cards):
-            col = row1[idx] if idx < 3 else row2[idx-3]
-            col.markdown(
-                f'<div style="background:{bg};border:1px solid {color}33;'
-                f'border-radius:10px;padding:14px 16px;margin:4px 0">'
-                f'<div style="font-size:11px;color:var(--color-text-secondary);'
-                f'font-weight:500;margin-bottom:4px">{label}</div>'
-                f'<div style="font-size:26px;font-weight:700;color:{color};line-height:1">{val}</div>'
-                f'<div style="font-size:11px;color:#00B050;margin-top:4px">▲ {delta}</div>'
-                f'<div style="font-size:10px;color:var(--color-text-secondary)">{note}</div>'
-                f'</div>',
-                unsafe_allow_html=True)
-
-        st.divider()
-        # Target progress bars
-        st.markdown("#### 🎯 Target vs Actual")
-        targets_kpi = [
-            ("Interviews Completed",   stats_h["total"], tgt.get("interviews_target",50), "#00B0F0"),
-            ("Candidates Selected",    sel_i,            tgt.get("selected_target",30),   "#00B050"),
-            ("Shortlist Generated",    207,              500,                              "#6B4EAA"),
-            ("TCON Completed",         42,               150,                             "#F5A623"),
-            ("Positions Filled",       sel_i,            61,                              "#00B050"),
-        ]
-        for label, actual, target, color in targets_kpi:
-            pct   = min(100, round(actual/max(target,1)*100))
-            tcolor= "#00B050" if pct>=80 else "#F5A623" if pct>=50 else "#CC0000"
-            st.markdown(
-                f'<div style="margin:6px 0">'
-                f'<div style="display:flex;justify-content:space-between;'
-                f'font-size:12px;margin-bottom:3px">'
-                f'<span style="font-weight:500">{label}</span>'
-                f'<span style="color:{tcolor};font-weight:700">{actual} / {target} ({pct}%)</span>'
-                f'</div>'
-                f'<div style="background:var(--color-background-secondary);'
-                f'border-radius:8px;height:20px">'
-                f'<div style="background:{tcolor};width:{pct}%;height:20px;'
-                f'border-radius:8px;display:flex;align-items:center;padding-left:8px">'
-                f'<span style="color:white;font-size:10px;font-weight:700">{pct}%</span>'
-                f'</div></div></div>',
-                unsafe_allow_html=True)
-
-        st.divider()
-        # Source ROI table
-        st.markdown("#### 🔍 Source ROI Analysis")
-        if src_h:
-            src_rows_h = []
-            for sname, sd in src_h.items():
-                conv  = round(sd["hired"]/max(sd["submissions"],1)*100,1)
-                cph   = round(sd.get("cost",0)/max(sd["hired"],1))
-                roi_s = "✅ High" if conv>20 else ("⚠️ OK" if conv>10 else "❌ Low")
-                src_rows_h.append({
-                    "Source":sname,"Submissions":sd["submissions"],
-                    "Hired":sd["hired"],"Conv%":f"{conv}%",
-                    "Cost/Hire":f"${cph:,}","ROI Grade":roi_s})
-            st.dataframe(_pd_home.DataFrame(src_rows_h),
-                use_container_width=True, hide_index=True)
-        else:
-            st.dataframe(_pd_home.DataFrame([
-                {"Source":"LinkedIn", "Submissions":210,"Hired":38,"Conv%":"18%","Cost/Hire":"$2,200","ROI Grade":"✅ High"},
-                {"Source":"Naukri",   "Submissions":310,"Hired":28,"Conv%":"9%", "Cost/Hire":"$800",  "ROI Grade":"⚠️ OK"},
-                {"Source":"Referral", "Submissions":80, "Hired":45,"Conv%":"56%","Cost/Hire":"$200",  "ROI Grade":"✅ High"},
-                {"Source":"Indeed",   "Submissions":120,"Hired":22,"Conv%":"18%","Cost/Hire":"$1,200","ROI Grade":"✅ High"},
-                {"Source":"IJM",      "Submissions":42, "Hired":8, "Conv%":"19%","Cost/Hire":"$1,500","ROI Grade":"✅ High"},
-            ]), use_container_width=True, hide_index=True)
-
-        if st.button("📊 Full KPI Dashboard →",use_container_width=False):
-            st.session_state.page="kpi"; st.rerun()
-
-    # ══════════════════════════════════════════════════════════
-    # TAB 3 — RECRUITMENT REVENUE
-    # ══════════════════════════════════════════════════════════
-    with db3:
-        st.markdown("#### 💰 Recruitment Revenue — Business Impact View")
-
-        # Revenue config
-        rc1,rc2,rc3 = st.columns(3)
-        rev_fee   = rc1.number_input("Fee per placement ($)",
-            value=int(KPI_H.get("revenue_per_placement",1250)),
-            step=50, key="rev_fee")
-        rev_margin= rc2.slider("Gross margin (%)", 20, 80, 65, key="rev_margin")
-        rev_target= rc3.number_input("Monthly revenue target ($)",
-            value=int(KPI_H.get("monthly_revenue_target",50000)),
-            step=1000, key="rev_target")
-
-        # Computed revenue metrics
-        gross_rev  = sel_i * rev_fee
-        net_rev    = round(gross_rev * rev_margin / 100)
-        pipeline_v = (207 * rev_fee * 0.25)            # shortlisted at 25% close
-        tgt_gap    = max(0, rev_target - gross_rev)
-        roi_ias    = round(gross_rev / max(stats_h["total"]*0.18, 0.01))
-
-        st.divider()
-        rv1,rv2,rv3,rv4,rv5 = st.columns(5)
-        rv1.metric("Gross Revenue",   f"${gross_rev:,}",     delta=f"${sel_i} × ${rev_fee:,}")
-        rv2.metric("Net Revenue",     f"${net_rev:,}",       delta=f"{rev_margin}% margin")
-        rv3.metric("Pipeline Value",  f"${pipeline_v:,.0f}", delta="207 shortlisted × 25%")
-        rv4.metric("Target Gap",      f"${tgt_gap:,}",       delta="to monthly goal" if tgt_gap else "Target met ✅")
-        rv5.metric("IAS ROI",         f"{roi_ias:,}×",       delta="revenue per $1 AI spend")
-
-        st.divider()
-
-        # Revenue by tier
-        st.markdown("#### 💼 Revenue by Job Grade Tier")
-        tier_data = [
-            ("JG5-6  Graduate/Intern",  12, 500,   "#B0BEC5"),
-            ("JG7     Engineer",        15, 900,   "#00B0F0"),
-            ("JG8     Senior Engineer", 18, 1400,  "#6B4EAA"),
-            ("JG9     Lead / Manager",   8, 2200,  "#F5A623"),
-            ("JG10+  Principal/Director",3, 4500,  "#CC0000"),
-        ]
-        tot_tier_rev = sum(c*f for _,c,f,_ in tier_data)
-        for tier_name, count, fee, color in tier_data:
-            t_rev = count * fee
-            t_pct = round(t_rev/max(tot_tier_rev,1)*100)
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:10px;margin:5px 0">'
-                f'<span style="font-size:12px;min-width:200px;color:var(--color-text-primary)">'
-                f'{tier_name}</span>'
-                f'<div style="flex:1;background:var(--color-background-secondary);'
-                f'border-radius:6px;height:22px">'
-                f'<div style="background:{color};width:{t_pct}%;height:22px;border-radius:6px;'
-                f'display:flex;align-items:center;padding:0 8px">'
-                f'<span style="color:white;font-size:10px;font-weight:700">'
-                f'{count} placed · ${t_rev:,}</span></div></div>'
-                f'<span style="font-size:11px;color:var(--color-text-secondary);min-width:40px">'
-                f'{t_pct}%</span></div>',
-                unsafe_allow_html=True)
-
-        st.divider()
-
-        # Monthly revenue forecast
-        st.markdown("#### 📈 12-Month Revenue Forecast")
-        months_f = ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"]
-        placed_f = [4,6,8,10,12,15,18,20,22,25,28,30]
-        rev_f    = [p*rev_fee for p in placed_f]
-        cum_rev  = []
-        running  = gross_rev
-        for r in rev_f:
-            running += r
-            cum_rev.append(running)
-        fdf = _pd_home.DataFrame({
-            "Month":months_f,
-            "Monthly Revenue":rev_f,
-            "Cumulative":cum_rev
-        })
-        st.line_chart(fdf.set_index("Month"), use_container_width=True, height=220)
-
-        st.divider()
-
-        # Client revenue breakdown
-        st.markdown("#### 🏢 Revenue by Client / Stream")
-        client_rev = [
-            {"Client":"Empower Professionals","Placements":sel_i,
-             "Fee":rev_fee,"Revenue":f"${sel_i*rev_fee:,}","Status":"✅ Active"},
-            {"Client":"eTeki",                "Placements":8,
-             "Fee":1100,"Revenue":"$8,800","Status":"✅ Active"},
-            {"Client":"GVS Internal",          "Placements":5,
-             "Fee":0,   "Revenue":"$0","Status":"🔵 Internal"},
-            {"Client":"Pipeline",              "Placements":0,
-             "Fee":rev_fee,"Revenue":f"${int(pipeline_v):,} est","Status":"⚠️ Forecast"},
-        ]
-        st.dataframe(_pd_home.DataFrame(client_rev),
-            use_container_width=True, hide_index=True)
-
-        # IAS cost efficiency
-        st.divider()
-        st.markdown("#### 🤖 IAS Cost Efficiency vs Manual")
-        ce1,ce2,ce3 = st.columns(3)
-        ias_total_cost = stats_h["total"] * 0.18
-        manual_cost    = stats_h["total"] * 300 * 4
-        saving         = manual_cost - ias_total_cost
-        ce1.metric("IAS API Cost",    f"${ias_total_cost:.2f}",   delta=f"${0.18}/interview")
-        ce2.metric("Manual Equiv.",   f"${manual_cost:,.0f}",     delta=f"4 hrs × $300/hr each")
-        ce3.metric("Net Saving",      f"${saving:,.0f}",          delta=f"{round(saving/max(manual_cost,1)*100)}% reduction")
-
-    # ══════════════════════════════════════════════════════════
-    # TAB 4 — RECRUITMENT PORTFOLIO
-    # ══════════════════════════════════════════════════════════
-    with db4:
-        st.markdown("#### 📁 Recruitment Portfolio — Live Pipeline Overview")
-
-        # Portfolio streams from KPI data or defaults
-        streams_p = KPI_H.get("streams", [
-            {"vs":"Stream A/Cloud","hm":"Alex Morgan",        "open":2, "cvs":46, "shortlisted":6,  "tcon":0,"status":"In Progress","priority":"High"},
-            {"vs":"Stream B/Java",     "hm":"James Lee",   "open":3, "cvs":62, "shortlisted":42, "tcon":0,"status":"In Progress","priority":"High"},
-            {"vs":"Stream C/QA",  "hm":"Priya Shah",      "open":5, "cvs":0,  "shortlisted":0,  "tcon":0,"status":"Not Started","priority":"High"},
-            {"vs":"Continuous Integration",           "hm":"Chris Taylor",   "open":11,"cvs":97, "shortlisted":0,  "tcon":0,"status":"In Progress","priority":"Critical"},
-            {"vs":"Service Mgmt",           "hm":"Carl / Yas", "open":9, "cvs":240,"shortlisted":34, "tcon":29,"status":"In Progress","priority":"Critical"},
-            {"vs":"Field Management",           "hm":"Maria Costa",     "open":8, "cvs":165,"shortlisted":91, "tcon":0,"status":"In Progress","priority":"High"},
-            {"vs":"Core Config Mgmt",      "hm":"David Osei",  "open":8, "cvs":139,"shortlisted":28, "tcon":0,"status":"In Progress","priority":"High"},
-            {"vs":"Operations Mgmt",          "hm":"Sam Rivera",   "open":3, "cvs":19, "shortlisted":6,  "tcon":13,"status":"In Progress","priority":"Medium"},
-            {"vs":"DSS/Architect","hm":"Ben Ross",           "open":3, "cvs":0,  "shortlisted":0,  "tcon":0,"status":"Not Started","priority":"High"},
-            {"vs":"Graduate Intake", "hm":"Alan Ford",          "open":12,"cvs":0,  "shortlisted":0,  "tcon":0,"status":"Not Started","priority":"High"},
-        ])
-
-        # Summary metrics
-        tot_open = sum(s.get("open",0) for s in streams_p if isinstance(s,dict))
-        tot_cvs  = sum(s.get("cvs",0) for s in streams_p if isinstance(s,dict))
-        tot_sl   = sum(s.get("shortlisted",0) for s in streams_p if isinstance(s,dict))
-        tot_tcon = sum(s.get("tcon",0) for s in streams_p if isinstance(s,dict))
-        active_n = sum(1 for s in streams_p if isinstance(s,dict) and s.get("status")=="In Progress")
-        crit_n   = sum(1 for s in streams_p if isinstance(s,dict) and s.get("priority")=="Critical")
-
-        pm1,pm2,pm3,pm4,pm5,pm6 = st.columns(6)
-        pm1.metric("Open Positions",tot_open)
-        pm2.metric("CVs Sourced",   tot_cvs)
-        pm3.metric("Shortlisted",   tot_sl)
-        pm4.metric("TCON Done",     tot_tcon)
-        pm5.metric("Active Streams",active_n)
-        pm6.metric("🔴 Critical",   crit_n, delta="immediate action")
-
-        st.divider()
-
-        # Priority heat map
-        ph1, ph2 = st.columns([3,2])
-        with ph1:
-            st.markdown("#### 📋 Portfolio Stream Table")
-            prio_map   = {"Critical":"🔴","High":"🟠","Medium":"🟡","Low":"🟢"}
-            status_map = {"In Progress":"🔵","Complete":"✅","Not Started":"⬜","Blocked":"🔴"}
-
-            table_rows = []
-            for s in sorted(streams_p, key=lambda x: ["Critical","High","Medium","Low"].index(
-                x.get("priority","Low") if x.get("priority","Low") in ["Critical","High","Medium","Low"] else "Low")):
-                if not isinstance(s,dict): continue
-                conv = round(s.get("shortlisted",0)/max(s.get("cvs",1),1)*100)
-                table_rows.append({
-                    "VS / Stream":  s.get("vs",""),
-                    "Hiring Mgr":   s.get("hm",""),
-                    "Open":         s.get("open",0),
-                    "CVs":          s.get("cvs",0),
-                    "Shortlisted":  s.get("shortlisted",0),
-                    "TCON":         s.get("tcon",0),
-                    "Conv%":        f"{conv}%",
-                    "Priority":     f'{prio_map.get(s.get("priority","Low"),"⬜")} {s.get("priority","")}',
-                    "Status":       f'{status_map.get(s.get("status","Not Started"),"⬜")} {s.get("status","")}',
-                })
-            if table_rows:
-                st.dataframe(_pd_home.DataFrame(table_rows),
-                    use_container_width=True, hide_index=True, height=340)
-
-        with ph2:
-            st.markdown("#### 🚦 Priority Heat Map")
-            for s in sorted(streams_p,
-                key=lambda x: ["Critical","High","Medium","Low"].index(
-                    x.get("priority","Low") if x.get("priority","Low") in
-                    ["Critical","High","Medium","Low"] else "Low")):
-                if not isinstance(s,dict): continue
-                pc = {"Critical":"#CC0000","High":"#F5A623",
-                      "Medium":"#00B0F0","Low":"#888"}.get(s.get("priority","Low"),"#888")
-                conv2 = round(s.get("shortlisted",0)/max(s.get("cvs",1),1)*100)
-                st.markdown(
-                    f'<div style="background:var(--color-background-secondary);'
-                    f'border-left:4px solid {pc};border-radius:0 8px 8px 0;'
-                    f'padding:6px 12px;margin:3px 0;display:flex;'
-                    f'justify-content:space-between;align-items:center">'
-                    f'<span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">'
-                    f'{s.get("vs","")}</span>'
-                    f'<span style="font-size:11px;color:var(--color-text-secondary)">'
-                    f'{s.get("open",0)} open · {conv2}% SL</span>'
-                    f'<span style="background:{pc};color:white;padding:1px 8px;'
-                    f'border-radius:8px;font-size:10px;font-weight:700">'
-                    f'{s.get("priority","")}</span></div>',
-                    unsafe_allow_html=True)
-
-        st.divider()
-
-        # Portfolio stage tracker
-        st.markdown("#### 📊 Portfolio by Recruitment Stage")
-        stage_dist = {
-            "Workforce Planning": sum(1 for s in streams_p if isinstance(s,dict) and s.get("status")=="Not Started"),
-            "Sourcing Active":    sum(1 for s in streams_p if isinstance(s,dict) and s.get("cvs",0)>0 and s.get("shortlisted",0)==0),
-            "Screening":          sum(1 for s in streams_p if isinstance(s,dict) and s.get("shortlisted",0)>0 and s.get("tcon",0)==0),
-            "TCON/Interviews":    sum(1 for s in streams_p if isinstance(s,dict) and s.get("tcon",0)>0),
-            "Complete":           sum(1 for s in streams_p if isinstance(s,dict) and s.get("status")=="Complete"),
-        }
-        stage_colors = ["#1565C0","#558B2F","#E65100","#6A1B9A","#00B050"]
-        for (stage_name, stage_count), sc in zip(stage_dist.items(), stage_colors):
-            bar_p = round(stage_count/max(len(streams_p),1)*100)
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:10px;margin:5px 0">'
-                f'<span style="font-size:12px;min-width:160px;color:var(--color-text-primary)">'
-                f'{stage_name}</span>'
-                f'<div style="flex:1;background:var(--color-background-secondary);'
-                f'border-radius:6px;height:22px">'
-                f'<div style="background:{sc};width:{max(bar_p,3)}%;height:22px;'
-                f'border-radius:6px;display:flex;align-items:center;padding:0 8px">'
-                f'<span style="color:white;font-size:11px;font-weight:700">'
-                f'{stage_count} streams</span></div></div>'
-                f'<span style="font-size:11px;min-width:30px;text-align:right;'
-                f'color:var(--color-text-secondary)">{bar_p}%</span></div>',
-                unsafe_allow_html=True)
-
-        st.divider()
-        pa1,pa2,pa3 = st.columns(3)
-        with pa1:
-            if st.button("💼 Full Portfolio →",use_container_width=True):
-                st.session_state.page="portfolio"; st.rerun()
-        with pa2:
-            if st.button("📋 Recruitment Process →",use_container_width=True):
-                st.session_state.page="hiringplan"; st.rerun()
-        with pa3:
-            if st.button("📜 Compliance Hub →",use_container_width=True):
-                st.session_state.page="compliance"; st.rerun()
-
-    # Recent results
+    # ── RECENT INTERVIEWS TABLE ─────────────────────────────────
     if results_h:
-        st.divider()
-        st.markdown("#### 🕐 Recent Interviews")
-        for r in sorted(results_h, key=lambda x:x.get("date",""), reverse=True)[:5]:
-            sc = r.get("overall_score",0); stars = "★"*round(float(sc)) + "☆"*(5-round(float(sc)))
-            vc = "#00B050" if "SELECT" in str(r.get("verdict","")).upper() else "#CC0000"
-            st.markdown(
-                f'<div style="background:var(--color-background-secondary);'
-                f'border-radius:8px;padding:8px 14px;margin:4px 0;'
-                f'display:flex;justify-content:space-between;align-items:center">'
-                f'<span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">'
-                f'{r.get("candidate","—")}</span>'
-                f'<span style="font-size:12px;color:var(--color-text-secondary)">'
-                f'{r.get("date","")}</span>'
-                f'<span style="color:#F5A623">{stars}</span>'
-                f'<span style="font-size:12px;font-weight:700;color:{vc}">'
-                f'{r.get("verdict","—")}</span></div>',
-                unsafe_allow_html=True)
-            v=r.get("verdict",""); icon="✅" if "SELECT" in v.upper() else "❌"
-            sn=float(r.get("overall_score",0)); stars="★"*round(sn)+"☆"*(5-round(sn))
-            st.markdown(f"{icon} **{r.get('candidate','')}** · {r.get('role','')[:35]} · "
-                        f"{stars} · {r.get('date','')}")
+        st.markdown('<div class="dash-card" style="margin-bottom:14px">', unsafe_allow_html=True)
+        st.markdown('<div class="dash-card-title">Recent interviews</div>', unsafe_allow_html=True)
+        _recent = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8]
+        _rows = []
+        for r in _recent:
+            _v = r.get("verdict","—")
+            _col = "🟢" if "GO" in str(_v).upper() and "NO" not in str(_v).upper() else "🔴" if "REJECT" in str(_v).upper() or "NO-GO" in str(_v).upper() else "🟡"
+            _rows.append({
+                "Candidate": r.get("candidate_name","—"),
+                "Role": str(r.get("job_role","—"))[:30],
+                "Score": f"{round(r.get('overall_score', r.get('score',0)),1)}/10",
+                "Verdict": f"{_col} {_v}",
+                "Date": str(r.get("date", r.get("timestamp","—")))[:10],
+            })
+        if _rows:
+            import pandas as _pdrec
+            st.dataframe(_pdrec.DataFrame(_rows), use_container_width=True, hide_index=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
+    # ── SUPPORT CENTRE ──────────────────────────────────────────
+    st.markdown("""
+<div style="font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Support & resources</div>
+<div class="support-grid">
+  <div class="sup-card"><div class="sup-icon">💬</div><div class="sup-label">Live chat</div></div>
+  <div class="sup-card"><div class="sup-icon">📚</div><div class="sup-label">Knowledge base</div></div>
+  <div class="sup-card"><div class="sup-icon">🎬</div><div class="sup-label">Training videos</div></div>
+  <div class="sup-card"><div class="sup-icon">🎫</div><div class="sup-label">Raise a ticket</div></div>
+</div>
+""", unsafe_allow_html=True)
+
+    # ── AI COPILOT FAB ──────────────────────────────────────────
+    st.markdown("""
+<div class="cop-fab">
+  <div class="cop-popup" id="ias_cop">
+    <div class="cop-hdr">🤖 Ask IAS</div>
+    <div class="cop-chip">Show delayed interviews</div>
+    <div class="cop-chip">Generate interview questions</div>
+    <div class="cop-chip">Summarise this week's pipeline</div>
+    <div class="cop-chip">Create hiring report</div>
+  </div>
+  <button class="cop-fab-btn" onclick="var p=document.getElementById('ias_cop');p.classList.toggle('open')">🤖</button>
+</div>
+""", unsafe_allow_html=True)
+
+    # ── QUICK ACTIONS (for new users only) ─────────────────────
+    if _total_interviews == 0:
+        st.divider()
+        st.markdown("#### 🚀 Quick start — 5 steps to your first interview")
+        _q1, _q2 = st.columns(2)
+        with _q1:
+            _steps_todo = [
+                ("🔑", "Set API key", "Settings → API Key"),
+                ("📋", "Paste job description", "Interview Workflow → Paste JD"),
+                ("📄", "Upload candidate CV", "Interview Workflow → Upload CV"),
+                ("❓", "Generate questions", "Interview Workflow → Generate"),
+                ("📊", "Score & report", "Interview Workflow → Complete"),
+            ]
+            for icon, title, sub in _steps_todo:
+                st.markdown(f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,201,167,0.1)"><span style="font-size:18px">{icon}</span><div><div style="font-size:13px;font-weight:600;color:#C8D8E4">{title}</div><div style="font-size:11px;color:#4A6A80">{sub}</div></div></div>', unsafe_allow_html=True)
+        with _q2:
+            st.markdown("**Try a demo interview:**")
+            _demo_scenarios = [
+                ("🌐", "Telecom — 5G OSS Architect", "Senior", "telecom"),
+                ("🏭", "Manufacturing — Plant Manager", "Mid", "manufacturing"),
+                ("🏥", "Healthcare — Clinical Lead", "Senior", "healthcare"),
+                ("📊", "Consulting — PMO Director", "Lead", "consulting"),
+            ]
+            for icon, label, level, key in _demo_scenarios:
+                if st.button(f"{icon} {label}", key=f"demo_{key}", use_container_width=True):
+                    _demo_cv = f"Experienced professional applying for {label} role with 10+ years relevant experience."
+                    _demo_jd = f"We are looking for a {label} with strong domain expertise, leadership skills, and proven delivery record."
+                    st.session_state.candidate_name  = f"Demo Candidate ({label.split('—')[1].strip()})"
+                    st.session_state.candidate_email = "demo@gvstechnologies.com"
+                    st.session_state.cv_text  = _demo_cv
+                    st.session_state.jd_text  = _demo_jd
+                    st.session_state.questions = []
+                    st.session_state.page = "workflow"
+                    st.rerun()
 # ════════════════════════════════════════════════════════════════
 # WORKFLOW — MAIN INTERVIEW FLOW
 
