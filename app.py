@@ -396,6 +396,1190 @@ def detect_industry_from_jd(jd_text):
 
 # ── END INDUSTRY CONFIG ───────────────────────────────────────────────────────
 
+# ══════════════════════════════════════════════════════════════════════════════
+# IAS INDUSTRY QUESTION BANK — Sprint 2
+# 300 questions · 12 industries · Easy / Medium / Hard
+# ══════════════════════════════════════════════════════════════════════════════
+# IAS v9.0 — Multi-Industry Question Bank
+# Sprint 2: 540 questions · 12 industries · Easy / Medium / Hard
+# GVS Technologies · Gokul Prakash T
+
+IND_QUESTION_BANK = {
+
+# ═══════════════════════════════════════════════════════════════
+"Telecom & Networks": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"OSS/BSS","type":"concept","question":"What is the difference between OSS and BSS in a telecom operator environment? Give two examples of each."},
+    {"skill":"5G","type":"concept","question":"Explain the difference between 5G NSA and SA architecture. Which deployment model is more common today and why?"},
+    {"skill":"FCAPS","type":"concept","question":"What does FCAPS stand for and how does it relate to network management?"},
+    {"skill":"Network Management","type":"concept","question":"What is a Network Management System (NMS) and what are its core functions? Name two vendors."},
+    {"skill":"Protocols","type":"concept","question":"What is the role of SNMP in network management? What are its three versions and key differences?"},
+    {"skill":"Network Operations","type":"scenario","question":"A network alarm fires at 2am showing a critical fault on a core router. Walk me through your first five steps as NOC engineer."},
+    {"skill":"Troubleshooting","type":"scenario","question":"A customer reports slow data speeds on 4G. List three possible causes you would investigate first."},
+    {"skill":"SLA","type":"concept","question":"What is a Service Level Agreement (SLA) in telecom? Name three key metrics typically included."},
+    {"skill":"VoIP","type":"concept","question":"What is VoIP and what are the two most common protocols used? What quality metrics matter most?"},
+    {"skill":"Cloud RAN","type":"concept","question":"What is Cloud RAN (C-RAN) and how does it differ from traditional distributed RAN?"},
+],
+"medium": [
+    {"skill":"OSS/BSS","type":"scenario","question":"You are leading an OSS/BSS modernisation programme for a Tier-1 operator. Their legacy Amdocs BSS is being replaced with a cloud-native stack. What are the top three integration risks and how do you mitigate them?"},
+    {"skill":"5G","type":"scenario","question":"An operator wants to deploy 5G network slicing for enterprise IoT, eMBB, and URLLC use cases. How would you architect the slice management framework?"},
+    {"skill":"Network Automation","type":"scenario","question":"Your team needs to reduce mean time to repair (MTTR) from 4 hours to 30 minutes using automation. Describe your approach and the tools you would deploy."},
+    {"skill":"TM Forum","type":"concept","question":"Explain the TM Forum Open API framework. How does eTOM map to real operational processes? Give two examples."},
+    {"skill":"ZTP","type":"scenario","question":"A new greenfield 5G site needs to be provisioned without on-site engineers. Walk me through a Zero-Touch Provisioning workflow end-to-end."},
+    {"skill":"Performance","type":"scenario","question":"KPIs show a cell site with declining throughput over 3 weeks but no alarms. How do you diagnose and resolve this?"},
+    {"skill":"ORAN","type":"concept","question":"What is the xApp ecosystem in ORAN architecture? How does the RAN Intelligent Controller (RIC) enable dynamic optimisation?"},
+    {"skill":"Order-to-Activate","type":"scenario","question":"A business customer's fibre order has been stuck in provisioning for 5 days. Walk through the Order-to-Activate process and where the likely blockages are."},
+    {"skill":"Security","type":"scenario","question":"You detect anomalous traffic patterns suggesting a DDoS attack on the core network. Describe your response playbook."},
+    {"skill":"Cloud Migration","type":"scenario","question":"How would you migrate a monolithic OSS platform to microservices without service disruption? What is your rollback strategy?"},
+],
+"hard": [
+    {"skill":"Autonomous Networks","type":"scenario","question":"Design an autonomous network closed-loop architecture for a 5G SA operator. How does the system progress from Level 0 (manual) to Level 4 (conditional autonomy)? What ML models power each closed loop?"},
+    {"skill":"OSS/BSS Architecture","type":"scenario","question":"A Tier-1 operator with 50M subscribers needs to consolidate three legacy OSS stacks (Nokia NetAct, HP OpenView, custom in-house) into a single cloud-native platform. Design the migration architecture, data model harmonisation approach, and zero-downtime cutover strategy."},
+    {"skill":"5G Core","type":"scenario","question":"Architect a 5G service-based architecture (SBA) for a national operator deploying private 5G for industrial IoT across 200 factories. Address network slicing, latency requirements (<5ms), edge compute placement, and end-to-end security."},
+    {"skill":"Network AI/ML","type":"scenario","question":"You need to build an ML model to predict cell site outages 4 hours before they occur. What features would you engineer from NetAct telemetry data? Which algorithm would you choose and why? How do you handle concept drift in production?"},
+    {"skill":"Programme Leadership","type":"scenario","question":"You are AVP responsible for a €20M OSS transformation programme that is 3 months behind and €2M over budget. The client's CTIO is threatening to terminate. How do you stabilise, recover, and restore confidence?"},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"IT & Software": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"System Design","type":"concept","question":"Explain the difference between horizontal and vertical scaling. When would you choose each?"},
+    {"skill":"APIs","type":"concept","question":"What is the difference between REST and GraphQL? Name two use cases where GraphQL is a better choice."},
+    {"skill":"DevOps","type":"concept","question":"What is CI/CD? Describe the stages of a typical CI/CD pipeline for a web application."},
+    {"skill":"Cloud","type":"concept","question":"What is the difference between IaaS, PaaS, and SaaS? Give one example of each from AWS, Azure, or GCP."},
+    {"skill":"Containers","type":"concept","question":"What is Docker and why do containers improve deployment consistency? How do containers differ from virtual machines?"},
+    {"skill":"Databases","type":"concept","question":"When would you choose a NoSQL database over a relational database? Give two specific use cases."},
+    {"skill":"Git","type":"scenario","question":"A developer accidentally pushed sensitive credentials to a public GitHub repo 10 minutes ago. What are your immediate steps?"},
+    {"skill":"Testing","type":"concept","question":"What is the difference between unit, integration, and end-to-end testing? Why is the testing pyramid important?"},
+    {"skill":"Agile","type":"concept","question":"Explain the difference between a Sprint and a Kanban workflow. When would you choose each?"},
+    {"skill":"Security","type":"concept","question":"What is SQL injection? How do you prevent it in a web application?"},
+],
+"medium": [
+    {"skill":"System Design","type":"scenario","question":"Design a URL shortening service (like bit.ly) that handles 100M requests/day. Address storage, hashing strategy, caching, and failover."},
+    {"skill":"Microservices","type":"scenario","question":"Your monolithic e-commerce app is experiencing 3-second page load times during flash sales. How would you decompose it into microservices and implement a caching strategy?"},
+    {"skill":"Kubernetes","type":"scenario","question":"A production pod is crashing with OOMKilled errors every 2 hours. Walk me through your diagnosis and long-term resolution."},
+    {"skill":"Data Engineering","type":"scenario","question":"Design a real-time fraud detection pipeline processing 50,000 transactions/second. What stream processing framework would you use and why?"},
+    {"skill":"Security","type":"scenario","question":"Your application's login endpoint is receiving 50,000 failed authentication attempts per minute. How do you respond and what controls do you implement?"},
+    {"skill":"Observability","type":"scenario","question":"A microservice in production is slow but shows no errors. How do you use distributed tracing, metrics, and logs to find the root cause?"},
+    {"skill":"API Design","type":"scenario","question":"You need to design a public REST API for a payments platform. How do you handle versioning, rate limiting, idempotency, and backward compatibility?"},
+    {"skill":"Architecture","type":"scenario","question":"Compare event-driven architecture vs request-response for a food delivery platform. What are the trade-offs for order management, notifications, and payment?"},
+    {"skill":"Performance","type":"scenario","question":"A SQL query that was running in 200ms is now taking 45 seconds after a data migration. How do you diagnose and optimise it?"},
+    {"skill":"CI/CD","type":"scenario","question":"Your team deploys 15 times a day. How do you implement blue-green deployments with automated rollback and feature flags?"},
+],
+"hard": [
+    {"skill":"Distributed Systems","type":"scenario","question":"Design a globally distributed database for a financial trading platform requiring sub-10ms latency, strong consistency for trades, and 99.999% uptime across 5 regions. How do you resolve the CAP theorem trade-offs?"},
+    {"skill":"System Design","type":"scenario","question":"Architect a real-time recommendation engine for a streaming platform with 200M users. Address feature engineering at scale, model serving latency (<50ms), A/B testing infrastructure, and feedback loops."},
+    {"skill":"Platform Engineering","type":"scenario","question":"Your company wants to build an internal developer platform (IDP) to reduce deployment time from 3 days to 30 minutes for 500 engineers. Design the golden path, self-service capabilities, and governance model."},
+    {"skill":"Engineering Leadership","type":"scenario","question":"You inherit an engineering team of 40 where attrition is 40% annually, deployment frequency is monthly, and defect escape rate is 30%. You have 6 months to transform it. What is your plan?"},
+    {"skill":"AI/ML","type":"scenario","question":"Design an LLM-powered coding assistant that understands your company's internal codebase of 2M lines across 50 repositories. Address RAG architecture, code embedding strategy, latency, hallucination mitigation, and security."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"BFSI": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Risk","type":"concept","question":"What is the difference between market risk, credit risk, and operational risk? Give one example of each."},
+    {"skill":"Compliance","type":"concept","question":"What is AML (Anti-Money Laundering)? Name three red flags that would trigger an AML investigation."},
+    {"skill":"Payments","type":"concept","question":"What is the difference between SWIFT, SEPA, and RTGS? When is each used?"},
+    {"skill":"Banking","type":"concept","question":"What is the difference between a retail bank and an investment bank? What products does each offer?"},
+    {"skill":"Regulations","type":"concept","question":"What is Basel III? What are its three pillars and why was it introduced?"},
+    {"skill":"KYC","type":"scenario","question":"A new corporate client applying for a business account has complex ownership structure across 4 jurisdictions. What KYC steps do you follow?"},
+    {"skill":"Credit","type":"concept","question":"What is a credit rating and who issues them? How does a credit rating affect borrowing costs?"},
+    {"skill":"Insurance","type":"concept","question":"What is the difference between life insurance, general insurance, and reinsurance?"},
+    {"skill":"Fintech","type":"concept","question":"What is open banking and what does PSD2 require European banks to do?"},
+    {"skill":"Trading","type":"concept","question":"What is the difference between an equity and a bond? How does duration risk affect bond portfolios?"},
+],
+"medium": [
+    {"skill":"Risk Management","type":"scenario","question":"Your bank's credit portfolio has 15% exposure to commercial real estate, which is showing early stress signals. How do you quantify the risk and what actions do you recommend to the ALCO?"},
+    {"skill":"Compliance","type":"scenario","question":"A suspicious transaction alert fires for a long-standing private banking client who transferred $2M to an offshore account. How do you handle this while maintaining the client relationship?"},
+    {"skill":"Technology","type":"scenario","question":"Your core banking system (30 years old) needs modernisation. How do you manage the migration to a cloud-native platform without a single hour of downtime?"},
+    {"skill":"Fraud","type":"scenario","question":"Design a real-time fraud detection system for a bank processing 5M transactions/day. What ML features matter most and how do you reduce false positives?"},
+    {"skill":"IFRS 9","type":"scenario","question":"Explain how IFRS 9 ECL (Expected Credit Loss) calculation works for a retail mortgage portfolio. What are the three stages and what triggers stage migration?"},
+    {"skill":"Trading","type":"scenario","question":"Explain Value at Risk (VaR) and its limitations. How would you supplement VaR with CVaR and stress testing for a trading desk?"},
+    {"skill":"Payments","type":"scenario","question":"Design a cross-border payment system handling 10 currencies with T+0 settlement. Address FX risk, correspondent banking relationships, and regulatory reporting."},
+    {"skill":"Digital Banking","type":"scenario","question":"Your bank wants to launch a neo-bank product. What is your product strategy, regulatory approach, and technology stack?"},
+    {"skill":"RegTech","type":"scenario","question":"GDPR and MiFID II are creating 200+ daily regulatory reports. How do you build a regulatory reporting platform that reduces manual effort by 80%?"},
+    {"skill":"Stress Testing","type":"scenario","question":"Walk me through how you would design and execute an ECB stress test scenario for a mid-sized European bank. What are the key assumptions and pitfalls?"},
+],
+"hard": [
+    {"skill":"Risk Architecture","type":"scenario","question":"Design an enterprise risk management framework for a global bank operating in 20 countries. How do you aggregate risk across market, credit, operational, and liquidity dimensions in real-time? What is your data architecture?"},
+    {"skill":"Digital Transformation","type":"scenario","question":"A traditional bank with €500B AUM is losing 20% of its Gen-Z customers annually to neobanks. Design a 3-year digital transformation strategy that maintains regulatory compliance while competing on customer experience and unit economics."},
+    {"skill":"Capital Markets","type":"scenario","question":"Design the technology architecture for a dark pool trading venue that needs to match orders in <1ms, maintain full audit trails for MiFID II, handle 2M orders/second at peak, and survive a DR scenario within 4 hours."},
+    {"skill":"Leadership","type":"scenario","question":"You are Group CRO of a bank that just acquired a fintech with embedded lending. The combined entity has conflicting risk frameworks, incompatible data models, and different regulatory licences. How do you harmonise risk management within 18 months?"},
+    {"skill":"AI in Finance","type":"scenario","question":"Design an explainable AI credit decisioning system for SME lending that satisfies ECOA/fair lending requirements, achieves <2s decisions, handles thin-file applicants, and maintains model performance above 0.72 Gini. How do you address model drift and regulatory scrutiny?"},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Healthcare & Pharma": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"GCP","type":"concept","question":"What is Good Clinical Practice (GCP) and why is it essential for clinical trials?"},
+    {"skill":"Regulatory","type":"concept","question":"What is the difference between an IND and an NDA in the FDA drug approval pathway?"},
+    {"skill":"Clinical Trials","type":"concept","question":"What are the four phases of clinical trials? What is the primary objective of each phase?"},
+    {"skill":"Pharmacovigilance","type":"concept","question":"What is an adverse drug reaction (ADR)? What is the difference between a serious and non-serious ADR?"},
+    {"skill":"Health IT","type":"concept","question":"What is HL7 FHIR and why has it become the standard for healthcare data exchange?"},
+    {"skill":"Quality","type":"concept","question":"What is a CAPA (Corrective and Preventive Action)? When is it triggered and what does it involve?"},
+    {"skill":"Regulatory","type":"scenario","question":"You receive a Form 483 observation from the FDA regarding incomplete batch records. What are your immediate steps?"},
+    {"skill":"Clinical Data","type":"concept","question":"What is CDASH and why is it used in clinical data collection? How does it relate to SDTM?"},
+    {"skill":"Medical Devices","type":"concept","question":"What is ISO 13485? How does it differ from ISO 9001 for medical device manufacturers?"},
+    {"skill":"Healthcare IT","type":"concept","question":"What is the difference between EHR and EMR? What is interoperability in the context of healthcare IT?"},
+],
+"medium": [
+    {"skill":"Clinical Trials","type":"scenario","question":"A Phase III trial shows your primary endpoint was missed but a pre-specified secondary endpoint shows strong efficacy. How do you handle this in the regulatory submission?"},
+    {"skill":"Pharmacovigilance","type":"scenario","question":"Post-marketing surveillance reveals a 3-fold increase in cardiac events for your blockbuster drug compared to the control population. Walk me through your response timeline and regulatory obligations."},
+    {"skill":"Regulatory Affairs","type":"scenario","question":"You are planning a global submission strategy for a novel oncology drug across FDA, EMA, and PMDA. What are the key differences in requirements and how do you align your dossier?"},
+    {"skill":"GMP","type":"scenario","question":"An out-of-specification (OOS) result is found during final batch release testing. Walk me through the OOS investigation process under GMP."},
+    {"skill":"Health IT","type":"scenario","question":"A large hospital network wants to implement a clinical decision support system integrated with their Epic EHR. What are the key implementation risks and how do you validate it for patient safety?"},
+    {"skill":"Digital Health","type":"scenario","question":"Design a remote patient monitoring solution for heart failure patients. Address device selection, data pipelines, alert thresholds, clinical workflow integration, and regulatory classification."},
+    {"skill":"Quality","type":"scenario","question":"During a GMP audit, you find that 3 SOPs have not been updated in 5 years and two involve validated computer systems. How do you manage this finding?"},
+    {"skill":"Clinical Operations","type":"scenario","question":"Patient enrolment in your Phase II trial is running 40% behind schedule at month 6. What interventions do you implement to recover?"},
+    {"skill":"Real World Evidence","type":"concept","question":"How can Real World Evidence (RWE) supplement randomised controlled trials? What are its limitations and FDA's current stance?"},
+    {"skill":"Biostatistics","type":"scenario","question":"Explain how you would power a non-inferiority trial for a new antibiotic against the standard of care. What margin would you select and why?"},
+],
+"hard": [
+    {"skill":"Regulatory Strategy","type":"scenario","question":"Your mRNA gene therapy shows strong Phase II data in a rare disease with 2,000 patients worldwide. Design a full regulatory strategy across FDA (Breakthrough Therapy), EMA (PRIME), and at least two other markets. Address adaptive trial design, surrogate endpoints, and post-marketing requirements."},
+    {"skill":"Digital Health","type":"scenario","question":"Design a Class II SaMD (Software as a Medical Device) for AI-powered radiology diagnosis. Address FDA's AI/ML action plan, algorithm change protocol, predicate device selection, and post-market performance monitoring for a system used in 200 hospitals."},
+    {"skill":"Clinical Operations","type":"scenario","question":"You are VP Clinical Operations responsible for a 15,000-patient global Phase III trial across 40 countries that is 18 months from primary endpoint readout. An audit reveals systematic protocol deviations at 30 sites. How do you protect data integrity, manage the timeline, and address the root cause?"},
+    {"skill":"CMC","type":"scenario","question":"Design the CMC development strategy for a biologic (monoclonal antibody) from cell line development through commercial manufacturing. Address comparability studies, scale-up challenges, and regulatory submission requirements for a global launch."},
+    {"skill":"AI in Healthcare","type":"scenario","question":"A hospital system wants to deploy an LLM to assist clinical documentation and summarise patient records. Design the validation framework, safeguards against hallucination, HIPAA compliance architecture, and physician workflow integration — including how you demonstrate clinical equivalence."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Manufacturing": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Lean","type":"concept","question":"What are the 8 wastes of Lean manufacturing (TIMWOODS)? Give a real example of each."},
+    {"skill":"Six Sigma","type":"concept","question":"What is DMAIC? What happens in each phase and what tools are commonly used?"},
+    {"skill":"OEE","type":"concept","question":"What is Overall Equipment Effectiveness (OEE)? How is it calculated? What is considered world-class OEE?"},
+    {"skill":"Quality","type":"concept","question":"What is the difference between quality assurance and quality control? Give an example of each in a manufacturing context."},
+    {"skill":"Safety","type":"concept","question":"What is 5S methodology? Describe each S and its purpose on a factory floor."},
+    {"skill":"FMEA","type":"concept","question":"What is a Process FMEA (PFMEA)? What does the Risk Priority Number (RPN) represent?"},
+    {"skill":"Maintenance","type":"concept","question":"What is the difference between preventive, predictive, and corrective maintenance? When is each most appropriate?"},
+    {"skill":"Production Planning","type":"scenario","question":"A machine breaks down during a peak production run with orders due tomorrow. How do you prioritise and manage the situation?"},
+    {"skill":"Kaizen","type":"concept","question":"What is a Kaizen event? How does it differ from a Six Sigma project?"},
+    {"skill":"ERP","type":"concept","question":"What is MES (Manufacturing Execution System) and how does it interface with an ERP system?"},
+],
+"medium": [
+    {"skill":"Lean","type":"scenario","question":"A production line has a 35% defect rate for a new component. Using DMAIC, describe the first three phases and the tools you would deploy."},
+    {"skill":"OEE","type":"scenario","question":"OEE has dropped from 78% to 61% over the last month. Availability is unchanged but performance has dropped from 88% to 72%. How do you diagnose the root cause?"},
+    {"skill":"Industry 4.0","type":"scenario","question":"A plant manager wants to implement predictive maintenance for 50 CNC machines. Design the sensor strategy, data pipeline, ML model approach, and integration with the CMMS."},
+    {"skill":"Quality","type":"scenario","question":"You receive a major customer complaint about a batch of products with surface finish defects that passed your inspection. How do you manage the customer, investigate, and prevent recurrence?"},
+    {"skill":"Supply Chain","type":"scenario","question":"A key supplier has just filed for bankruptcy. You have 3 weeks of inventory and no qualified alternative. Walk me through your immediate response and 90-day recovery plan."},
+    {"skill":"Value Stream Mapping","type":"scenario","question":"Map the value stream for a machined component from raw material to delivery. The current lead time is 14 days but value-added time is only 4 hours. Identify three improvement opportunities."},
+    {"skill":"Automation","type":"scenario","question":"The board has approved ₹5 crore for factory automation. How do you identify, prioritise, and build the business case for automation investments?"},
+    {"skill":"IATF 16949","type":"scenario","question":"Your automotive plant is preparing for IATF 16949 certification. What are the five additional requirements beyond ISO 9001 and how do you implement them?"},
+    {"skill":"TPM","type":"scenario","question":"Implement Total Productive Maintenance (TPM) in a plant where operators see maintenance as 'not their job'. How do you drive the cultural and operational change?"},
+    {"skill":"Statistical Process Control","type":"scenario","question":"A control chart shows your process is in statistical control but producing 2% defectives. How do you reduce defects to below 0.1%?"},
+],
+"hard": [
+    {"skill":"Factory Transformation","type":"scenario","question":"A 30-year-old automotive stamping plant needs to be transformed into an Industry 4.0 facility while maintaining production volume. Design the 3-year transformation roadmap covering digital twin implementation, IIoT connectivity for 200 machines, AI-driven quality inspection, and change management for 800 unionised workers."},
+    {"skill":"Supply Chain Resilience","type":"scenario","question":"Post-COVID analysis shows your supply chain has single points of failure for 40% of your top 100 SKUs. Design a supplier diversification strategy, regional buffering model, and supply chain visibility platform for a manufacturer with €2B in annual procurement."},
+    {"skill":"Quality System","type":"scenario","question":"Your global quality system needs harmonisation across 12 plants in 6 countries with different ERP systems and quality management standards. Design the harmonised QMS architecture, data governance model, and global rollout plan without disrupting production."},
+    {"skill":"Leadership","type":"scenario","question":"You are VP Operations at a plant running at 65% capacity utilisation with €8M annual losses. The board gives you 18 months to reach profitability or they will close it. What is your turnaround plan?"},
+    {"skill":"Sustainability","type":"scenario","question":"Design a net-zero manufacturing roadmap for a steel plant producing 2M tonnes annually. Address energy transition (coal to hydrogen DRI), scope 3 emissions in the supply chain, green premium pricing, and regulatory compliance across three jurisdictions."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Consulting & Professional Services": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Problem Solving","type":"concept","question":"What is the MECE principle? Why is it important in consulting problem structuring?"},
+    {"skill":"Frameworks","type":"concept","question":"When would you use a McKinsey 7-S framework vs a SWOT analysis? Give an example of each."},
+    {"skill":"Project Management","type":"concept","question":"What is the difference between a project, a programme, and a portfolio? Give a real consulting example of each."},
+    {"skill":"Stakeholder Management","type":"concept","question":"What is a RACI matrix? How do you use it to manage stakeholder expectations on a complex programme?"},
+    {"skill":"Change Management","type":"concept","question":"What is the ADKAR model? How does it differ from Kotter's 8-step model?"},
+    {"skill":"Agile","type":"concept","question":"What is the difference between Agile and Waterfall? When would you recommend each to a client?"},
+    {"skill":"Communication","type":"scenario","question":"A mid-level client manager is resistant to a recommendation your team has made. How do you handle this without escalating?"},
+    {"skill":"Business Analysis","type":"concept","question":"What is a business case? What are the five key components you always include?"},
+    {"skill":"Risk Management","type":"concept","question":"What is a risk register? What are the five typical fields you would include for each risk?"},
+    {"skill":"Estimation","type":"scenario","question":"How many petrol stations are there in India? Walk me through your estimation approach."},
+],
+"medium": [
+    {"skill":"Strategy","type":"scenario","question":"A telecom operator with declining ARPU wants to enter the fintech space. Conduct a strategic assessment of this diversification move."},
+    {"skill":"Programme Delivery","type":"scenario","question":"You are leading a ₹200 crore ERP implementation that is 4 months behind schedule. The client's CFO is threatening penalties. How do you stabilise and recover the programme?"},
+    {"skill":"Change Management","type":"scenario","question":"You are implementing an AI-powered workflow tool for 5,000 back-office employees who fear job losses. How do you design and execute the change management programme?"},
+    {"skill":"Process Excellence","type":"scenario","question":"A shared services centre is processing invoices at an average of 12 days. The benchmark is 3 days. Walk me through your approach to diagnose and close this performance gap."},
+    {"skill":"Client Development","type":"scenario","question":"After completing a cost-reduction project, the client is satisfied. How do you convert this into a larger digital transformation mandate?"},
+    {"skill":"Pre-sales","type":"scenario","question":"You have 48 hours to submit a bid for a £5M digital transformation programme. You have limited information. How do you structure your response?"},
+    {"skill":"Operating Model","type":"scenario","question":"A bank wants to create a shared services centre for finance, HR, and IT across 8 countries. Design the target operating model including governance, location strategy, and transition approach."},
+    {"skill":"Benefits Realisation","type":"scenario","question":"6 months after a process improvement project, the projected £2M savings have not materialised. How do you diagnose the root cause and get back on track?"},
+    {"skill":"Agile Transformation","type":"scenario","question":"A 1,000-person IT department wants to adopt SAFe. How do you approach the assessment, programme increment planning, and first 90 days?"},
+    {"skill":"Data Strategy","type":"scenario","question":"A retailer's board wants a data strategy in 6 weeks. How do you structure the engagement, and what are the five key components of the deliverable?"},
+],
+"hard": [
+    {"skill":"Digital Transformation","type":"scenario","question":"A traditional insurance company with €10B GWP is losing 3 percentage points of market share annually to insurtech competitors. Design a 5-year digital transformation strategy covering customer experience, product innovation, operational efficiency, and technology modernisation — including how you fund it through existing cost takeout."},
+    {"skill":"M&A Integration","type":"scenario","question":"Your consulting firm has been engaged to lead the integration of two banks post-merger with combined assets of $200B. Design the 100-day integration management office structure, synergy capture methodology, and customer retention programme."},
+    {"skill":"Operating Model","type":"scenario","question":"A global manufacturing company with operations in 25 countries wants to centralise its procurement function from decentralised country operations to a global shared service. Design the full target operating model, change management programme, and 3-year transition plan."},
+    {"skill":"AI Strategy","type":"scenario","question":"A Fortune 500 retailer asks you to develop their enterprise AI strategy. How do you conduct the opportunity assessment, build the governance framework, design the capability roadmap, and demonstrate ROI within 12 months?"},
+    {"skill":"Turnaround","type":"scenario","question":"A mid-market manufacturing company with €500M revenue is 90 days from insolvency. You are engaged as interim CEO. What are your actions in the first 72 hours, 30 days, and 90 days to stabilise and chart a recovery path?"},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Retail & E-commerce": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Omnichannel","type":"concept","question":"What is omnichannel retail? How does it differ from multichannel? Give three examples of omnichannel execution."},
+    {"skill":"Metrics","type":"concept","question":"What is GMV and how does it differ from net revenue? What other metrics do you track for e-commerce health?"},
+    {"skill":"Supply Chain","type":"concept","question":"What is ABC analysis in inventory management? How do you classify and manage each category differently?"},
+    {"skill":"Merchandising","type":"concept","question":"What is a planogram and why is it important? How does it differ between physical and digital retail?"},
+    {"skill":"Digital Marketing","type":"concept","question":"What is the difference between SEO and SEM? When would you invest more in each?"},
+    {"skill":"Customer Experience","type":"scenario","question":"A customer tweets about a damaged delivery to 50,000 followers. How do you respond in the next 30 minutes?"},
+    {"skill":"Pricing","type":"concept","question":"What is dynamic pricing? Name three retailers that use it effectively and the data inputs they rely on."},
+    {"skill":"Logistics","type":"concept","question":"What is the difference between first-mile, mid-mile, and last-mile in retail logistics?"},
+    {"skill":"Category Management","type":"concept","question":"What is the category management process? What are the eight steps in the ECR category management framework?"},
+    {"skill":"Loyalty","type":"concept","question":"What is the difference between a points-based and a tiered loyalty programme? What are the pros and cons of each?"},
+],
+"medium": [
+    {"skill":"Demand Planning","type":"scenario","question":"Sales for your hero SKU have been 40% above forecast for 3 consecutive weeks. You have 10 days of inventory. How do you respond?"},
+    {"skill":"Digital Commerce","type":"scenario","question":"Your e-commerce conversion rate has dropped from 3.2% to 1.8% over 6 weeks. Nothing changed in the checkout flow. How do you diagnose and fix this?"},
+    {"skill":"Supply Chain","type":"scenario","question":"Your primary supplier in China announces a 6-week factory shutdown due to regulatory inspection. You have €20M of orders in pipeline. Walk me through your crisis response."},
+    {"skill":"Pricing","type":"scenario","question":"A competitor has permanently dropped prices by 15% on your top 50 SKUs. How do you respond without destroying your margin structure?"},
+    {"skill":"Personalisation","type":"scenario","question":"Design a personalisation engine for a fashion retailer with 10M monthly active users. What data inputs, ML models, and A/B testing framework would you use?"},
+    {"skill":"Omnichannel","type":"scenario","question":"Your buy-online-pick-up-in-store (BOPIS) NPS is 42 vs 71 for pure delivery. What are the likely root causes and how do you close the gap?"},
+    {"skill":"Marketplace","type":"scenario","question":"Your brand wants to launch on Amazon India while protecting your brand equity and direct-to-consumer channel. How do you design the marketplace strategy?"},
+    {"skill":"Sustainability","type":"scenario","question":"A major retail client wants to achieve net-zero scope 3 emissions in its supply chain by 2030. How do you build the supplier engagement programme and measurement framework?"},
+    {"skill":"Quick Commerce","type":"scenario","question":"Design the unit economics model for a 10-minute grocery delivery business. What are the key levers to reach profitability?"},
+    {"skill":"Analytics","type":"scenario","question":"Your CLTV model shows your best customers have dropped from ₹18,000 average annual spend to ₹11,000 this year. How do you diagnose causes and design a retention intervention?"},
+],
+"hard": [
+    {"skill":"Digital Transformation","type":"scenario","question":"A 200-store traditional fashion retailer with €800M revenue is facing existential threat from fast fashion e-commerce. Design a full digital-physical integration strategy covering customer data platform, inventory visibility, last-mile fulfilment, and digital product discovery — with a 3-year P&L impact model."},
+    {"skill":"Platform Strategy","type":"scenario","question":"Design a marketplace platform strategy for a grocery retailer that wants to open their logistics network and dark stores to third-party sellers while protecting their brand and customer data. Address technology architecture, seller onboarding, trust & safety, and revenue model."},
+    {"skill":"Supply Chain Resilience","type":"scenario","question":"Design a supply chain resilience framework for a global fashion brand with 800 suppliers across 30 countries. Address supplier risk scoring, nearshoring strategy, inventory positioning, and a technology platform that gives live visibility into tier-2 supplier disruptions."},
+    {"skill":"Customer Strategy","type":"scenario","question":"Your loyalty programme has 20M members but only 8% are active. Design a full loyalty programme transformation covering segmentation, rewards redesign, gamification, coalition partnerships, and a 3-year activation roadmap."},
+    {"skill":"Technology","type":"scenario","question":"Architect the technology stack for an omnichannel retailer expanding from 3 to 15 countries. Address ERP/OMS/WMS selection, composable commerce architecture, data residency compliance, and a headless CMS strategy that supports 15 localised storefronts from a single platform."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Energy & Utilities": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Power Systems","type":"concept","question":"What is the difference between AC and DC power transmission? Why is HVDC used for long-distance transmission?"},
+    {"skill":"Safety","type":"concept","question":"What is a Permit to Work (PTW) system? Why is it critical in energy operations?"},
+    {"skill":"Renewables","type":"concept","question":"What is the capacity factor for wind and solar? How does it compare to gas-fired power plants?"},
+    {"skill":"Grid","type":"concept","question":"What is baseload vs peaking power? Give one example of each technology."},
+    {"skill":"SCADA","type":"concept","question":"What is SCADA in an energy context? What are its core functions in a power utility?"},
+    {"skill":"Oil & Gas","type":"concept","question":"What is the difference between upstream, midstream, and downstream operations in oil and gas?"},
+    {"skill":"Safety","type":"scenario","question":"During a routine inspection, you discover a gas leak near a compressor station. What are your immediate actions?"},
+    {"skill":"Sustainability","type":"concept","question":"What is the difference between Scope 1, 2, and 3 greenhouse gas emissions? Give one example of each for a utility company."},
+    {"skill":"Asset Management","type":"concept","question":"What is asset integrity management? Why is it critical for ageing infrastructure?"},
+    {"skill":"Smart Grid","type":"concept","question":"What is an Advanced Metering Infrastructure (AMI)? What benefits does it deliver versus traditional metering?"},
+],
+"medium": [
+    {"skill":"Grid Management","type":"scenario","question":"A major transmission line trips during peak demand, causing a potential frequency event. Walk me through the grid operator response in the first 10 minutes."},
+    {"skill":"Renewables","type":"scenario","question":"A 200MW solar farm is underperforming by 18% versus P50 projections. What are the possible causes and how do you investigate?"},
+    {"skill":"Asset Management","type":"scenario","question":"Your transformer fleet has 35% of assets past their design life. How do you build a risk-based asset replacement programme with limited capex?"},
+    {"skill":"HSE","type":"scenario","question":"A high-potential safety incident occurs at an offshore platform — a near-miss involving dropped objects. How do you manage the immediate response, investigation, and systemic improvement?"},
+    {"skill":"Energy Trading","type":"scenario","question":"Spot prices spike to €800/MWh during a cold snap. You have 500MW of flexible gas capacity. How do you optimise your trading position while managing fuel supply risk?"},
+    {"skill":"Smart Grid","type":"scenario","question":"Design a demand response programme for a utility with 2M residential customers to manage peak demand without building new generation capacity."},
+    {"skill":"Decarbonisation","type":"scenario","question":"A gas distribution company needs to repurpose its network for hydrogen. What are the material, safety, and regulatory challenges? Design a 5-year transition roadmap."},
+    {"skill":"Regulatory","type":"scenario","question":"OFGEM has launched a price control review that proposes to cut your allowed revenues by 15%. How do you build your regulatory submission to defend your capex plan?"},
+    {"skill":"Predictive Maintenance","type":"scenario","question":"Design an AI-powered predictive maintenance system for a 1,500km gas transmission pipeline. What sensor data, ML models, and operational integration would you deploy?"},
+    {"skill":"Operations","type":"scenario","question":"A refinery unit has an unplanned shutdown with 2 weeks of product inventory. How do you manage the recovery and minimise financial impact?"},
+],
+"hard": [
+    {"skill":"Energy Transition","type":"scenario","question":"A coal utility generating 8GW needs to transition its entire portfolio to renewables and storage by 2035 while maintaining grid reliability and shareholder returns. Design the full transition strategy including asset retirement, new build pipeline, workforce reskilling, and financing structure."},
+    {"skill":"Grid Architecture","type":"scenario","question":"Design the grid architecture for a country adding 50GW of variable renewables (wind and solar) to a 100GW synchronous grid. Address inertia replacement, storage sizing and placement, flexible demand integration, and market design changes required."},
+    {"skill":"Digital Utility","type":"scenario","question":"Design a digital twin for a 500km transmission network that enables real-time N-1 security analysis, predictive maintenance, and asset investment planning. Address data ingestion from 10,000 sensors, model fidelity, and integration with EMS/SCADA."},
+    {"skill":"Leadership","type":"scenario","question":"You are CEO of a regional utility facing three simultaneous crises: a cybersecurity attack on SCADA systems, a major storm causing 500,000 customer outages, and a regulator announcing a review of your licence. How do you manage all three?"},
+    {"skill":"Hydrogen","type":"scenario","question":"Design the full value chain architecture for a green hydrogen hub producing 100,000 tonnes/year from offshore wind. Address electrolyser procurement and financing, storage and transportation (pipeline vs liquid vs ammonia), offtake agreements, and the business case at current and projected hydrogen pricing."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Education & EdTech": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Curriculum Design","type":"concept","question":"What is Bloom's Taxonomy? Give one example of a learning objective at each of the six levels."},
+    {"skill":"Instructional Design","type":"concept","question":"What is the ADDIE model? Describe what happens in each phase."},
+    {"skill":"Learning Technology","type":"concept","question":"What is an LMS? Name three platforms and describe their primary use case."},
+    {"skill":"Assessment","type":"concept","question":"What is the difference between formative and summative assessment? Give two examples of each."},
+    {"skill":"Adult Learning","type":"concept","question":"What is andragogy? How does it differ from pedagogy? Name three principles of adult learning."},
+    {"skill":"E-learning","type":"concept","question":"What is SCORM and why does it matter for e-learning content? What replaced it?"},
+    {"skill":"Accessibility","type":"concept","question":"What is WCAG 2.1 and why does it matter for EdTech products? Name three key requirements."},
+    {"skill":"Learning Design","type":"scenario","question":"A classroom session is not landing well with adult learners who keep checking their phones. How do you redesign it?"},
+    {"skill":"Corporate L&D","type":"concept","question":"What is Kirkpatrick's Four Levels of Training Evaluation? How would you measure Level 3 (Behaviour)?"},
+    {"skill":"EdTech","type":"concept","question":"What is gamification in education? Name three mechanics that improve engagement and learning outcomes."},
+],
+"medium": [
+    {"skill":"Curriculum Design","type":"scenario","question":"You need to design a 12-week data analytics curriculum for 500 non-technical employees of a bank. How do you approach needs analysis, content design, and learning pathway?"},
+    {"skill":"Learning Analytics","type":"scenario","question":"Your LMS data shows 70% of learners drop off on Module 3 of a mandatory compliance course. How do you diagnose the problem and redesign?"},
+    {"skill":"EdTech Product","type":"scenario","question":"Design an adaptive learning platform for K-12 mathematics. What data model, recommendation algorithm, and teacher dashboard would you build?"},
+    {"skill":"Corporate L&D","type":"scenario","question":"The CEO wants to see the ROI of the ₹2 crore L&D budget. How do you design a measurement framework that demonstrates business impact?"},
+    {"skill":"Digital Learning","type":"scenario","question":"A university wants to launch an online MBA programme competing with Coursera. Design the learning experience, technology stack, faculty engagement model, and student support system."},
+    {"skill":"Change Management","type":"scenario","question":"Teachers at a 50-school district are resisting a new EdTech platform. How do you design an adoption programme that goes from 20% to 85% active use within one academic year?"},
+    {"skill":"Assessment Design","type":"scenario","question":"Design a competency-based assessment framework for a software engineering apprenticeship programme. How do you ensure fairness, reliability, and employer relevance?"},
+    {"skill":"Instructional Design","type":"scenario","question":"Convert a 3-day instructor-led leadership training programme into a blended learning experience. What elements stay face-to-face and what moves online? How do you maintain social learning?"},
+    {"skill":"Personalisation","type":"scenario","question":"Design a personalised learning pathway system for an enterprise upskilling platform with 50,000 employees across 20 job families. How do you balance employee choice with business skill priorities?"},
+    {"skill":"Impact Measurement","type":"scenario","question":"Three months after a sales training programme, revenue per rep has increased by 8%. How do you determine whether the training caused this and what other factors you need to control for?"},
+],
+"hard": [
+    {"skill":"National Education System","type":"scenario","question":"You are appointed to lead the digital transformation of a national K-12 education system in a country with 20M students, 800,000 teachers, and significant digital divide between urban and rural areas. Design the 5-year strategy covering infrastructure, teacher development, content localisation, and learning outcomes measurement."},
+    {"skill":"EdTech Scale","type":"scenario","question":"Design an AI tutoring system for STEM subjects that can serve 10M students simultaneously, adapts to individual learning pace, works on low-bandwidth connections, and demonstrates measurable learning gains equivalent to one-to-one tutoring. Address AI safety for minors and algorithmic bias."},
+    {"skill":"Corporate University","type":"scenario","question":"A Fortune 500 company with 100,000 employees wants to build a corporate university that replaces 60% of external training spend and becomes a competitive advantage for talent attraction. Design the full operating model, technology stack, faculty model, and 3-year business case."},
+    {"skill":"Accreditation","type":"scenario","question":"An online university with 50,000 students is applying for regional accreditation for the first time. Design the self-study preparation process, evidence collection framework, and continuous improvement system to meet the 18-month accreditation timeline."},
+    {"skill":"Learning Ecosystem","type":"scenario","question":"Design an enterprise learning ecosystem that integrates formal training, social learning, experience-based development, and AI coaching for a global professional services firm of 30,000 people in 40 countries. Address content governance, skills taxonomy, career pathing, and demonstrate how learning data informs workforce planning."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Legal & Compliance": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Contract Law","type":"concept","question":"What are the essential elements of a valid contract? Give an example of a situation where each element is missing."},
+    {"skill":"GDPR","type":"concept","question":"What are the six lawful bases for processing personal data under GDPR? Give one example of each."},
+    {"skill":"Corporate Governance","type":"concept","question":"What are the duties of a company director? Name three fiduciary duties and explain each."},
+    {"skill":"IP Law","type":"concept","question":"What is the difference between a patent, trademark, copyright, and trade secret? Give one example of each."},
+    {"skill":"Employment Law","type":"concept","question":"What is the difference between an employee, a worker, and a self-employed contractor? Why does the distinction matter?"},
+    {"skill":"Regulatory","type":"concept","question":"What is the difference between a regulator and a legislator? Give two examples of UK financial regulators and their remit."},
+    {"skill":"Compliance","type":"scenario","question":"An employee reports that their manager asked them to backdate a document. How do you handle this as the compliance officer?"},
+    {"skill":"Risk","type":"concept","question":"What is a legal risk register? What are the five fields you would include for each entry?"},
+    {"skill":"Data Privacy","type":"concept","question":"What is the difference between a Data Controller and a Data Processor under GDPR? Give a practical example."},
+    {"skill":"Contract","type":"scenario","question":"A supplier has delivered goods 3 weeks late causing you €50,000 of consequential losses. Your contract has a liquidated damages clause capped at €10,000. What are your options?"},
+],
+"medium": [
+    {"skill":"M&A","type":"scenario","question":"You are conducting legal due diligence on a tech acquisition target. What are your top 10 priority areas and what red flags would cause you to recommend against proceeding?"},
+    {"skill":"GDPR","type":"scenario","question":"Your company suffers a data breach affecting 100,000 EU customer records. Walk me through your obligations under GDPR for the next 72 hours and 30 days."},
+    {"skill":"Employment","type":"scenario","question":"A senior executive is being dismissed for gross misconduct after an investigation into expenses fraud. They are threatening an unfair dismissal claim. How do you manage the process?"},
+    {"skill":"Commercial","type":"scenario","question":"You are negotiating a €10M SaaS contract with a large enterprise customer. They want uncapped liability, no limitation of liability, and full indemnity for all consequential losses. How do you respond?"},
+    {"skill":"Regulatory","type":"scenario","question":"The FCA launches a supervisory visit focusing on your firm's financial crime controls. What are your key preparation steps and how do you manage the on-site review?"},
+    {"skill":"IP","type":"scenario","question":"A competitor has launched a product that appears to infringe your patent. Walk me through your response strategy from initial assessment to litigation decision."},
+    {"skill":"Data Privacy","type":"scenario","question":"A customer exercises their right to erasure under GDPR for all their personal data. Your CRM system cannot delete records without breaking referential integrity. How do you respond?"},
+    {"skill":"Corporate","type":"scenario","question":"The board wants to proceed with a related-party transaction involving a director's family member. What governance process do you apply and what are the disclosure requirements?"},
+    {"skill":"Compliance Programme","type":"scenario","question":"You are the new CCO of a company that has never had a formal compliance programme. How do you build one from scratch with a budget of £500,000 in the first year?"},
+    {"skill":"Sanctions","type":"scenario","question":"A new customer passes your KYC check but you later discover they are connected to a sanctioned entity through a third-degree ownership relationship. What do you do?"},
+],
+"hard": [
+    {"skill":"Legal Strategy","type":"scenario","question":"Your company faces a class action lawsuit from 50,000 consumers alleging your AI product caused psychological harm. The potential liability is $2B. Design the full legal response strategy covering immediate steps, document preservation, expert witnesses, litigation versus settlement analysis, and regulatory co-ordination across 5 jurisdictions."},
+    {"skill":"M&A","type":"scenario","question":"You are General Counsel advising on a hostile takeover bid. The target's board has triggered a poison pill and there are regulatory approval requirements in 7 countries with contradictory remedies. Design the legal strategy for the next 6 months."},
+    {"skill":"Regulatory Crisis","type":"scenario","question":"Your bank receives simultaneous enforcement actions from the FCA, PRA, and US DOJ for AML failures, with potential fines exceeding £500M. Design the crisis management response, including board governance, regulatory engagement strategy, and remediation programme."},
+    {"skill":"Data Privacy","type":"scenario","question":"Your company wants to use employee behavioural data from 50,000 staff across 20 countries for an AI workforce management system. Design the global privacy compliance framework addressing GDPR (EU), CCPA (US), PDPA (India), and PIPL (China) — including data transfer mechanisms, consent architecture, and algorithmic transparency obligations."},
+    {"skill":"AI Governance","type":"scenario","question":"Your company is deploying an AI system that makes employment decisions (hiring, promotion, performance management) for 100,000 employees. Design the legal and compliance framework covering EU AI Act obligations, employment law requirements across 10 jurisdictions, bias testing methodology, and algorithmic accountability governance."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Government & Public Sector": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Public Policy","type":"concept","question":"What is the policy cycle? Name and describe each stage with an example."},
+    {"skill":"Programme Management","type":"concept","question":"What is the difference between PRINCE2 and MSP? When would you use each in a government context?"},
+    {"skill":"Procurement","type":"concept","question":"What is the OJEU (Official Journal of the EU) procurement threshold? What procedure applies above it?"},
+    {"skill":"Digital Government","type":"concept","question":"What is the GDS (Government Digital Service) design principle 'start with user needs'? Why does it differ from traditional government IT?"},
+    {"skill":"Public Finance","type":"concept","question":"What is the difference between capital expenditure and revenue expenditure in public sector budgeting?"},
+    {"skill":"Governance","type":"concept","question":"What is the Nolan Principles framework? Name all seven principles and explain one in detail."},
+    {"skill":"Risk","type":"scenario","question":"A critical government IT system is approaching end-of-life with no budget approved for replacement. How do you manage this risk?"},
+    {"skill":"Stakeholder","type":"concept","question":"Who are the typical stakeholders in a local government digital transformation? How do you prioritise their needs?"},
+    {"skill":"Smart City","type":"concept","question":"What are three core components of a smart city? Give a real-world example of each from any country."},
+    {"skill":"Cybersecurity","type":"concept","question":"What is the NCSC's Cyber Essentials scheme? What are the five technical controls it requires?"},
+],
+"medium": [
+    {"skill":"Digital Transformation","type":"scenario","question":"A government department has 150 legacy IT systems with 30-year-old COBOL code. 40% have no documentation. Design a 5-year modernisation roadmap that maintains public services throughout."},
+    {"skill":"Procurement","type":"scenario","question":"You are running an OJEU procurement for a £20M digital platform. Three of the four bidders score very closely. Walk me through your evaluation and award process including how you manage unsuccessful bidder challenges."},
+    {"skill":"Programme Delivery","type":"scenario","question":"A high-profile Universal Credit-type programme is 2 years behind schedule and £500M over budget. You are brought in as Programme Director. What do you do in the first 30 days?"},
+    {"skill":"Smart City","type":"scenario","question":"Design a smart traffic management system for a city of 3 million people that reduces congestion by 25% and emergency vehicle response time by 30%. Address data privacy, procurement, and legacy infrastructure integration."},
+    {"skill":"Cybersecurity","type":"scenario","question":"A ransomware attack has encrypted the systems of a regional hospital trust, affecting patient records and scheduling. You are the CISO. Walk me through your incident response for the first 24 hours."},
+    {"skill":"Policy Implementation","type":"scenario","question":"You are implementing a major welfare reform affecting 500,000 citizens. Early indicators show a 30% error rate in benefit payments. How do you diagnose and fix this at scale?"},
+    {"skill":"Data Strategy","type":"scenario","question":"Design a national data strategy that enables cross-department data sharing to improve public service delivery while complying with GDPR and building public trust."},
+    {"skill":"Stakeholder Management","type":"scenario","question":"Your digital transformation programme is opposed by the civil service union, three senior ministers, and two prominent media outlets. How do you build political and public support?"},
+    {"skill":"Defence Procurement","type":"scenario","question":"A £2B defence system is delivered 3 years late by the prime contractor. The system fails acceptance testing in 15% of scenarios. How do you manage the contractual response and operational risk?"},
+    {"skill":"AI in Government","type":"scenario","question":"A government department wants to use AI to prioritise benefit fraud investigations. What ethical framework, oversight model, and safeguards do you apply?"},
+],
+"hard": [
+    {"skill":"National Digital Strategy","type":"scenario","question":"You are appointed Digital Secretary with a mandate to make your country a global digital economy leader within 5 years. Design the national digital strategy covering broadband infrastructure, digital skills, AI governance, public sector modernisation, and tech sector investment — including how you fund it and measure success."},
+    {"skill":"Crisis Management","type":"scenario","question":"A nation-state cyberattack has simultaneously compromised the power grid, HMRC tax systems, and NHS patient records affecting 10M people. You are the National Cyber Security Coordinator. Design the response across the first 24 hours, 7 days, and 90 days."},
+    {"skill":"Government Transformation","type":"scenario","question":"Design a whole-of-government data architecture that allows 50 departments to securely share citizen data to deliver joined-up public services, while complying with GDPR, building public trust, and reducing the £3B annual duplication cost in current siloed systems."},
+    {"skill":"Public Sector Programme","type":"scenario","question":"A major new social housing programme must deliver 100,000 homes in 5 years across 300 local authorities with a £15B budget. Design the programme governance, delivery model, performance management framework, and risk management approach for this scale of public investment."},
+    {"skill":"AI Policy","type":"scenario","question":"Your government wants to be the first to pass comprehensive AI legislation that protects citizens without stifling innovation. Design the regulatory framework covering foundation model governance, sector-specific rules, enforcement mechanisms, and international co-ordination — and advise on how to navigate the political economy of regulating Big Tech."},
+],
+},
+
+# ═══════════════════════════════════════════════════════════════
+"Media & Entertainment": {
+# ═══════════════════════════════════════════════════════════════
+"easy": [
+    {"skill":"Streaming","type":"concept","question":"What is the difference between SVOD, AVOD, and FAST streaming models? Give one example of each."},
+    {"skill":"Content Strategy","type":"concept","question":"What is a content calendar? What are the three key questions it answers for a media team?"},
+    {"skill":"Ad Tech","type":"concept","question":"What is programmatic advertising? What is the difference between RTB (Real-Time Bidding) and programmatic direct?"},
+    {"skill":"Gaming","type":"concept","question":"What is the difference between a GaaS (Games as a Service) and a traditional boxed game model? How does monetisation differ?"},
+    {"skill":"IP Rights","type":"concept","question":"What is a synchronisation licence? When do you need one and who grants it?"},
+    {"skill":"Audience","type":"concept","question":"What is the difference between reach, impressions, and engagement rate in media measurement?"},
+    {"skill":"OTT","type":"scenario","question":"Subscriber churn on your OTT platform spikes to 8% in Q4. What are the three most likely causes you investigate first?"},
+    {"skill":"Production","type":"concept","question":"What is the difference between pre-production, production, and post-production in a film or TV context?"},
+    {"skill":"Distribution","type":"concept","question":"What is a windowing strategy in film distribution? Why is the theatrical window important and how has it changed?"},
+    {"skill":"Social Media","type":"concept","question":"What is the algorithm difference between TikTok and Instagram Reels? How does it affect content strategy?"},
+],
+"medium": [
+    {"skill":"Content Strategy","type":"scenario","question":"A streaming platform with 8M subscribers has seen 15% growth in churn for 3 consecutive months. Content investment has doubled. How do you diagnose whether this is a content, pricing, or product problem?"},
+    {"skill":"Ad Tech","type":"scenario","question":"Advertisers are reporting a 35% drop in their ROAS on your digital ad platform. Your CPMs are unchanged. Walk me through the diagnosis and response."},
+    {"skill":"Streaming Architecture","type":"scenario","question":"Design the video delivery architecture for a live sports streaming service expecting 5M concurrent viewers for a major event. Address CDN strategy, adaptive bitrate, failover, and latency targets."},
+    {"skill":"Gaming","type":"scenario","question":"Your mobile game hit 10M downloads but 30-day retention is only 8%. How do you redesign the onboarding and early gameplay loop to improve retention to 25%?"},
+    {"skill":"Rights Management","type":"scenario","question":"You are licensing a premium sports package across 15 countries. Each country has different blackout rules, device restrictions, and commercial terms. Design the rights management system and enforcement approach."},
+    {"skill":"Creator Economy","type":"scenario","question":"Design a creator monetisation programme for a video platform competing with YouTube. How do you balance creator economics, advertiser safety, and platform sustainability?"},
+    {"skill":"Personalisation","type":"scenario","question":"Design a content recommendation engine for a music streaming service with 100M tracks and 60M users. What signals, models, and feedback loops drive recommendations? How do you address the filter bubble problem?"},
+    {"skill":"Production Technology","type":"scenario","question":"A major TV network wants to virtualise its broadcast infrastructure using cloud production. Design the hybrid architecture, latency management, and broadcast quality assurance approach."},
+    {"skill":"Audience Development","type":"scenario","question":"A news publisher has 95% of its traffic from social media referrals, making it highly vulnerable to algorithm changes. Design a direct audience development strategy."},
+    {"skill":"Licensing","type":"scenario","question":"A Hollywood studio wants to negotiate a 5-year licensing deal with your streaming platform for 500 titles across 50 countries with revenue share. What are your negotiation priorities and red lines?"},
+],
+"hard": [
+    {"skill":"Streaming Strategy","type":"scenario","question":"A premium streaming service with 40M subscribers is losing $2B annually and facing pressure to merge. Design a path to profitability that addresses content investment ROI, advertising tier launch, password sharing enforcement, and international expansion — with a 3-year financial model."},
+    {"skill":"Gaming Platform","type":"scenario","question":"Design a cloud gaming platform that delivers AAA games at 4K/60fps with <20ms latency to 50M users across 30 countries. Address infrastructure architecture, game streaming protocol, licensing model with publishers, and monetisation strategy."},
+    {"skill":"Media Transformation","type":"scenario","question":"A traditional broadcast network with €1B revenue is losing 15% of its audience annually to streaming. Design a full digital transformation strategy covering IP strategy, streaming platform launch, news product reinvention, and advertiser migration — including how you manage the transition period where linear and streaming revenues overlap."},
+    {"skill":"AI in Media","type":"scenario","question":"Design a generative AI strategy for a media company covering AI-assisted scriptwriting, synthetic voices for localisation, AI-generated imagery for editorial, and deepfake detection. Address rights ownership questions, talent union concerns, editorial integrity safeguards, and the competitive advantage model."},
+    {"skill":"Global Expansion","type":"scenario","question":"A US streaming platform wants to expand into India, Brazil, and Japan simultaneously. Design the content localisation strategy (dubbing vs subtitling vs local originals), technology localisation, payment methods, pricing strategy, and partnership model for each market — addressing how you balance global platform consistency with local market requirements."},
+],
+},
+
+} # End IND_QUESTION_BANK
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# IAS INDUSTRY SCORING RUBRICS + MARKET INTELLIGENCE — Sprint 3
+# 12 industries · Weighted competency dimensions · Salary benchmarks
+# ══════════════════════════════════════════════════════════════════════════════
+# IAS v9.0 — Sprint 3: Industry Scoring Rubrics + Market Intelligence
+# GVS Technologies · Gokul Prakash T
+
+# ══════════════════════════════════════════════════════════════════════════════
+# INDUSTRY SCORING RUBRICS
+# Each industry has weighted competency dimensions for fair, domain-specific scoring
+# ══════════════════════════════════════════════════════════════════════════════
+
+IND_RUBRICS = {
+
+    "Telecom & Networks": {
+        "dimensions": [
+            {"id": "tech_depth",      "label": "Technical Domain Depth",        "weight": 0.30, "desc": "OSS/BSS, 5G, RAN, network protocols, vendor platforms"},
+            {"id": "arch_thinking",   "label": "Architecture & Design Thinking", "weight": 0.20, "desc": "End-to-end system design, integration patterns, trade-offs"},
+            {"id": "ops_excellence",  "label": "Operational Excellence",         "weight": 0.20, "desc": "FCAPS, SLA management, incident response, NOC experience"},
+            {"id": "problem_solving", "label": "Problem Solving",                "weight": 0.15, "desc": "Root cause analysis, troubleshooting methodology, MTTR focus"},
+            {"id": "communication",   "label": "Communication & Stakeholders",   "weight": 0.10, "desc": "Technical communication, CxO engagement, cross-team collaboration"},
+            {"id": "innovation",      "label": "Innovation & Automation",        "weight": 0.05, "desc": "Automation mindset, AI/ML in networks, continuous improvement"},
+        ],
+        "score_anchors": {
+            1: "No domain knowledge. Cannot describe basic network concepts.",
+            2: "Basic awareness only. Limited hands-on experience with tools or platforms.",
+            3: "Solid practitioner. Handles standard scenarios with good domain knowledge.",
+            4: "Strong expert. Deep technical depth, handles complex scenarios confidently.",
+            5: "Industry leader. Exceptional expertise, thought leadership, strategic vision.",
+        },
+        "red_flags": ["No FCAPS knowledge", "Never worked with OSS/BSS platforms", "Cannot describe 5G SA vs NSA", "No SLA management experience"],
+        "green_flags": ["Nokia NetAct/Ericsson ENM hands-on", "Real ZTP deployments", "ORAN experience", "Autonomous networks background"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "IT & Software": {
+        "dimensions": [
+            {"id": "coding_design",   "label": "Coding & System Design",         "weight": 0.30, "desc": "Code quality, algorithms, system design, architecture patterns"},
+            {"id": "cloud_devops",    "label": "Cloud & DevOps",                  "weight": 0.20, "desc": "Cloud platforms, CI/CD, containers, IaC, SRE practices"},
+            {"id": "problem_solving", "label": "Problem Solving",                 "weight": 0.20, "desc": "Debugging, analytical thinking, first-principles approach"},
+            {"id": "collab_culture",  "label": "Collaboration & Culture",         "weight": 0.15, "desc": "Team working, code reviews, Agile mindset, documentation"},
+            {"id": "data_ai",         "label": "Data & AI Literacy",              "weight": 0.10, "desc": "SQL, data pipelines, ML fundamentals, LLM awareness"},
+            {"id": "security",        "label": "Security Mindset",                "weight": 0.05, "desc": "Secure coding, threat modelling, dependency management"},
+        ],
+        "score_anchors": {
+            1: "Cannot write basic code or explain system concepts.",
+            2: "Writes simple code but struggles with design decisions and scalability.",
+            3: "Competent engineer. Good code, understands distributed systems fundamentals.",
+            4: "Strong engineer. Designs scalable systems, leads technical decisions confidently.",
+            5: "Exceptional. Deep expertise across stack, strong architectural vision, mentors others.",
+        },
+        "red_flags": ["Cannot explain trade-offs in system design", "No version control experience", "Never deployed to production", "No awareness of security basics"],
+        "green_flags": ["Open source contributions", "Production incidents handled at scale", "Polyglot programming", "Strong CS fundamentals with practical experience"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "BFSI": {
+        "dimensions": [
+            {"id": "regulatory",      "label": "Regulatory & Compliance Knowledge","weight": 0.30, "desc": "Basel, AML/KYC, IFRS, MiFID, FCA/PRA, GDPR in financial context"},
+            {"id": "domain_expertise","label": "Financial Domain Expertise",       "weight": 0.25, "desc": "Products, markets, risk types, banking/insurance/capital markets"},
+            {"id": "risk_mgmt",       "label": "Risk Management",                  "weight": 0.20, "desc": "Risk identification, quantification, mitigation, reporting"},
+            {"id": "technology",      "label": "FinTech & Technology Acumen",      "weight": 0.15, "desc": "Core banking, payments, data, AI in finance"},
+            {"id": "communication",   "label": "Communication & Judgement",        "weight": 0.10, "desc": "Board-level communication, commercial judgement, stakeholder management"},
+        ],
+        "score_anchors": {
+            1: "No financial domain knowledge. Unaware of key regulations.",
+            2: "General awareness only. Limited regulatory or product depth.",
+            3: "Solid practitioner. Good regulatory knowledge and domain product understanding.",
+            4: "Strong professional. Deep expertise, regulatory fluency, strategic thinking.",
+            5: "Exceptional. Thought leader, regulatory mastery, board-level presence.",
+        },
+        "red_flags": ["Unaware of AML obligations", "Cannot explain Basel III", "No risk framework experience", "Confuses product types"],
+        "green_flags": ["Regulatory exam qualifications (CFA, FRM, ACCA)", "Regulator engagement experience", "Built financial models from scratch", "Multi-jurisdiction experience"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Healthcare & Pharma": {
+        "dimensions": [
+            {"id": "regulatory",      "label": "Regulatory & Quality Knowledge",  "weight": 0.35, "desc": "GCP/GMP, FDA/EMA, ICH, CAPA, audit readiness"},
+            {"id": "clinical",        "label": "Clinical & Scientific Depth",     "weight": 0.25, "desc": "Trial design, pharmacology, biostatistics, medical writing"},
+            {"id": "patient_safety",  "label": "Patient Safety Mindset",          "weight": 0.20, "desc": "Pharmacovigilance, signal detection, risk-benefit assessment"},
+            {"id": "tech_digital",    "label": "Digital Health & Technology",     "weight": 0.10, "desc": "HL7/FHIR, EDC, EHR, clinical data management"},
+            {"id": "communication",   "label": "Scientific Communication",        "weight": 0.10, "desc": "Regulatory submissions, cross-functional communication, stakeholder management"},
+        ],
+        "score_anchors": {
+            1: "No regulatory or clinical knowledge. Cannot describe GCP basics.",
+            2: "Theoretical knowledge only. Limited practical trial or regulatory experience.",
+            3: "Competent practitioner. Solid GCP/GMP knowledge with hands-on experience.",
+            4: "Strong expert. Deep regulatory strategy, manages complex submissions.",
+            5: "Exceptional. Shapes regulatory strategy, industry thought leader.",
+        },
+        "red_flags": ["Cannot describe CAPA process", "No GCP training", "Unaware of adverse event reporting timelines", "No data integrity experience"],
+        "green_flags": ["FDA/EMA submission experience", "NDA/MAA involvement", "Multiple Phase II/III trials", "Qualified Person (QP) status"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Manufacturing": {
+        "dimensions": [
+            {"id": "lean_excellence", "label": "Lean & Continuous Improvement",   "weight": 0.30, "desc": "Lean, Six Sigma, Kaizen, VSM, problem-solving tools"},
+            {"id": "quality",         "label": "Quality Management",              "weight": 0.25, "desc": "QMS, FMEA, SPC, ISO/IATF standards, customer complaints"},
+            {"id": "operations",      "label": "Operations & Planning",           "weight": 0.20, "desc": "Production planning, OEE, scheduling, supply chain"},
+            {"id": "technology",      "label": "Manufacturing Technology",        "weight": 0.15, "desc": "Automation, SCADA, MES, Industry 4.0, maintenance"},
+            {"id": "leadership",      "label": "People & Safety Leadership",      "weight": 0.10, "desc": "HSE culture, team development, union relations, change management"},
+        ],
+        "score_anchors": {
+            1: "No manufacturing knowledge. Cannot describe basic quality or safety concepts.",
+            2: "Theoretical only. Limited shopfloor or improvement project experience.",
+            3: "Solid practitioner. Good lean/quality knowledge with measurable results.",
+            4: "Strong leader. Deep technical expertise with significant improvement track record.",
+            5: "Exceptional. Industry-leading expertise, transforms operations at enterprise scale.",
+        },
+        "red_flags": ["No OEE experience", "Cannot describe DMAIC", "No safety incident management experience", "Never led a Kaizen event"],
+        "green_flags": ["LSS Black Belt certification", "Quantified OEE improvements", "IATF 16949 lead auditor", "Industry 4.0 transformation experience"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Consulting & Professional Services": {
+        "dimensions": [
+            {"id": "problem_solving", "label": "Structured Problem Solving",      "weight": 0.30, "desc": "MECE thinking, hypothesis-driven, frameworks, case study ability"},
+            {"id": "delivery",        "label": "Programme & Delivery Excellence", "weight": 0.25, "desc": "PMO, risk management, milestone delivery, RAID management"},
+            {"id": "client_mgmt",     "label": "Client & Stakeholder Management", "weight": 0.20, "desc": "CxO engagement, influence, trust-building, commercial acumen"},
+            {"id": "domain",          "label": "Domain & Industry Knowledge",     "weight": 0.15, "desc": "Industry-specific knowledge relevant to consulting focus area"},
+            {"id": "communication",   "label": "Communication & Presence",        "weight": 0.10, "desc": "Executive storytelling, presentation, written communication"},
+        ],
+        "score_anchors": {
+            1: "Cannot structure a problem. No consulting frameworks or delivery experience.",
+            2: "Limited structured thinking. Some project experience but no client-facing delivery.",
+            3: "Competent consultant. Good frameworks, solid delivery, handles client interactions.",
+            4: "Strong senior consultant. Independent workstream leadership, trusted advisor.",
+            5: "Exceptional. Partner-track presence, drives revenue, shapes practice strategy.",
+        },
+        "red_flags": ["Cannot apply MECE", "No client engagement experience", "Misses commercial considerations in analysis", "Cannot estimate or build business cases"],
+        "green_flags": ["Big 4/MBB experience", "Led £1M+ workstreams independently", "Repeat client relationships", "Published thought leadership"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Retail & E-commerce": {
+        "dimensions": [
+            {"id": "commercial",      "label": "Commercial Acumen",              "weight": 0.30, "desc": "P&L, margin management, GMV, pricing, category performance"},
+            {"id": "customer",        "label": "Customer & Brand Understanding",  "weight": 0.25, "desc": "CX, NPS, loyalty, brand positioning, customer segmentation"},
+            {"id": "operations",      "label": "Supply Chain & Operations",       "weight": 0.20, "desc": "Inventory, logistics, demand planning, supplier management"},
+            {"id": "digital",         "label": "Digital & Data Literacy",         "weight": 0.15, "desc": "E-commerce, analytics, personalisation, digital marketing"},
+            {"id": "leadership",      "label": "Leadership & Change",             "weight": 0.10, "desc": "Team leadership, change management, cross-functional influence"},
+        ],
+        "score_anchors": {
+            1: "No retail or commercial understanding. Cannot describe basic retail KPIs.",
+            2: "General awareness. Limited P&L or operational hands-on experience.",
+            3: "Solid practitioner. Good commercial understanding with category or channel results.",
+            4: "Strong leader. P&L ownership, significant commercial outcomes.",
+            5: "Exceptional. Enterprise-level commercial leadership, industry innovator.",
+        },
+        "red_flags": ["Cannot describe GMV vs revenue", "No inventory management experience", "Unaware of omnichannel dynamics", "No customer data experience"],
+        "green_flags": ["P&L ownership >£10M", "Launched new categories or channels", "Measurable NPS or CLTV improvements", "Marketplace strategy experience"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Energy & Utilities": {
+        "dimensions": [
+            {"id": "safety",          "label": "Safety & HSE Culture",           "weight": 0.30, "desc": "HSE mindset, process safety, permit to work, incident management"},
+            {"id": "technical",       "label": "Technical & Engineering Depth",  "weight": 0.25, "desc": "Power systems, SCADA, asset management, domain engineering"},
+            {"id": "regulatory",      "label": "Regulatory & Compliance",        "weight": 0.20, "desc": "OFGEM/FERC/sector regulations, licence conditions, ESG reporting"},
+            {"id": "operations",      "label": "Operations & Reliability",       "weight": 0.15, "desc": "Asset integrity, maintenance strategy, grid/plant operations"},
+            {"id": "sustainability",  "label": "Sustainability & Energy Transition","weight": 0.10, "desc": "Decarbonisation, renewables, net zero strategy, scope 3"},
+        ],
+        "score_anchors": {
+            1: "No safety culture. Cannot describe basic HSE requirements.",
+            2: "Awareness only. Limited operational or engineering experience.",
+            3: "Solid practitioner. Good technical depth with hands-on operational experience.",
+            4: "Strong expert. Deep domain expertise, regulatory fluency, safety leadership.",
+            5: "Exceptional. Industry thought leader, shapes regulatory landscape.",
+        },
+        "red_flags": ["Dismissive of safety culture", "No permit to work experience", "Cannot describe asset integrity", "No regulatory awareness"],
+        "green_flags": ["NEBOSH/IOSH certified", "Zero LTI record", "Major project delivery (>£100M)", "Renewable energy transition leadership"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Education & EdTech": {
+        "dimensions": [
+            {"id": "pedagogy",        "label": "Pedagogical Expertise",          "weight": 0.30, "desc": "Learning theory, curriculum design, assessment, instructional design"},
+            {"id": "learner_focus",   "label": "Learner-Centred Design",         "weight": 0.25, "desc": "Needs analysis, accessibility, differentiation, learner outcomes"},
+            {"id": "technology",      "label": "Technology & Platform Acumen",   "weight": 0.20, "desc": "LMS, EdTech tools, e-learning authoring, data analytics"},
+            {"id": "measurement",     "label": "Impact Measurement",             "weight": 0.15, "desc": "Kirkpatrick levels, ROI, learning analytics, evidence of outcomes"},
+            {"id": "leadership",      "label": "Stakeholder & Leadership",       "weight": 0.10, "desc": "Faculty/facilitator management, institutional stakeholders, change"},
+        ],
+        "score_anchors": {
+            1: "No learning theory knowledge. Cannot describe basic instructional design.",
+            2: "Awareness only. Limited curriculum or programme delivery experience.",
+            3: "Solid practitioner. Good pedagogical grounding with programme delivery results.",
+            4: "Strong expert. Evidence-based design, measurable learning outcomes.",
+            5: "Exceptional. Shapes learning strategy at enterprise or national level.",
+        },
+        "red_flags": ["Cannot explain Bloom's Taxonomy", "No evidence of learning outcomes measurement", "No LMS experience", "No accessibility awareness"],
+        "green_flags": ["Published learning research", "National curriculum contribution", "Measurable ROI on L&D programmes", "EdTech product built and launched"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Legal & Compliance": {
+        "dimensions": [
+            {"id": "legal_knowledge", "label": "Legal Knowledge & Expertise",    "weight": 0.35, "desc": "Jurisdiction-specific law, regulatory frameworks, case law awareness"},
+            {"id": "commercial",      "label": "Commercial & Business Judgement", "weight": 0.25, "desc": "Balancing legal risk with commercial objectives, pragmatic advice"},
+            {"id": "risk_compliance", "label": "Risk & Compliance Management",   "weight": 0.20, "desc": "Compliance programme design, risk registers, regulatory engagement"},
+            {"id": "communication",   "label": "Communication & Influence",      "weight": 0.15, "desc": "Board communication, cross-functional influence, external counsel management"},
+            {"id": "tech_innovation", "label": "Legal Tech & Innovation",        "weight": 0.05, "desc": "Legal technology, contract automation, RegTech, AI in law"},
+        ],
+        "score_anchors": {
+            1: "No legal or compliance knowledge relevant to the role.",
+            2: "Limited practical experience. Theoretical knowledge only.",
+            3: "Competent practitioner. Solid legal knowledge with commercial awareness.",
+            4: "Strong expert. Deep legal expertise, trusted business partner.",
+            5: "Exceptional. General Counsel calibre, shapes regulatory landscape.",
+        },
+        "red_flags": ["Purely academic, no in-house or firm experience", "No commercial awareness", "Cannot describe GDPR obligations", "Never drafted a contract"],
+        "green_flags": ["Magic Circle / top-tier firm background", "Regulatory engagement experience", "Multi-jurisdiction expertise", "Legal tech implementation"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Government & Public Sector": {
+        "dimensions": [
+            {"id": "public_service",  "label": "Public Service Ethos & Values",  "weight": 0.25, "desc": "Accountability, transparency, Nolan principles, public interest"},
+            {"id": "policy_delivery", "label": "Policy & Programme Delivery",    "weight": 0.30, "desc": "Policy cycle, programme management, cross-agency delivery"},
+            {"id": "stakeholders",    "label": "Political & Stakeholder Acumen",  "weight": 0.20, "desc": "Ministerial engagement, public consultation, media relations"},
+            {"id": "technical",       "label": "Technical & Digital Literacy",   "weight": 0.15, "desc": "GDS standards, digital transformation, procurement, data"},
+            {"id": "commercial",      "label": "Commercial & Financial",         "weight": 0.10, "desc": "Public procurement, budget management, VFM, business cases"},
+        ],
+        "score_anchors": {
+            1: "No public sector awareness. Unaware of accountability or procurement frameworks.",
+            2: "Private sector only. No understanding of public sector constraints.",
+            3: "Solid practitioner. Good public sector delivery with stakeholder management.",
+            4: "Strong leader. Navigates political complexity, delivers at scale.",
+            5: "Exceptional. Senior Civil Service calibre, shapes national policy.",
+        },
+        "red_flags": ["No understanding of public accountability", "Cannot describe procurement thresholds", "No experience with ministerial submissions", "Dismissive of public sector constraints"],
+        "green_flags": ["SCS/SES experience", "Cross-departmental programme leadership", "Successful GDS service assessment", "Published policy papers"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+
+    "Media & Entertainment": {
+        "dimensions": [
+            {"id": "content_strategy","label": "Content & Creative Strategy",    "weight": 0.25, "desc": "Content strategy, editorial judgement, audience development, IP value"},
+            {"id": "commercial",      "label": "Commercial & Monetisation",      "weight": 0.25, "desc": "Revenue models, advertising, licensing, subscriber economics"},
+            {"id": "technology",      "label": "Media Technology",               "weight": 0.20, "desc": "Streaming platforms, CDN, production tech, OTT architecture"},
+            {"id": "audience",        "label": "Audience & Data Intelligence",   "weight": 0.20, "desc": "Audience analytics, recommendation, personalisation, A/B testing"},
+            {"id": "creative",        "label": "Creative & Cultural Awareness",  "weight": 0.10, "desc": "Market trends, cultural sensitivity, brand positioning, talent relations"},
+        ],
+        "score_anchors": {
+            1: "No media or entertainment domain knowledge.",
+            2: "Consumer awareness only. No professional media or technology experience.",
+            3: "Solid practitioner. Good domain knowledge with commercial or technology results.",
+            4: "Strong professional. Deep expertise, delivered significant audience or revenue outcomes.",
+            5: "Exceptional. Industry thought leader, shapes media landscape.",
+        },
+        "red_flags": ["No audience metrics knowledge", "Cannot explain SVOD vs AVOD economics", "No platform or distribution experience", "No IP rights awareness"],
+        "green_flags": ["Significant subscriber growth track record", "Launched streaming product", "Award-winning content commissioning", "Cross-border rights deal experience"],
+        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
+    },
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MARKET INTELLIGENCE DATA
+# Real salary benchmarks + demand signals per industry
+# ══════════════════════════════════════════════════════════════════════════════
+
+IND_MARKET_INTEL = {
+    "Telecom & Networks": {
+        "demand_yoy": 28,
+        "demand_direction": "up",
+        "demand_driver": "5G SA rollouts, ORAN adoption, autonomous network transformation",
+        "shortage_roles": ["5G Core Architect","ORAN Specialist","Autonomous Networks Lead","Cloud RAN Engineer"],
+        "emerging_skills": ["AI/ML in networks","ORAN","Network as Code","Digital Twin","Network APIs"],
+        "avg_hiring_days": 52,
+        "interview_rounds": 3,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹6–12","mid":"₹15–28","senior":"₹30–55","lead":"₹55–90","head":"₹90–150+"},
+            "UAE ($K)":     {"junior":"$40–65","mid":"$70–110","senior":"$110–160","lead":"$160–220","head":"$220–350"},
+            "Europe (€K)":  {"junior":"€35–55","mid":"€60–90","senior":"€90–130","lead":"€130–180","head":"€180–280"},
+            "US ($K)":      {"junior":"$70–100","mid":"$110–150","senior":"$150–200","lead":"$200–270","head":"$270–400"},
+        },
+    },
+    "IT & Software": {
+        "demand_yoy": 35,
+        "demand_direction": "up",
+        "demand_driver": "AI/ML adoption, cloud migration, platform engineering, GenAI products",
+        "shortage_roles": ["ML Engineer","Platform Engineer","Security Engineer","AI/ML Architect"],
+        "emerging_skills": ["LLM/GenAI","Rust","Platform Engineering","FinOps","AI Security"],
+        "avg_hiring_days": 38,
+        "interview_rounds": 4,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹5–12","mid":"₹14–28","senior":"₹30–60","lead":"₹60–100","head":"₹100–200+"},
+            "UAE ($K)":     {"junior":"$35–60","mid":"$65–100","senior":"$100–150","lead":"$150–220","head":"$220–400"},
+            "Europe (€K)":  {"junior":"€30–50","mid":"€55–85","senior":"€85–130","lead":"€130–190","head":"€190–350"},
+            "US ($K)":      {"junior":"$70–110","mid":"$120–170","senior":"$170–240","lead":"$240–320","head":"$320–600"},
+        },
+    },
+    "BFSI": {
+        "demand_yoy": 22,
+        "demand_direction": "up",
+        "demand_driver": "Fintech disruption, Basel IV compliance, digital banking transformation",
+        "shortage_roles": ["Quantitative Analyst","AML Technology Lead","RegTech Specialist","Chief Risk Officer"],
+        "emerging_skills": ["AI in Credit","RegTech","Embedded Finance","CBDC","Open Banking APIs"],
+        "avg_hiring_days": 61,
+        "interview_rounds": 4,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹6–14","mid":"₹16–32","senior":"₹35–70","lead":"₹70–120","head":"₹120–250+"},
+            "UAE ($K)":     {"junior":"$45–75","mid":"$80–130","senior":"$130–200","lead":"$200–280","head":"$280–500"},
+            "Europe (€K)":  {"junior":"€40–65","mid":"€70–110","senior":"€110–160","lead":"€160–230","head":"€230–450"},
+            "US ($K)":      {"junior":"$80–120","mid":"$130–190","senior":"$190–270","lead":"$270–380","head":"$380–700"},
+        },
+    },
+    "Healthcare & Pharma": {
+        "demand_yoy": 18,
+        "demand_direction": "up",
+        "demand_driver": "Post-COVID health investment, mRNA platforms, digital health expansion",
+        "shortage_roles": ["Regulatory Affairs Director","Pharmacovigilance Lead","Clinical Data Scientist","Digital Health Architect"],
+        "emerging_skills": ["Real World Evidence","AI Drug Discovery","Decentralised Trials","SaMD Regulatory","Digital Biomarkers"],
+        "avg_hiring_days": 68,
+        "interview_rounds": 4,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹5–10","mid":"₹12–24","senior":"₹26–50","lead":"₹50–90","head":"₹90–160+"},
+            "UAE ($K)":     {"junior":"$40–65","mid":"$70–110","senior":"$110–165","lead":"$165–220","head":"$220–400"},
+            "Europe (€K)":  {"junior":"€35–58","mid":"€60–95","senior":"€95–145","lead":"€145–210","head":"€210–380"},
+            "US ($K)":      {"junior":"$65–100","mid":"$110–160","senior":"$160–230","lead":"$230–310","head":"$310–550"},
+        },
+    },
+    "Manufacturing": {
+        "demand_yoy": 15,
+        "demand_direction": "up",
+        "demand_driver": "Industry 4.0, reshoring, EV transition, defence spending increase",
+        "shortage_roles": ["Industrial Automation Engineer","Digital Manufacturing Lead","Hydrogen Process Engineer","EV Powertrain Engineer"],
+        "emerging_skills": ["Digital Twin","AI Quality Inspection","Collaborative Robotics","Green Manufacturing","Additive Manufacturing"],
+        "avg_hiring_days": 45,
+        "interview_rounds": 3,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹4–8","mid":"₹10–20","senior":"₹22–42","lead":"₹42–75","head":"₹75–130+"},
+            "UAE ($K)":     {"junior":"$35–55","mid":"$60–95","senior":"$95–145","lead":"$145–200","head":"$200–350"},
+            "Europe (€K)":  {"junior":"€30–50","mid":"€55–85","senior":"€85–125","lead":"€125–175","head":"€175–300"},
+            "US ($K)":      {"junior":"$55–85","mid":"$90–130","senior":"$130–185","lead":"$185–255","head":"$255–420"},
+        },
+    },
+    "Consulting & Professional Services": {
+        "demand_yoy": 20,
+        "demand_direction": "up",
+        "demand_driver": "Digital transformation mandates, AI strategy demand, post-merger integration",
+        "shortage_roles": ["AI Strategy Director","Change Management Lead","Data Strategy Partner","Sustainability Consultant"],
+        "emerging_skills": ["GenAI Strategy","ESG Advisory","Operating Model Design","AI Governance","Value Architecture"],
+        "avg_hiring_days": 42,
+        "interview_rounds": 5,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹6–12","mid":"₹15–30","senior":"₹32–65","lead":"₹65–110","head":"₹110–200+"},
+            "UAE ($K)":     {"junior":"$45–70","mid":"$75–120","senior":"$120–180","lead":"$180–260","head":"$260–500"},
+            "Europe (€K)":  {"junior":"€38–62","mid":"€65–105","senior":"€105–160","lead":"€160–230","head":"€230–450"},
+            "US ($K)":      {"junior":"$75–115","mid":"$120–180","senior":"$180–260","lead":"$260–380","head":"$380–700"},
+        },
+    },
+    "Retail & E-commerce": {
+        "demand_yoy": 24,
+        "demand_direction": "up",
+        "demand_driver": "Quick commerce explosion, D2C brand growth, omnichannel investment",
+        "shortage_roles": ["Quick Commerce Director","D2C Growth Lead","Personalisation Engineer","Marketplace Strategist"],
+        "emerging_skills": ["Conversational Commerce","Social Commerce","Last-mile Optimisation","Sustainability in Retail","Composable Commerce"],
+        "avg_hiring_days": 36,
+        "interview_rounds": 3,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹4–9","mid":"₹10–22","senior":"₹24–48","lead":"₹48–85","head":"₹85–150+"},
+            "UAE ($K)":     {"junior":"$35–58","mid":"$60–95","senior":"$95–145","lead":"$145–200","head":"$200–380"},
+            "Europe (€K)":  {"junior":"€28–48","mid":"€52–82","senior":"€82–125","lead":"€125–175","head":"€175–320"},
+            "US ($K)":      {"junior":"$55–85","mid":"$90–135","senior":"$135–190","lead":"$190–265","head":"$265–450"},
+        },
+    },
+    "Energy & Utilities": {
+        "demand_yoy": 32,
+        "demand_direction": "up",
+        "demand_driver": "Energy transition, hydrogen economy, smart grid investment, offshore wind",
+        "shortage_roles": ["Hydrogen Engineer","Offshore Wind Director","Smart Grid Architect","Battery Storage Engineer"],
+        "emerging_skills": ["Green Hydrogen","BESS Technology","Virtual Power Plants","Carbon Capture","AI Grid Optimisation"],
+        "avg_hiring_days": 55,
+        "interview_rounds": 3,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹5–10","mid":"₹12–24","senior":"₹26–52","lead":"₹52–90","head":"₹90–160+"},
+            "UAE ($K)":     {"junior":"$40–65","mid":"$70–115","senior":"$115–170","lead":"$170–235","head":"$235–420"},
+            "Europe (€K)":  {"junior":"€35–58","mid":"€62–98","senior":"€98–148","lead":"€148–215","head":"€215–390"},
+            "US ($K)":      {"junior":"$65–100","mid":"$105–155","senior":"$155–215","lead":"$215–295","head":"$295–520"},
+        },
+    },
+    "Education & EdTech": {
+        "demand_yoy": 19,
+        "demand_direction": "up",
+        "demand_driver": "EdTech investment surge, corporate upskilling economy, AI tutoring platforms",
+        "shortage_roles": ["AI Learning Designer","Corporate CLO","EdTech Product Lead","Learning Analytics Engineer"],
+        "emerging_skills": ["AI Tutoring","Adaptive Learning","Learning in the Flow of Work","Skills Taxonomy Design","Micro-credentials"],
+        "avg_hiring_days": 40,
+        "interview_rounds": 3,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹3–7","mid":"₹8–18","senior":"₹20–38","lead":"₹38–65","head":"₹65–110+"},
+            "UAE ($K)":     {"junior":"$35–55","mid":"$58–90","senior":"$90–135","lead":"$135–185","head":"$185–320"},
+            "Europe (€K)":  {"junior":"€28–45","mid":"€48–78","senior":"€78–118","lead":"€118–165","head":"€165–285"},
+            "US ($K)":      {"junior":"$50–80","mid":"$85–125","senior":"$125–175","lead":"$175–240","head":"$240–400"},
+        },
+    },
+    "Legal & Compliance": {
+        "demand_yoy": 16,
+        "demand_direction": "up",
+        "demand_driver": "AI Act compliance, privacy regulation expansion, M&A activity, ESG obligations",
+        "shortage_roles": ["AI Governance Counsel","Data Privacy Officer","ESG Legal Lead","Sanctions Compliance Specialist"],
+        "emerging_skills": ["EU AI Act","DORA (Digital Operational Resilience)","ESG Disclosure Law","Privacy-Enhancing Tech","Legal AI Tools"],
+        "avg_hiring_days": 58,
+        "interview_rounds": 4,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹6–12","mid":"₹14–30","senior":"₹32–65","lead":"₹65–110","head":"₹110–200+"},
+            "UAE ($K)":     {"junior":"$45–75","mid":"$80–130","senior":"$130–195","lead":"$195–270","head":"$270–500"},
+            "Europe (€K)":  {"junior":"€38–62","mid":"€65–105","senior":"€105–158","lead":"€158–225","head":"€225–430"},
+            "US ($K)":      {"junior":"$75–115","mid":"$120–180","senior":"$180–260","lead":"$260–380","head":"$380–700"},
+        },
+    },
+    "Government & Public Sector": {
+        "demand_yoy": 21,
+        "demand_direction": "up",
+        "demand_driver": "National digital transformation, AI governance, defence investment, infrastructure programmes",
+        "shortage_roles": ["Digital Service Director","Government CTO","AI Policy Lead","Critical Infrastructure Specialist"],
+        "emerging_skills": ["Sovereign AI","Digital Identity","GovTech","Cyber Resilience","Data-Driven Policy"],
+        "avg_hiring_days": 72,
+        "interview_rounds": 3,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹4–8","mid":"₹9–18","senior":"₹20–38","lead":"₹38–65","head":"₹65–110+"},
+            "UAE ($K)":     {"junior":"$40–65","mid":"$68–105","senior":"$105–155","lead":"$155–215","head":"$215–380"},
+            "Europe (€K)":  {"junior":"€30–50","mid":"€55–85","senior":"€85–128","lead":"€128–180","head":"€180–320"},
+            "US ($K)":      {"junior":"$60–92","mid":"$95–140","senior":"$140–195","lead":"$195–265","head":"$265–430"},
+        },
+    },
+    "Media & Entertainment": {
+        "demand_yoy": 25,
+        "demand_direction": "up",
+        "demand_driver": "Streaming wars, gaming boom, AI content tools, creator economy growth",
+        "shortage_roles": ["Streaming Technology Lead","AI Content Engineer","Gaming Live-ops Director","Sports Rights Executive"],
+        "emerging_skills": ["Generative AI in Media","FAST Channels","Spatial Computing","Creator Economy Tech","Immersive Experiences"],
+        "avg_hiring_days": 42,
+        "interview_rounds": 3,
+        "salary_bands": {
+            "India (LPA)":  {"junior":"₹4–9","mid":"₹10–22","senior":"₹24–50","lead":"₹50–88","head":"₹88–155+"},
+            "UAE ($K)":     {"junior":"$38–62","mid":"$65–105","senior":"$105–158","lead":"$158–215","head":"$215–380"},
+            "Europe (€K)":  {"junior":"€30–52","mid":"€55–88","senior":"€88–132","lead":"€132–185","head":"€185–330"},
+            "US ($K)":      {"junior":"$60–95","mid":"$98–145","senior":"$145–205","lead":"$205–285","head":"$285–500"},
+        },
+    },
+}
+
+
+def get_industry_rubric(industry_name):
+    """Get scoring rubric for an industry."""
+    return IND_RUBRICS.get(industry_name, IND_RUBRICS.get("IT & Software", {}))
+
+def get_market_intel(industry_name):
+    """Get market intelligence for an industry."""
+    return IND_MARKET_INTEL.get(industry_name, {})
+
+def calculate_weighted_score(dimension_scores, industry_name):
+    """Calculate weighted overall score from dimension scores."""
+    rubric = get_industry_rubric(industry_name)
+    dims   = rubric.get("dimensions", [])
+    if not dims or not dimension_scores:
+        raw = list(dimension_scores.values())
+        return round(sum(raw) / len(raw), 2) if raw else 0.0
+    total_weight = 0.0
+    weighted_sum = 0.0
+    for dim in dims:
+        dim_id = dim["id"]
+        score  = dimension_scores.get(dim_id, 0)
+        weight = dim["weight"]
+        weighted_sum += score * weight
+        total_weight += weight
+    return round(weighted_sum / total_weight, 2) if total_weight else 0.0
+
+def get_verdict_from_score(score, industry_name):
+    """Get verdict string from weighted score."""
+    rubric     = get_industry_rubric(industry_name)
+    thresholds = rubric.get("verdict_threshold", {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0})
+    if score >= thresholds.get("SELECTED", 3.5):
+        return "SELECTED"
+    elif score >= thresholds.get("HOLD", 2.8):
+        return "HOLD — FURTHER REVIEW"
+    else:
+        return "REJECTED"
+
+def format_rubric_for_prompt(industry_name):
+    """Format rubric as text for AI scoring prompt."""
+    rubric = get_industry_rubric(industry_name)
+    dims   = rubric.get("dimensions", [])
+    lines  = [f"Industry: {industry_name}", "Scoring dimensions (weight):"]
+    for d in dims:
+        lines.append(f"  {d['id']} — {d['label']} ({int(d['weight']*100)}%): {d['desc']}")
+    lines.append("\nScore anchors (1–5):")
+    for score, anchor in rubric.get("score_anchors", {}).items():
+        lines.append(f"  {score}: {anchor}")
+    lines.append(f"\nGreen flags: {', '.join(rubric.get('green_flags', []))}")
+    lines.append(f"Red flags: {', '.join(rubric.get('red_flags', []))}")
+    return "\n".join(lines)
+
+
+
+def get_industry_questions(industry_name, difficulty="medium", count=15):
+    """Get questions from the pre-built bank for an industry and difficulty."""
+    bank = IND_QUESTION_BANK.get(industry_name, IND_QUESTION_BANK.get("IT & Software", {}))
+    questions = bank.get(difficulty, bank.get("medium", []))
+    import random
+    if len(questions) > count:
+        questions = random.sample(questions, count)
+    # Add num field
+    result = []
+    for i, q in enumerate(questions):
+        q_out = dict(q)
+        q_out["num"] = i + 1
+        result.append(q_out)
+    return result
+
+def get_question_bank_stats():
+    """Return stats about the question bank."""
+    total = 0
+    by_industry = {}
+    for ind, levels in IND_QUESTION_BANK.items():
+        count = sum(len(qs) for qs in levels.values())
+        by_industry[ind] = count
+        total += count
+    return {"total": total, "by_industry": by_industry, "industries": len(IND_QUESTION_BANK)}
+
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# IAS MULTI-TENANT WHITE-LABEL ENGINE — Sprint 4
+# Organisation profiles · Industry dashboards · White-label branding
+# ══════════════════════════════════════════════════════════════════════════════
+
+import copy as _copy_mod
+
+# ── Default tenant template ───────────────────────────────────────────────────
+_TENANT_DEFAULTS = {
+    "org_name":         "GVS Technologies",
+    "org_type":         "Staffing Agency",      # Staffing Agency / RPO / Enterprise / Independent
+    "industry":         "IT & Software",
+    "primary_color":    "#00C9A7",
+    "secondary_color":  "#0D1B3E",
+    "logo_emoji":       "🎯",
+    "platform_name":    "IAS",
+    "tagline":          "AI-Powered · Zero Touch · Multi-Industry",
+    "footer_line":      "Powered by IAS v9.0 · GVS Technologies",
+    "interviewer_name": "Interviewer",
+    "recruiter_email":  "",
+    "active_industry":  "IT & Software",
+    "dashboard_mode":   "Executive",           # Executive / Recruiter / Hiring Manager / Panel
+    "show_salary_band": True,
+    "show_market_intel":True,
+    "max_questions":    15,
+    "default_difficulty":"medium",
+    "report_template":  "standard",           # standard / detailed / executive
+    "subscriptiontier": "Growth",             # Starter / Growth / Enterprise
+    "created_at":       "",
+}
+
+def get_tenant_config():
+    """Load current tenant configuration from settings."""
+    settings = cfg.get_settings()
+    tenant = _copy_mod.deepcopy(_TENANT_DEFAULTS)
+    # Map existing settings keys to tenant config
+    mappings = {
+        "company_name":   "org_name",
+        "brand_company":  "org_name",
+        "industry":       "active_industry",
+        "brand_color":    "primary_color",
+        "brand_name":     "platform_name",
+        "brand_tagline":  "tagline",
+        "brand_footer":   "footer_line",
+        "interviewer_name":"interviewer_name",
+    }
+    for src_key, dst_key in mappings.items():
+        if settings.get(src_key):
+            tenant[dst_key] = settings[src_key]
+    # Also sync selected_industry from session
+    try:
+        import streamlit as _st_tenant
+        _sess_ind = _st_tenant.session_state.get("selected_industry","")
+        if _sess_ind:
+            tenant["active_industry"] = _sess_ind
+    except Exception:
+        pass
+    return tenant
+
+def save_tenant_config(tenant_dict):
+    """Save tenant configuration to settings."""
+    cfg.save_settings({
+        "company_name":    tenant_dict.get("org_name",""),
+        "brand_company":   tenant_dict.get("org_name",""),
+        "industry":        tenant_dict.get("active_industry",""),
+        "brand_color":     tenant_dict.get("primary_color","#00C9A7"),
+        "brand_name":      tenant_dict.get("platform_name","IAS"),
+        "brand_tagline":   tenant_dict.get("tagline",""),
+        "brand_footer":    tenant_dict.get("footer_line",""),
+        "interviewer_name":tenant_dict.get("interviewer_name",""),
+    })
+
+# ── Industry-specific dashboard config ────────────────────────────────────────
+IND_DASHBOARD_CONFIG = {
+    "Telecom & Networks": {
+        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","NPS","Acceptance"],
+        "priority_items": [
+            ("Network Architect offers expiring",   "CRITICAL", "#CC0000"),
+            ("5G Specialist evaluations pending",   "WARNING",  "#F5A623"),
+            ("OSS Engineer interviews unconfirmed", "WARNING",  "#F5A623"),
+            ("NOC Lead reports not submitted",      "INFO",     "#378ADD"),
+        ],
+        "forecast_items": [
+            ("5G Talent Pipeline",  "At risk — 28% demand surge outpacing supply", "#F5A623"),
+            ("OSS/BSS Specialist",  "Healthy — Strong applicant pipeline",          "#00C9A7"),
+            ("ORAN Engineers",      "Critical shortage — expand sourcing now",      "#CC0000"),
+        ],
+        "insight_template": "Telecom hiring velocity is {trend}. Focus areas: {shortage_roles}.",
+        "hero_metric": "5G specialists interviewed this month",
+        "accent_color": "#00C9A7",
+    },
+    "IT & Software": {
+        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","NPS","Acceptance"],
+        "priority_items": [
+            ("ML Engineer offers expiring",         "CRITICAL", "#CC0000"),
+            ("Senior Engineer evaluations pending", "WARNING",  "#F5A623"),
+            ("DevOps interviews unconfirmed",       "WARNING",  "#F5A623"),
+            ("Platform Engineer reports pending",   "INFO",     "#378ADD"),
+        ],
+        "forecast_items": [
+            ("AI/ML Engineers",     "Critical shortage — 35% YoY demand growth",   "#CC0000"),
+            ("Cloud Architects",    "At risk — salary benchmarks rising fast",      "#F5A623"),
+            ("Platform Engineers",  "Healthy — steady supply pipeline",             "#00C9A7"),
+        ],
+        "insight_template": "Engineering hiring is {trend}. AI/ML roles are the hardest to fill.",
+        "hero_metric": "Engineers onboarded this quarter",
+        "accent_color": "#378ADD",
+    },
+    "BFSI": {
+        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","Compliance Rate","Acceptance"],
+        "priority_items": [
+            ("Risk Manager offers expiring",        "CRITICAL", "#CC0000"),
+            ("Compliance Officer evaluations",      "WARNING",  "#F5A623"),
+            ("AML Analyst interviews unconfirmed",  "WARNING",  "#F5A623"),
+            ("Regulatory reviews pending",          "INFO",     "#378ADD"),
+        ],
+        "forecast_items": [
+            ("AML/Compliance Talent",   "Critical — regulatory change driving demand", "#CC0000"),
+            ("Quant Analysts",          "At risk — fintech competition for talent",     "#F5A623"),
+            ("Core Banking Engineers",  "Healthy — steady pipeline",                   "#00C9A7"),
+        ],
+        "insight_template": "BFSI hiring at {trend}. Regulatory expertise is the top differentiator.",
+        "hero_metric": "Compliance-certified candidates screened",
+        "accent_color": "#7F77DD",
+    },
+    "Healthcare & Pharma": {
+        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","GCP Rate","Acceptance"],
+        "priority_items": [
+            ("Regulatory Affairs offers expiring",  "CRITICAL", "#CC0000"),
+            ("Clinical Lead evaluations pending",   "WARNING",  "#F5A623"),
+            ("Pharmacovigilance interviews",        "WARNING",  "#F5A623"),
+            ("Clinical Data reports pending",       "INFO",     "#378ADD"),
+        ],
+        "forecast_items": [
+            ("Regulatory Affairs",  "Critical shortage globally",                   "#CC0000"),
+            ("Digital Health Leads","At risk — new specialty, limited talent pool", "#F5A623"),
+            ("Clinical Operations", "Healthy — established training pipelines",     "#00C9A7"),
+        ],
+        "insight_template": "Healthcare hiring is {trend}. GCP certification is a key filter.",
+        "hero_metric": "GCP-certified candidates assessed",
+        "accent_color": "#00B050",
+    },
+}
+# Fill remaining industries with generic config
+for _ind_fill in get_industry_names():
+    if _ind_fill not in IND_DASHBOARD_CONFIG:
+        _idata_fill = get_industry_config(_ind_fill)
+        IND_DASHBOARD_CONFIG[_ind_fill] = {
+            "kpi_labels":    ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","NPS","Acceptance"],
+            "priority_items": [
+                (f"{_ind_fill.split(' &')[0]} offers expiring",     "CRITICAL", "#CC0000"),
+                (f"Senior evaluations pending",                     "WARNING",  "#F5A623"),
+                (f"Specialist interviews unconfirmed",               "WARNING",  "#F5A623"),
+                (f"Reports not submitted",                           "INFO",     "#378ADD"),
+            ],
+            "forecast_items": [
+                (_idata_fill.get("shortage_roles",["Specialist"])[0] if _idata_fill.get("shortage_roles") else "Specialist",
+                 "High demand — limited supply", "#F5A623"),
+                ("Senior Professionals",  "Healthy pipeline", "#00C9A7"),
+                ("Leadership Roles",      "Monitoring closely", "#378ADD"),
+            ],
+            "insight_template": f"{_ind_fill} hiring at {{trend}}. Focus on key competencies.",
+            "hero_metric":  f"{_ind_fill.split(' &')[0]} specialists assessed",
+            "accent_color": _idata_fill.get("color","#00C9A7"),
+        }
+
+def get_industry_dashboard_config(industry_name):
+    """Get industry-specific dashboard configuration."""
+    return IND_DASHBOARD_CONFIG.get(industry_name, IND_DASHBOARD_CONFIG.get("IT & Software", {}))
+
+# ── Org type presets ──────────────────────────────────────────────────────────
+ORG_PRESETS = {
+    "Staffing Agency": {
+        "description": "High-volume recruitment for client companies",
+        "default_mode": "Recruiter",
+        "key_features": ["Bulk CV Screening","Interview Workflow","Offer Letter","Client Reports"],
+        "recommended_tier": "Growth",
+        "typical_users": "5–20 recruiters",
+    },
+    "RPO (Recruitment Process Outsourcing)": {
+        "description": "End-to-end hiring management for enterprise clients",
+        "default_mode": "Executive",
+        "key_features": ["Executive Dashboard","Multi-Industry","White-label","ATS Integration"],
+        "recommended_tier": "Enterprise",
+        "typical_users": "20–100+ recruiters",
+    },
+    "Enterprise HR Team": {
+        "description": "Internal talent acquisition for large organisations",
+        "default_mode": "Hiring Manager",
+        "key_features": ["Interview Workflow","Competency Library","Analytics","Compliance"],
+        "recommended_tier": "Growth",
+        "typical_users": "3–15 hiring managers",
+    },
+    "Independent Interviewer": {
+        "description": "Single interviewer on platforms like eTeki, FloCareer, BarRaiser",
+        "default_mode": "Panel",
+        "key_features": ["Interview Workflow","Report Generation","Question Bank","Quick Scoring"],
+        "recommended_tier": "Starter",
+        "typical_users": "1 interviewer",
+    },
+    "Consulting / Advisory Firm": {
+        "description": "Hiring intelligence for consulting and advisory practices",
+        "default_mode": "Executive",
+        "key_features": ["Executive Dashboard","AI Insights","Market Intel","Pitch Deck"],
+        "recommended_tier": "Growth",
+        "typical_users": "2–10 partners/managers",
+    },
+}
+
+def get_org_preset(org_type):
+    return ORG_PRESETS.get(org_type, ORG_PRESETS["Staffing Agency"])
+
+# ── END SPRINT 4 MULTI-TENANT ENGINE ─────────────────────────────────────────
 
 # ── PAGE CONFIG ──────────────────────────────────────────────────
 st.set_page_config(
@@ -1293,13 +2477,22 @@ def _ai_score(notes, questions, jd, name):
     ss=", ".join([f'"{q.get("skill","")}":{{\"competency\":3,\"experience\":3}}'
                   for q in questions[:6]])
 
+    # ── Industry-aware scoring ───────────────────────────────────
+    _ind_for_score = st.session_state.get("selected_industry","IT & Software") if "st" in dir() else "IT & Software"
+    _rubric_prompt = format_rubric_for_prompt(_ind_for_score)
+    _dim_keys = [d["id"] for d in get_industry_rubric(_ind_for_score).get("dimensions",[])]
+    _dim_json  = ",".join([f'"{k}":3.5' for k in _dim_keys])
+
     # Score
     r=client.messages.create(model=apikey.get_model(),max_tokens=3000,
         messages=[{"role":"user","content":
+            f"You are scoring an interview for industry: {_ind_for_score}.\n"
+            f"{_rubric_prompt}\n\n"
             f"Score interview for {name}. JD:{jd[:300]}\n{qa}\n"
             f'Return ONLY JSON: {{"candidate":"{name}","role":"{jd[:60].replace(chr(10)," ")}","date":"{today}",'
             f'"scores":[{{"q_num":1,"question":"","score":4,"summary":"","skill":""}}],'
-            f'"skill_scores":{{{ss}}},"overall_score":3.8,"verdict":"SELECTED"}}'
+            f'"skill_scores":{{{ss}}},"dimension_scores":{{{_dim_json}}},"overall_score":3.8,'
+            f'"verdict":"SELECTED","industry":"{_ind_for_score}"}}'
         }])
     txt=_clean_json(r.content[0].text)
     result=None
@@ -1311,6 +2504,18 @@ def _ai_score(notes, questions, jd, name):
             except: pass
     if not result: return {"error":"Scoring failed","raw":txt[:200]}
     result["date"]=today
+
+    # ── Industry-weighted score calculation ──────────────────────
+    _dim_scores = result.get("dimension_scores",{})
+    if _dim_scores:
+        _w_score = calculate_weighted_score(_dim_scores, _ind_for_score)
+        result["weighted_score"]   = _w_score
+        result["weighted_verdict"] = get_verdict_from_score(_w_score, _ind_for_score)
+        result["industry"]         = _ind_for_score
+        # Override overall score with weighted score if available
+        if "overall_score" in result:
+            result["overall_score_raw"]     = result["overall_score"]
+            result["overall_score"]         = _w_score
 
     # Project Discussion (Req 4.1)
     all_notes=" ".join(v for k,v in notes.items() if not k.startswith("score_") and isinstance(v,str) and v.strip())
@@ -1615,6 +2820,26 @@ with st.sidebar:
             disabled=not _can_gen):
             st.session_state["_trigger_generate"] = True
             st.rerun()
+
+        # ── Pre-built bank button ─────────────────────────
+        _sel_ind = st.session_state.get("selected_industry","IT & Software")
+        _qb_stats = get_question_bank_stats()
+        _qb_count = _qb_stats["by_industry"].get(_sel_ind, 0)
+        if _qb_count > 0:
+            _diff = st.session_state.get("_q_difficulty","medium")
+            if st.button(f"📚 Use Pre-built Bank ({_sel_ind[:15]}... · {_diff.title()})",
+                use_container_width=True,
+                help=f"Load {_qb_count} pre-built questions for {_sel_ind} — no API call needed"):
+                _bank_qs = get_industry_questions(_sel_ind, _diff, 15)
+                if _bank_qs:
+                    st.session_state.questions = _bank_qs
+                    st.session_state.notes    = {}
+                    st.session_state.curr_q   = 0
+                    if not st.session_state.candidate_name:
+                        st.session_state.candidate_name = "Candidate"
+                    st.success(f"✅ {len(_bank_qs)} pre-built {_diff} questions loaded for {_sel_ind}")
+                    st.rerun()
+
         st.divider()
 
     has_session=bool(st.session_state.candidate_name and st.session_state.questions)
@@ -2039,11 +3264,16 @@ if st.session_state.page == "home":
     _health_icon  = "🟢" if _health_score >= 80 else "🟡" if _health_score >= 60 else "🔴"
     _drivers_html = "".join([f'<div style="font-size:10px;color:#4A6A80;margin-top:2px">{d}</div>' for d in _health_drivers]) if _health_drivers else ""
 
+    _tenant_hdr    = get_tenant_config()
+    _org_name_hdr  = _tenant_hdr.get("org_name","GVS Technologies")
+    _platform_hdr  = _tenant_hdr.get("platform_name","IAS")
+    _ind_icon_hdr  = get_industry_config(_curr_ind).get("icon","🎯")
+
     st.markdown(f"""
 <div class="exec-header">
   <div class="exec-greeting">
     <h2>Good {"morning" if _now_h.hour < 12 else "afternoon" if _now_h.hour < 17 else "evening"}, {_interviewer}</h2>
-    <p>{_today_str}</p>
+    <p>{_today_str} &nbsp;·&nbsp; {_ind_icon_hdr} {_curr_ind} &nbsp;·&nbsp; {_org_name_hdr}</p>
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <div style="background:rgba(0,0,0,0.2);border:1px solid {_health_color}40;border-radius:10px;padding:8px 14px;min-width:200px;position:relative" title="Health drivers: {chr(10).join(_health_drivers) if _health_drivers else 'All systems healthy'}">
@@ -2070,12 +3300,35 @@ if st.session_state.page == "home":
 """, unsafe_allow_html=True)
 
     # ── ROLE-BASED TABS ─────────────────────────────────────────
-    _role_tab = st.session_state.get("_dash_role", "Executive")
+    _role_tab      = st.session_state.get("_dash_role", "Executive")
+    _ind_dash_cfg  = get_industry_dashboard_config(_curr_ind)
+    _tenant_cfg    = get_tenant_config()
+    _accent_color  = _ind_dash_cfg.get("accent_color","#00C9A7")
     _tabs_html = "".join([
         f'<button class="rtab {"active" if t == _role_tab else ""}" '        f'onclick="window.parent.document.querySelectorAll(\'.rtab\').forEach(b=>b.classList.remove(\'active\'));this.classList.add(\'active\')">{t}</button>'
         for t in ["Executive", "Recruiter", "Hiring Manager", "Interview Panel"]
     ])
     st.markdown(f'<div class="role-tabs">{_tabs_html}</div>', unsafe_allow_html=True)
+
+    # ── ROLE-BASED VIEW SWITCHER ────────────────────────────────
+    if _role_tab == "Recruiter":
+        st.markdown(
+            '<div style="background:rgba(55,138,221,0.08);border:1px solid rgba(55,138,221,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'  
+            '<span style="font-size:11px;font-weight:700;color:#378ADD">RECRUITER VIEW</span>'
+            ' &mdash; Today''s interviews, pending CVs, and scheduling tasks</div>',
+            unsafe_allow_html=True)
+    elif _role_tab == "Hiring Manager":
+        st.markdown(
+            '<div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'
+            '<span style="font-size:11px;font-weight:700;color:#F5A623">HIRING MANAGER VIEW</span>'
+            ' &mdash; Pending approvals, team feedback, and candidate pipeline</div>',
+            unsafe_allow_html=True)
+    elif _role_tab == "Interview Panel":
+        st.markdown(
+            '<div style="background:rgba(127,119,221,0.08);border:1px solid rgba(127,119,221,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'
+            '<span style="font-size:11px;font-weight:700;color:#7F77DD">INTERVIEW PANEL VIEW</span>'
+            ' &mdash; Upcoming interviews and evaluation tasks for today</div>',
+            unsafe_allow_html=True)
 
     # ── START LAYOUT WITH COPILOT SIDEBAR ─────────────────────
     _main_col, _cop_col = st.columns([3, 1])
@@ -2178,17 +3431,24 @@ if st.session_state.page == "home":
                 f'<div class="dash-card"><div class="dash-card-title">Live activity <span style="font-size:10px;color:#00C9A7">View all</span></div>'            f'{_act_html}</div>',
                 unsafe_allow_html=True)
 
-        # ── PREDICTIVE FORECAST ROW ────────────────────────────────
-        _pred_html = (
-            '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">' +
-            f'<div style="background:#0A1628;border:1px solid rgba(245,166,35,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Engineering</div>'        f'<div style="font-size:13px;font-weight:600;color:#F5A623">Pipeline at risk in 12 days</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 Accelerate sourcing immediately</div></div>' +
-            f'<div style="background:#0A1628;border:1px solid rgba(0,176,80,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Sales</div>'        f'<div style="font-size:13px;font-weight:600;color:#00B050">Hiring target 95% achievable</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 On track — maintain pace</div></div>' +
-            f'<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Support</div>'        f'<div style="font-size:13px;font-weight:600;color:#00C9A7">Pipeline healthy</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 No action needed</div></div>' +
-            '</div>'
-        )
-        st.markdown(
-            '<div style="font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">🔮 Predictive forecast</div>',
-            unsafe_allow_html=True)
+        # ── PREDICTIVE FORECAST ROW — Industry-aware ──────────────
+        _ind_dash_cfg  = get_industry_dashboard_config(_curr_ind)
+        _fc_items = _ind_dash_cfg.get("forecast_items", [
+            ("Engineering",  "Pipeline at risk in 12 days",      "#F5A623"),
+            ("Sales",        "Hiring target 95% achievable",     "#00B050"),
+            ("Support",      "Pipeline healthy",                 "#00C9A7"),
+        ])
+        _pred_parts = ["<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px\">"]
+        _col_border_map = {"#F5A623":"rgba(245,166,35,0.25)","#00B050":"rgba(0,176,80,0.25)",
+                           "#00C9A7":"rgba(0,201,167,0.25)","#CC0000":"rgba(204,0,0,0.25)",
+                           "#378ADD":"rgba(55,138,221,0.25)"}
+        for _fc_label, _fc_status, _fc_color in (_fc_items + [("","","")]* 3)[:3]:
+            _fc_border = _col_border_map.get(_fc_color, "rgba(0,201,167,0.25)")
+            _pred_parts.append(
+                f'<div style="background:#0A1628;border:1px solid {_fc_border};border-radius:10px;padding:12px 14px">'                f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">{_fc_label}</div>'                f'<div style="font-size:13px;font-weight:600;color:{_fc_color}">{_fc_status}</div>'                f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 {_curr_ind} forecast</div></div>'
+            )
+        _pred_parts.append("</div>")
+        _pred_html = "".join(_pred_parts)
         st.markdown(_pred_html, unsafe_allow_html=True)
 
         # ── ROW 2: AI Insights + Velocity + Metrics ─────────────────
@@ -3722,6 +4982,28 @@ elif st.session_state.page=="workflow":
                     st.markdown(f"**Project Discussion:** {sc['project_discussion']}")
                 if sc.get("overall_summary"):
                     st.markdown(f"**Overall Feedback:** {sc['overall_summary']}")
+                # ── Industry Rubric Scorecard ─────────────────────
+                _sc_industry = sc.get("industry", st.session_state.get("selected_industry","IT & Software"))
+                _dim_scores  = sc.get("dimension_scores",{})
+                _rubric_sc   = get_industry_rubric(_sc_industry)
+                _dims_sc     = _rubric_sc.get("dimensions",[])
+                if _dim_scores and _dims_sc:
+                    with st.expander(f"📊 {_sc_industry} — Rubric Scorecard", expanded=True):
+                        _w_sc = sc.get("weighted_score", calculate_weighted_score(_dim_scores, _sc_industry))
+                        _w_col = "#00B050" if _w_sc>=3.5 else "#F5A623" if _w_sc>=2.8 else "#CC0000"
+                        st.markdown(
+                            f'<div style="margin-bottom:10px"><span style="font-size:12px;color:#4A6A80">Weighted Score: </span>'                            f'<span style="font-size:20px;font-weight:700;color:{_w_col}">{_w_sc:.1f}/5.0</span></div>',
+                            unsafe_allow_html=True)
+                        for _dim_sc in _dims_sc:
+                            _ds = float(_dim_scores.get(_dim_sc["id"], 0) or 0)
+                            _bp = int(_ds/5*100)
+                            _dc = "#00B050" if _ds>=3.5 else "#F5A623" if _ds>=2.5 else "#CC0000"
+                            st.markdown(
+                                f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'                                f'<div style="width:155px;font-size:11px;color:#C8D8E4">{_dim_sc["label"]}</div>'                                f'<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:13px">'                                f'<div style="width:{_bp}%;background:{_dc};height:13px;border-radius:3px"></div></div>'                                f'<div style="width:36px;font-size:11px;font-weight:700;color:{_dc};text-align:right">{_ds:.1f}</div>'                                f'<div style="width:30px;font-size:10px;color:#4A6A80">{int(_dim_sc["weight"]*100)}%</div>'                                f'</div>', unsafe_allow_html=True)
+                        _gf = _rubric_sc.get("green_flags",[])
+                        _rf = _rubric_sc.get("red_flags",[])
+                        if _gf: st.markdown(f'<div style="font-size:11px;color:#00B050;margin-top:6px">✅ {" · ".join(_gf[:3])}</div>', unsafe_allow_html=True)
+                        if _rf: st.markdown(f'<div style="font-size:11px;color:#CC0000;margin-top:3px">⚠ {" · ".join(_rf[:3])}</div>', unsafe_allow_html=True)
                 with st.expander("Per-question scores"):
                     for s in sc.get("scores",[]):
                         sn=s.get("score",3)
@@ -4235,6 +5517,33 @@ elif st.session_state.page == "industry":
     _df_compare = _pd_ind.DataFrame(_compare_data)
     st.dataframe(_df_compare, use_container_width=True, hide_index=True)
 
+    # ── Question Bank Browser ─────────────────────────
+    st.divider()
+    st.markdown("### 📚 Question Bank Browser")
+    _stats = get_question_bank_stats()
+    _qbc1, _qbc2, _qbc3 = st.columns(3)
+    with _qbc1: st.metric("Total Questions", _stats["total"])
+    with _qbc2: st.metric("Industries", _stats["industries"])
+    with _qbc3: st.metric("Difficulty Levels", 3)
+
+    _qb_diff = st.select_slider("Difficulty", ["easy","medium","hard"],
+                                value="medium", key="qb_diff_browser")
+    _preview_qs = get_industry_questions(_curr_ind, _qb_diff, count=100)
+    st.caption(f"{len(_preview_qs)} **{_qb_diff.title()}** questions for **{_curr_ind}**")
+    for _pq in _preview_qs[:10]:  # show first 10
+        with st.expander(f"Q{_pq['num']}. [{_pq.get('skill','—')}] {_pq['question'][:90]}..."):
+            st.markdown(f"**Skill:** {_pq.get('skill','—')}  |  **Type:** {_pq.get('type','scenario').title()}")
+            st.markdown(f"**Question:** {_pq['question']}")
+
+    if st.button(f"▶ Load all {len(_preview_qs)} {_qb_diff.title()} questions into Interview Workflow",
+                 key="load_bank_to_workflow", type="primary"):
+        _load_qs = get_industry_questions(_curr_ind, _qb_diff, 15)
+        st.session_state.questions = _load_qs
+        st.session_state.notes = {}
+        st.session_state.curr_q = 0
+        st.session_state["selected_industry"] = _curr_ind
+        st.success(f"✅ {len(_load_qs)} pre-built questions loaded — go to Interview Workflow")
+
     st.divider()
     st.markdown(
         '<div style="text-align:center;font-size:11px;color:#4A6A80">'
@@ -4260,6 +5569,7 @@ elif st.session_state.page == "settings":
         ("📊", "Reports"),
         ("📸", "Photo ID"),
         ("🎨", "Branding"),
+        ("🏢", "Organisation"),
         ("📲", "Notifications"),
         ("🔒", "Licensing"),
     ]
@@ -4394,11 +5704,15 @@ elif st.session_state.page == "settings":
             st.markdown("#### 🎨 Industry & Brand Configuration")
             with st.form("brand_form"):
                 _bi1, _bi2 = st.columns(2)
+                # Use full IND_CONFIG industry list from Sprint 1
+                _all_ind_names = get_industry_names()
+                _curr_ind_brand = settings.get("industry", st.session_state.get("selected_industry","IT & Software"))
+                if _curr_ind_brand not in _all_ind_names:
+                    _curr_ind_brand = "IT & Software"
                 industry_sel = _bi1.selectbox("Industry / Sector",
-                    ["General Recruitment","Telecom / 5G","Manufacturing / Automotive",
-                     "Insurance / Finance","Medical / Healthcare","Technology / IT",
-                     "Consulting / Advisory","Government / Public Sector","Education","Retail / FMCG"],
-                    index=0)
+                    options=_all_ind_names,
+                    index=_all_ind_names.index(_curr_ind_brand)
+                )
                 brand_company = _bi1.text_input("Organisation name",
                     value=settings.get("brand_company","GVS Technologies"),
                     placeholder="e.g. Vodafone Germany / BMW Group / NHS")
@@ -4417,6 +5731,7 @@ elif st.session_state.page == "settings":
                         "brand_tagline":brand_tagline,"brand_footer":brand_footer,
                         "company_name":brand_company,"dashboard_tagline":brand_tagline,
                     })
+                    st.session_state["selected_industry"] = industry_sel
                     st.success(f"✅ Branding saved — {industry_sel} · {brand_company}")
                     st.rerun()
             st.divider()
@@ -4433,6 +5748,156 @@ elif st.session_state.page == "settings":
                     st.rerun()
 
         # ── NOTIFICATIONS ─────────────────────────────────────────
+        elif _sel == "Organisation":
+            # ════════════════════════════════════════════════════
+            # SPRINT 4: MULTI-TENANT ORGANISATION CONFIGURATION
+            # ════════════════════════════════════════════════════
+            st.markdown("#### 🏢 Organisation Profile")
+            st.caption("Configure IAS for your organisation type, industry, and white-label branding.")
+
+            _tenant = get_tenant_config()
+
+            # ── Org type ─────────────────────────────────────────
+            _org_types = list(ORG_PRESETS.keys())
+            _curr_org_type = _tenant.get("org_type","Staffing Agency")
+            if _curr_org_type not in _org_types:
+                _curr_org_type = "Staffing Agency"
+
+            _ot1, _ot2 = st.columns(2)
+            with _ot1:
+                _sel_org_type = st.selectbox(
+                    "Organisation type",
+                    options=_org_types,
+                    index=_org_types.index(_curr_org_type),
+                    key="org_type_sel",
+                    help="Select your organisation type to get a tailored IAS configuration."
+                )
+            with _ot2:
+                _preset = get_org_preset(_sel_org_type)
+                st.markdown(
+                    f'<div style="background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2);'
+                    f'border-radius:8px;padding:10px 12px;margin-top:22px">'
+                    f'<div style="font-size:12px;font-weight:600;color:#00C9A7">{_sel_org_type}</div>'
+                    f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">{_preset["description"]}</div>'
+                    f'<div style="font-size:10px;color:#4A6A80;margin-top:4px">'
+                    f'Tier: {_preset["recommended_tier"]} · Users: {_preset["typical_users"]}</div>'
+                    f'</div>', unsafe_allow_html=True)
+
+            # ── Industry vertical ─────────────────────────────────
+            st.markdown("---")
+            st.markdown("**🌐 Active Industry Vertical**")
+            _ind_names_org = get_industry_names()
+            _curr_ind_org  = _tenant.get("active_industry","IT & Software")
+            if _curr_ind_org not in _ind_names_org:
+                _curr_ind_org = "IT & Software"
+
+            _oi1, _oi2 = st.columns([2,1])
+            with _oi1:
+                _sel_ind_org = st.selectbox(
+                    "Primary industry",
+                    options=_ind_names_org,
+                    index=_ind_names_org.index(_curr_ind_org),
+                    key="org_ind_sel",
+                    help="This sets the default question bank, scoring rubric, and market intelligence."
+                )
+            with _oi2:
+                _ind_d = get_industry_config(_sel_ind_org)
+                _mkt_d = get_market_intel(_sel_ind_org)
+                st.markdown(
+                    f'<div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;margin-top:22px">'
+                    f'<div style="font-size:22px">{_ind_d["icon"]}</div>'
+                    f'<div style="font-size:12px;font-weight:600;color:#00C9A7">{_sel_ind_org.split(" &")[0]}</div>'
+                    f'<div style="font-size:11px;color:#4A6A80">{_mkt_d.get("demand_driver","")[:50]}...</div>'
+                    f'</div>', unsafe_allow_html=True)
+
+            # ── Dashboard mode ────────────────────────────────────
+            st.markdown("---")
+            st.markdown("**👁 Default Dashboard Mode**")
+            _dash_modes = ["Executive","Recruiter","Hiring Manager","Interview Panel"]
+            _curr_mode  = _tenant.get("dashboard_mode","Executive")
+            if _curr_mode not in _dash_modes:
+                _curr_mode = "Executive"
+            _mode_descs = {
+                "Executive":       "Hiring health, KPIs, forecasts, AI insights",
+                "Recruiter":       "Today's interviews, CV screening, scheduling",
+                "Hiring Manager":  "Pending approvals, team progress, feedback",
+                "Interview Panel": "Upcoming interviews, evaluation forms, questions",
+            }
+            _dm_cols = st.columns(4)
+            for _dmi, _dm in enumerate(_dash_modes):
+                with _dm_cols[_dmi]:
+                    _active_dm = _dm == _curr_mode
+                    if st.button(
+                        _dm,
+                        key=f"dash_mode_{_dmi}",
+                        use_container_width=True,
+                        type="primary" if _active_dm else "secondary"
+                    ):
+                        st.session_state["_dash_role"] = _dm
+                        _tenant["dashboard_mode"] = _dm
+                st.caption(_mode_descs.get(_dm,""))
+
+            # ── White-label settings ──────────────────────────────
+            st.markdown("---")
+            st.markdown("**🎨 White-Label Configuration**")
+            with st.form("org_whitelabel_form"):
+                _wl1, _wl2 = st.columns(2)
+                with _wl1:
+                    _wl_org_name    = st.text_input("Organisation name",
+                        value=_tenant.get("org_name","GVS Technologies"))
+                    _wl_platform    = st.text_input("Platform display name",
+                        value=_tenant.get("platform_name","IAS"))
+                    _wl_tagline     = st.text_input("Dashboard tagline",
+                        value=_tenant.get("tagline","AI-Powered · Zero Touch · Multi-Industry"))
+                    _wl_interviewer = st.text_input("Default interviewer name",
+                        value=_tenant.get("interviewer_name","Gokul Prakash T"))
+                with _wl2:
+                    _wl_primary_col = st.color_picker("Primary accent colour",
+                        value=_tenant.get("primary_color","#00C9A7"))
+                    _wl_secondary   = st.color_picker("Secondary / Background colour",
+                        value=_tenant.get("secondary_color","#0D1B3E"))
+                    _wl_footer      = st.text_input("Footer line",
+                        value=_tenant.get("footer_line","Powered by IAS v9.0"))
+                    _wl_sub_tier    = st.selectbox("Subscription tier",
+                        ["Starter","Growth","Enterprise"],
+                        index=["Starter","Growth","Enterprise"].index(
+                            _tenant.get("subscriptiontier","Growth")))
+
+                if st.form_submit_button("💾 Save Organisation Profile", type="primary", use_container_width=True):
+                    _new_tenant = {
+                        "org_name":         _wl_org_name,
+                        "org_type":         _sel_org_type,
+                        "active_industry":  _sel_ind_org,
+                        "platform_name":    _wl_platform,
+                        "tagline":          _wl_tagline,
+                        "footer_line":      _wl_footer,
+                        "primary_color":    _wl_primary_col,
+                        "secondary_color":  _wl_secondary,
+                        "interviewer_name": _wl_interviewer,
+                        "dashboard_mode":   st.session_state.get("_dash_role","Executive"),
+                        "subscriptiontier": _wl_sub_tier,
+                    }
+                    save_tenant_config(_new_tenant)
+                    st.session_state["selected_industry"] = _sel_ind_org
+                    st.session_state["_dash_role"]        = _new_tenant["dashboard_mode"]
+                    st.success(f"✅ Organisation profile saved — {_wl_org_name} · {_sel_ind_org}")
+                    st.rerun()
+
+            # ── Current config preview ────────────────────────────
+            st.markdown("---")
+            st.markdown("**🔍 Current Configuration**")
+            _cp1, _cp2, _cp3 = st.columns(3)
+            with _cp1:
+                st.markdown(f'<div style="font-size:12px;color:#4A6A80">Organisation</div><div style="font-size:14px;font-weight:600;color:#E8F2FF">{_tenant.get("org_name","—")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="font-size:12px;color:#4A6A80;margin-top:8px">Type</div><div style="font-size:13px;color:#C8D8E4">{_tenant.get("org_type","—")}</div>', unsafe_allow_html=True)
+            with _cp2:
+                st.markdown(f'<div style="font-size:12px;color:#4A6A80">Industry</div><div style="font-size:14px;font-weight:600;color:#00C9A7">{_tenant.get("active_industry","—")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="font-size:12px;color:#4A6A80;margin-top:8px">Dashboard mode</div><div style="font-size:13px;color:#C8D8E4">{_tenant.get("dashboard_mode","Executive")}</div>', unsafe_allow_html=True)
+            with _cp3:
+                st.markdown(f'<div style="font-size:12px;color:#4A6A80">Subscription</div><div style="font-size:14px;font-weight:600;color:#F5A623">{_tenant.get("subscriptiontier","Growth")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="font-size:12px;color:#4A6A80;margin-top:8px">Platform name</div><div style="font-size:13px;color:#C8D8E4">{_tenant.get("platform_name","IAS")}</div>', unsafe_allow_html=True)
+
+
         elif _sel == "Notifications":
             st.markdown("#### 📲 Gmail Monitor — Continuous Email Watching")
             st.caption("IAS watches your Gmail inbox every 60 seconds. When an interview email arrives, candidate details, CV, JD, and Zoom link are auto-loaded into the Interview Workflow — zero manual entry.")
@@ -7772,6 +9237,117 @@ elif st.session_state.page == "compliance":
 elif st.session_state.page == "hiring2026":
     import pandas as _pd26
     from datetime import datetime as _dt26
+
+    # ══════════════════════════════════════════════════════════════
+    # SPRINT 3: INDUSTRY MARKET INTELLIGENCE DASHBOARD
+    # ══════════════════════════════════════════════════════════════
+    _sel_mkt_ind = st.session_state.get("selected_industry", "IT & Software")
+    _mkt = get_market_intel(_sel_mkt_ind)
+
+    if _mkt:
+        st.markdown(f"## 🌐 Market Intelligence — {_sel_mkt_ind}")
+        st.caption(f"{_mkt.get('demand_driver','')}")
+
+        # ── Top KPI row ──────────────────────────────────────────
+        _mk1, _mk2, _mk3, _mk4 = st.columns(4)
+        _dir = "↑" if _mkt.get("demand_direction") == "up" else "↓"
+        with _mk1:
+            st.metric("Demand YoY", f"{_dir} {_mkt.get('demand_yoy',0)}%",
+                      delta=f"{_mkt.get('demand_yoy',0)}% vs last year",
+                      delta_color="normal")
+        with _mk2:
+            st.metric("Avg. Hiring Days", _mkt.get("avg_hiring_days","—"),
+                      delta="Industry benchmark")
+        with _mk3:
+            st.metric("Interview Rounds", _mkt.get("interview_rounds","—"),
+                      delta="Typical process")
+        with _mk4:
+            st.metric("Shortage Roles", len(_mkt.get("shortage_roles",[])),
+                      delta="Critical gaps")
+
+        st.divider()
+
+        # ── Salary benchmarks ─────────────────────────────────────
+        st.markdown("### 💰 Salary Benchmarks by Level & Region")
+        _sal_bands = _mkt.get("salary_bands", {})
+        if _sal_bands:
+            import pandas as _pd_mkt
+            _sal_rows = []
+            _levels = ["junior","mid","senior","lead","head"]
+            _level_labels = {"junior":"Junior (0–3y)","mid":"Mid (4–7y)",
+                             "senior":"Senior (7–12y)","lead":"Lead/Principal","head":"Head/C-Suite"}
+            for _lvl in _levels:
+                _row = {"Level": _level_labels.get(_lvl,_lvl)}
+                for _region, _bands in _sal_bands.items():
+                    _row[_region] = _bands.get(_lvl,"—")
+                _sal_rows.append(_row)
+            _df_sal = _pd_mkt.DataFrame(_sal_rows)
+            st.dataframe(_df_sal, use_container_width=True, hide_index=True)
+
+        st.divider()
+
+        # ── Shortage roles + Emerging skills ─────────────────────
+        _sr_col, _es_col = st.columns(2)
+        with _sr_col:
+            st.markdown("### 🔥 Critical Shortage Roles")
+            for _role in _mkt.get("shortage_roles",[]):
+                st.markdown(
+                    f'<div style="background:rgba(204,0,0,0.08);border-left:3px solid #CC0000;'
+                    f'border-radius:0 6px 6px 0;padding:7px 12px;margin-bottom:6px;'
+                    f'font-size:12px;color:#C8D8E4">'
+                    f'<b>⚠</b> {_role}</div>',
+                    unsafe_allow_html=True)
+        with _es_col:
+            st.markdown("### 🚀 Emerging Skills to Screen For")
+            for _skill in _mkt.get("emerging_skills",[]):
+                st.markdown(
+                    f'<div style="background:rgba(0,201,167,0.08);border-left:3px solid #00C9A7;'
+                    f'border-radius:0 6px 6px 0;padding:7px 12px;margin-bottom:6px;'
+                    f'font-size:12px;color:#C8D8E4">'
+                    f'<b>✦</b> {_skill}</div>',
+                    unsafe_allow_html=True)
+
+        st.divider()
+
+        # ── Cross-industry demand heatmap ─────────────────────────
+        st.markdown("### 📊 Cross-Industry Demand Comparison")
+        _all_intel = []
+        for _ind_name in get_industry_names():
+            _intel = get_market_intel(_ind_name)
+            if _intel:
+                _all_intel.append({
+                    "Industry": _ind_name,
+                    "Demand ↑ YoY": f"↑ {_intel.get('demand_yoy',0)}%",
+                    "Avg Hiring Days": _intel.get("avg_hiring_days","—"),
+                    "Interview Rounds": _intel.get("interview_rounds","—"),
+                    "Shortage Roles": ", ".join(_intel.get("shortage_roles",[])[:2]),
+                    "Key Driver": _intel.get("demand_driver","")[:55] + "...",
+                })
+        import pandas as _pd_heat
+        _df_heat = _pd_heat.DataFrame(_all_intel)
+        st.dataframe(_df_heat, use_container_width=True, hide_index=True)
+
+        st.divider()
+
+    # ── Industry selector for market intel ───────────────────────
+    st.markdown("### 🌐 Switch Industry View")
+    _mkt_ind_cols = st.columns(4)
+    for _mii, _ind_n in enumerate(get_industry_names()):
+        with _mkt_ind_cols[_mii % 4]:
+            _ind_d = get_industry_config(_ind_n)
+            if st.button(
+                f"{_ind_d['icon']} {_ind_n.split(' &')[0][:14]}",
+                key=f"mkt_ind_{_mii}",
+                use_container_width=True,
+                type="primary" if _ind_n == _sel_mkt_ind else "secondary"
+            ):
+                st.session_state["selected_industry"] = _ind_n
+                st.rerun()
+
+    st.divider()
+    st.markdown("---")
+    st.markdown("#### 📈 2026 Hiring Intelligence (Global Trends)")
+
 
     # ── 12 Challenges data ────────────────────────────────────
     CHALLENGES = [
