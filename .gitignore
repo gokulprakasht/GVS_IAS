@@ -1,0 +1,10 @@
+api_key.txt 
+google_credentials.json 
+.streamlit/secrets.toml 
+secrets.toml 
+data/ 
+output/ 
+__pycache__/ 
+*.pyc 
+fix_gcal.* 
+check_gcal.* 
