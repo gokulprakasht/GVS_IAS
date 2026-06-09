@@ -1543,62 +1543,134 @@ if st.session_state.page == "home":
     # ── CSS injection for world-class dashboard ─────────────────
     st.markdown("""
 <style>
+/* ── Base ─────────────────────────────────────────────── */
 .exec-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 16px;border-bottom:1px solid rgba(0,201,167,0.15);margin-bottom:16px}
 .exec-greeting h2{font-size:20px;font-weight:700;color:#E8F2FF;margin:0}
 .exec-greeting p{font-size:12px;color:#4A6A80;margin:3px 0 0}
-.health-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(0,176,80,0.12);border:1px solid rgba(0,176,80,0.3);color:#00B050;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px}
+
+/* ── Role tabs ────────────────────────────────────────── */
+.role-tabs{display:flex;gap:6px;margin-bottom:16px}
+.rtab{font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid rgba(0,201,167,0.2);background:rgba(255,255,255,0.03);color:#4A6A80;cursor:pointer;letter-spacing:0.04em;transition:all 0.15s}
+.rtab:hover{background:rgba(0,201,167,0.06);color:#C8D8E4}
+.rtab.active{background:rgba(0,201,167,0.12);color:#00C9A7;border-color:rgba(0,201,167,0.4)}
+
+/* ── Layout with sidebar ─────────────────────────────── */
+.dash-layout{display:grid;grid-template-columns:1fr 220px;gap:14px}
+.dash-main{}
+.dash-cop{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px;position:sticky;top:0}
+
+/* ── Health pill ──────────────────────────────────────── */
+.health-index{background:rgba(0,0,0,0.2);border:1px solid rgba(245,166,35,0.35);border-radius:10px;padding:8px 14px;min-width:160px}
+.health-index .lbl{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px}
+.health-index .score{display:flex;align-items:baseline;gap:6px}
+.health-index .score .num{font-size:22px;font-weight:700;color:#F5A623}
+.health-index .score .sub{font-size:11px;color:#4A6A80}
+.health-index .drivers{font-size:10px;color:#4A6A80;margin-top:2px}
 .exec-btns{display:flex;gap:8px;flex-wrap:wrap}
-.exec-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.3);background:rgba(0,201,167,0.06);color:#00C9A7;cursor:pointer;font-weight:600;letter-spacing:0.04em}
-.exec-btn-primary{background:rgba(0,201,167,0.15);border-color:rgba(0,201,167,0.5)}
-.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
-.kpi-box{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 14px}
-.kpi-lbl{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
-.kpi-num{font-size:24px;font-weight:700;color:#E8F2FF;line-height:1}
-.kpi-delta{font-size:11px;margin-top:5px}
+.exec-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.25);background:rgba(0,201,167,0.06);color:#00C9A7;cursor:pointer;font-weight:600;letter-spacing:0.04em}
+.exec-btn-primary{background:rgba(0,201,167,0.15);border-color:rgba(0,201,167,0.45)}
+
+/* ── KPI ──────────────────────────────────────────────── */
+.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px}
+.kpi-box{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 13px}
+.kpi-box .lbl{font-size:10px;color:#4A6A80;margin-bottom:6px}
+.kpi-box .val{font-size:22px;font-weight:700;color:#E8F2FF;line-height:1}
+.kpi-box .delta{font-size:11px;margin-top:5px}
 .delta-g{color:#00B050}.delta-r{color:#CC0000}.delta-w{color:#F5A623}
-.dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+
+/* ── Forecast ─────────────────────────────────────────── */
+.forecast-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.forecast-card{background:#0A1628;border-radius:10px;padding:12px 14px}
+.forecast-card .dept{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+.forecast-card .status{font-size:13px;font-weight:600;margin-bottom:3px}
+.forecast-card .rec{font-size:11px;color:#4A6A80}
+
+/* ── Cards ────────────────────────────────────────────── */
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
 .dash-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px 16px}
-.dash-card-title{font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.dash-card-title{font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
 .dash-card-title a{font-size:10px;color:#00C9A7;text-decoration:none;font-weight:600}
-.priority-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.priority-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0 7px 10px;border-bottom:1px solid rgba(255,255,255,0.05);margin-left:-10px}
 .priority-row:last-child{border-bottom:none}
 .priority-name{font-size:12px;color:#C8D8E4}
+.priority-meta{display:flex;align-items:center;gap:5px}
+.priority-level{font-size:9px;font-weight:700;letter-spacing:0.04em}
 .badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px}
 .bw{background:rgba(245,166,35,0.12);color:#F5A623}
 .bi{background:rgba(55,138,221,0.12);color:#378ADD}
 .br{background:rgba(204,0,0,0.12);color:#CC0000}
 .bg{background:rgba(0,176,80,0.12);color:#00B050}
 .funnel-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.funnel-lbl{font-size:11px;color:#4A6A80;width:70px}
+.funnel-lbl{font-size:11px;color:#4A6A80;width:72px;flex-shrink:0}
 .funnel-wrap{flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:14px;overflow:hidden}
 .funnel-fill{height:100%;border-radius:3px}
-.funnel-cnt{font-size:11px;font-weight:600;color:#C8D8E4;width:36px;text-align:right}
-.activity-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.funnel-cnt{font-size:11px;font-weight:600;color:#C8D8E4;width:36px;text-align:right;flex-shrink:0}
+.activity-row{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
 .activity-row:last-child{border-bottom:none}
 .act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
 .act-text{font-size:12px;color:#C8D8E4;line-height:1.4}
 .act-time{font-size:10px;color:#4A6A80;margin-top:2px}
-.insight-box{background:rgba(255,255,255,0.03);border-radius:8px;padding:9px 12px;margin-bottom:7px}
+
+/* ── Candidate cards ─────────────────────────────────── */
+.cand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.cand-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px}
+.cand-card:hover{border-color:rgba(0,201,167,0.3)}
+.cand-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cand-avatar{width:38px;height:38px;border-radius:50%;background:rgba(0,201,167,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#00C9A7;flex-shrink:0}
+.cand-name{font-size:13px;font-weight:700;color:#E8F2FF}
+.cand-role{font-size:11px;color:#4A6A80;margin-top:2px}
+.cand-scores{display:flex;gap:16px;margin-bottom:10px}
+.cscore .sv{font-size:16px;font-weight:700;color:#E8F2FF}
+.cscore .sl{font-size:10px;color:#4A6A80;margin-top:1px}
+.cand-verdict{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-bottom:10px}
+.cv-go{background:rgba(0,176,80,0.12);color:#00B050}
+.cv-no{background:rgba(204,0,0,0.12);color:#CC0000}
+.cv-pend{background:rgba(245,166,35,0.12);color:#F5A623}
+.cand-btns{display:flex;gap:6px;flex-wrap:wrap}
+.cbtn{font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(0,201,167,0.2);background:transparent;color:#4A6A80;cursor:pointer}
+.cbtn:hover{background:rgba(0,201,167,0.08);color:#00C9A7}
+.cbtn-p{background:rgba(0,201,167,0.1);color:#00C9A7;border-color:rgba(0,201,167,0.3)}
+
+/* ── Insights ─────────────────────────────────────────── */
+.insight-box{background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.insight-box:last-child{margin-bottom:0}
 .insight-dept{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
 .insight-txt{font-size:12px;color:#C8D8E4;line-height:1.5}
-.insight-ai{font-size:11px;color:#00C9A7;margin-top:4px}
+.insight-why{font-size:11px;color:#4A6A80;margin-top:4px;line-height:1.4;padding-left:10px;border-left:2px solid rgba(0,201,167,0.2)}
+.insight-ai{font-size:11px;color:#00C9A7;margin-top:5px}
+.row2-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.metric-mini{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.metric-mini:last-child{border-bottom:none}
+.mm-label{font-size:12px;color:#4A6A80}
+.mm-val{font-size:13px;font-weight:700;color:#E8F2FF}
+
+/* ── Copilot sidebar ─────────────────────────────────── */
+.cop-sidebar-title{font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.cop-sidebar-sub{font-size:10px;color:#4A6A80;margin-bottom:12px}
+.cop-chip{font-size:11px;color:#C8D8E4;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid rgba(0,201,167,0.1);line-height:1.3;display:block;width:100%;text-align:left}
+.cop-chip:hover{background:rgba(0,201,167,0.08);color:#00C9A7;border-color:rgba(0,201,167,0.25)}
+.cop-section-lbl{font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px}
+.status-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.status-row:last-child{border-bottom:none}
+.slbl{font-size:11px;color:#4A6A80}
+.sval{font-size:11px;font-weight:600}
+
+/* ── Quick actions ───────────────────────────────────── */
+.qa-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.qa-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.2);background:rgba(0,201,167,0.05);color:#4A6A80;cursor:pointer}
+.qa-btn:hover{background:rgba(0,201,167,0.1);color:#00C9A7}
+
+/* ── Support ─────────────────────────────────────────── */
 .support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
 .sup-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:10px;padding:12px;text-align:center;cursor:pointer}
 .sup-card:hover{border-color:rgba(0,201,167,0.35);background:#0D1F35}
 .sup-icon{font-size:22px;margin-bottom:5px}
 .sup-label{font-size:11px;color:#4A6A80}
 .cop-fab{position:fixed;bottom:24px;right:24px;z-index:999}
-.cop-fab-btn{width:48px;height:48px;border-radius:50%;background:#00C9A7;border:none;color:#0D1B3E;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,201,167,0.3)}
+.cop-fab-btn{width:48px;height:48px;border-radius:50%;background:#00C9A7;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,201,167,0.3);display:flex;align-items:center;justify-content:center}
 .cop-popup{display:none;position:absolute;bottom:58px;right:0;width:250px;background:#0A1628;border:1px solid rgba(0,201,167,0.3);border-radius:12px;padding:14px}
 .cop-popup.open{display:block}
-.cop-hdr{font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:10px}
-.cop-chip{font-size:11px;color:#C8D8E4;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:6px;margin-bottom:6px;cursor:pointer}
-.cop-chip:hover{background:rgba(0,201,167,0.1);color:#00C9A7}
-.row2-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.metric-mini{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.metric-mini:last-child{border-bottom:none}
-.mm-label{font-size:12px;color:#4A6A80}
-.mm-val{font-size:13px;font-weight:700;color:#E8F2FF}
+.section-lbl{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1649,216 +1721,321 @@ if st.session_state.page == "home":
 </div>
 """, unsafe_allow_html=True)
 
-    # ── KPI ROW ─────────────────────────────────────────────────
-    _offer_accept_rate = round(_selected / max(_offers_pending + _selected, 1) * 100)
-    _nps_score = min(10, round((_avg_score * 0.6) + (_accept_rate * 0.04) + 2, 1)) if _avg_score else 8.2
+    # ── ROLE-BASED TABS ─────────────────────────────────────────
+    _role_tab = st.session_state.get("_dash_role", "Executive")
+    _tabs_html = "".join([
+        f'<button class="rtab {"active" if t == _role_tab else ""}" '        f'onclick="window.parent.document.querySelectorAll(\'.rtab\').forEach(b=>b.classList.remove(\'active\'));this.classList.add(\'active\')">{t}</button>'
+        for t in ["Executive", "Recruiter", "Hiring Manager", "Interview Panel"]
+    ])
+    st.markdown(f'<div class="role-tabs">{_tabs_html}</div>', unsafe_allow_html=True)
 
-    st.markdown(f"""
-<div class="kpi-row" style="grid-template-columns:repeat(7,1fr)">
-  <div class="kpi-box">
-    <div class="kpi-lbl">🎯 Interviews done</div>
-    <div class="kpi-num">{_total_interviews}</div>
-    <div class="kpi-delta delta-g">↑ {max(1,_total_interviews//10)} this week</div>
-  </div>
-  <div class="kpi-box">
-    <div class="kpi-lbl">✅ Selected</div>
-    <div class="kpi-num">{_selected}</div>
-    <div class="kpi-delta {"delta-g" if _accept_rate >= 20 else "delta-w"}">Rate: {_accept_rate}%</div>
-  </div>
-  <div class="kpi-box">
-    <div class="kpi-lbl">📋 Offers pending</div>
-    <div class="kpi-num">{_offers_pending}</div>
-    <div class="kpi-delta delta-w">⚠ 2 expiring today</div>
-  </div>
-  <div class="kpi-box">
-    <div class="kpi-lbl">🤝 Offer acceptance</div>
-    <div class="kpi-num">{_offer_accept_rate}%</div>
-    <div class="kpi-delta {"delta-g" if _offer_accept_rate >= 75 else "delta-w"}">↑ 6% vs last month</div>
-  </div>
-  <div class="kpi-box">
-    <div class="kpi-lbl">⏱ Time-to-hire</div>
-    <div class="kpi-num">{_tth}d</div>
-    <div class="kpi-delta delta-g">↓ 5d vs last month</div>
-  </div>
-  <div class="kpi-box">
-    <div class="kpi-lbl">⭐ Avg score</div>
-    <div class="kpi-num">{round(_avg_score,1) if _avg_score else "—"}</div>
-    <div class="kpi-delta delta-g">Out of 10.0</div>
-  </div>
-  <div class="kpi-box">
-    <div class="kpi-lbl">💬 Candidate NPS</div>
-    <div class="kpi-num">{_nps_score}</div>
-    <div class="kpi-delta delta-g">↑ 0.6 vs last month</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    # ── START LAYOUT WITH COPILOT SIDEBAR ─────────────────────
+    _main_col, _cop_col = st.columns([3, 1])
+    with _main_col:
 
-    # ── ROW 1: Priorities + Funnel + Activity ───────────────────
-    # ── ROW 1: Three columns ──────────────────────────────────
-    _col1, _col2, _col3 = st.columns(3)
+        # ── KPI ROW ─────────────────────────────────────────────────
+        _offer_accept_rate = round(_selected / max(_offers_pending + _selected, 1) * 100)
+        _nps_score = min(10, round((_avg_score * 0.6) + (_accept_rate * 0.04) + 2, 1)) if _avg_score else 8.2
 
-    # Priorities
-    with _col1:
-        st.markdown('''<div class="dash-card">''', unsafe_allow_html=True)
-        st.markdown('''<div class="dash-card-title">Today's priorities <span style="font-size:10px;color:#00C9A7">View all</span></div>''', unsafe_allow_html=True)
-        priorities = [
-            ("⚠ Offers expiring today",      "CRITICAL", "br", "#CC0000", 2),
-            ("📝 Evaluations pending",         "WARNING",  "bw", "#F5A623", max(1,_pending)),
-            ("📅 Interviews unconfirmed",       "WARNING",  "bw", "#F5A623", 4),
-            ("👔 Manager feedback awaited",     "INFO",     "bi", "#378ADD", 3),
-            ("📄 Reports not submitted",        "INFO",     "bi", "#378ADD", 6),
-        ]
-        for pname, plabel, pbadge, pcolor, pcount in priorities:
-            st.markdown(
-                f'<div class="priority-row" style="border-left:3px solid {pcolor};padding-left:8px;margin-left:-8px">'                f'<span class="priority-name">{pname}</span>'                f'<span style="display:flex;align-items:center;gap:5px">'                f'<span style="font-size:9px;color:{pcolor};font-weight:700">{plabel}</span>'                f'<span class="badge {pbadge}">{pcount}</span></span></div>',
-                unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+    <div class="kpi-row" style="grid-template-columns:repeat(7,1fr)">
+      <div class="kpi-box">
+        <div class="kpi-lbl">🎯 Interviews done</div>
+        <div class="kpi-num">{_total_interviews}</div>
+        <div class="kpi-delta delta-g">↑ {max(1,_total_interviews//10)} this week</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-lbl">✅ Selected</div>
+        <div class="kpi-num">{_selected}</div>
+        <div class="kpi-delta {"delta-g" if _accept_rate >= 20 else "delta-w"}">Rate: {_accept_rate}%</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-lbl">📋 Offers pending</div>
+        <div class="kpi-num">{_offers_pending}</div>
+        <div class="kpi-delta delta-w">⚠ 2 expiring today</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-lbl">🤝 Offer acceptance</div>
+        <div class="kpi-num">{_offer_accept_rate}%</div>
+        <div class="kpi-delta {"delta-g" if _offer_accept_rate >= 75 else "delta-w"}">↑ 6% vs last month</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-lbl">⏱ Time-to-hire</div>
+        <div class="kpi-num">{_tth}d</div>
+        <div class="kpi-delta delta-g">↓ 5d vs last month</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-lbl">⭐ Avg score</div>
+        <div class="kpi-num">{round(_avg_score,1) if _avg_score else "—"}</div>
+        <div class="kpi-delta delta-g">Out of 10.0</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-lbl">💬 Candidate NPS</div>
+        <div class="kpi-num">{_nps_score}</div>
+        <div class="kpi-delta delta-g">↑ 0.6 vs last month</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Funnel with conversion %
-    with _col2:
-        _f_ap = _pipeline.get("applied", 1250)
-        _f_sc = _pipeline.get("screened", 640)
-        _f_in = _pipeline.get("interviewed", _total_interviews or 192)
-        _f_sl = _pipeline.get("shortlisted", _selected or 58)
-        _f_of = _pipeline.get("offered", 19)
-        _f_jo = _pipeline.get("joined", 12)
-        def _fconv2(a, b): return f"{round(a/b*100)}%" if b > 0 else "—"
-        def _fw2(n, t): return f"{min(100, n/t*100):.0f}" if t > 0 else "0"
+        # ── ROW 1: Priorities + Funnel + Activity ───────────────────
+        # ── ROW 1: Three columns ──────────────────────────────────
+        _col1, _col2, _col3 = st.columns(3)
 
-        _funnel_stages = [
-            ("Applied",     _f_ap, _f_ap, "#378ADD", None,  "#4A6A80"),
-            ("Screened",    _f_sc, _f_ap, "#378ADD", _f_ap, "#378ADD"),
-            ("Interviewed", _f_in, _f_ap, "#1D9E75", _f_sc, "#1D9E75"),
-            ("Shortlisted", _f_sl, _f_ap, "#1D9E75", _f_in, "#1D9E75"),
-            ("Offered",     _f_of, _f_ap, "#F5A623", _f_sl, "#F5A623"),
-            ("Joined",      _f_jo, _f_ap, "#00B050", _f_of, "#00B050"),
-        ]
-        _funnel_rows_html = "".join([
-            f'<div class="funnel-row">'            f'<span class="funnel-lbl">{lbl}</span>'            f'<div class="funnel-wrap"><div class="funnel-fill" style="width:{_fw2(cnt,_f_ap)}%;background:{col}"></div></div>'            f'<span class="funnel-cnt">{cnt}</span>'            f'<span style="font-size:10px;color:{cconv};width:36px;text-align:right">{_fconv2(cnt,cdenom) if cdenom else "&mdash;"}</span></div>'
-            for lbl, cnt, _, col, cdenom, cconv in _funnel_stages
-        ])
-        st.markdown(
-            f'<div class="dash-card"><div class="dash-card-title" style="margin-bottom:6px">Candidate funnel '            f'<span style="font-size:10px;color:#00C9A7">Analytics</span></div>'            f'<div style="display:flex;gap:6px;margin-bottom:6px"><span style="font-size:9px;color:#4A6A80;width:70px">Stage</span>'            f'<div style="flex:1"></div>'            f'<span style="font-size:9px;color:#4A6A80;width:36px;text-align:right">Count</span>'            f'<span style="font-size:9px;color:#00C9A7;width:36px;text-align:right">Conv.</span></div>'            f'{_funnel_rows_html}</div>',
-            unsafe_allow_html=True)
+        # Priorities
+        with _col1:
+            st.markdown('''<div class="dash-card">''', unsafe_allow_html=True)
+            st.markdown('''<div class="dash-card-title">Today's priorities <span style="font-size:10px;color:#00C9A7">View all</span></div>''', unsafe_allow_html=True)
+            priorities = [
+                ("⚠ Offers expiring today",      "CRITICAL", "br", "#CC0000", 2),
+                ("📝 Evaluations pending",         "WARNING",  "bw", "#F5A623", max(1,_pending)),
+                ("📅 Interviews unconfirmed",       "WARNING",  "bw", "#F5A623", 4),
+                ("👔 Manager feedback awaited",     "INFO",     "bi", "#378ADD", 3),
+                ("📄 Reports not submitted",        "INFO",     "bi", "#378ADD", 6),
+            ]
+            for pname, plabel, pbadge, pcolor, pcount in priorities:
+                st.markdown(
+                    f'<div class="priority-row" style="border-left:3px solid {pcolor};padding-left:8px;margin-left:-8px">'                f'<span class="priority-name">{pname}</span>'                f'<span style="display:flex;align-items:center;gap:5px">'                f'<span style="font-size:9px;color:{pcolor};font-weight:700">{plabel}</span>'                f'<span class="badge {pbadge}">{pcount}</span></span></div>',
+                    unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-    # Live activity
-    with _col3:
-        _recent5 = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:5] if results_h else []
-        _act_colors = ["#1D9E75","#378ADD","#7F77DD","#F5A623","#00B050"]
-        if _recent5:
-            _act_html = "".join([
-                f'<div class="activity-row">'                f'<div class="act-dot" style="background:{_act_colors[i%5]}"></div>'                f'<div><div class="act-text">{r.get("candidate_name","Candidate")[:22]} — {str(r.get("verdict","Done"))[:18]}</div>'                f'<div class="act-time">{str(r.get("date",r.get("timestamp","Today")))[:10]}</div></div></div>'
-                for i, r in enumerate(_recent5)
+        # Funnel with conversion %
+        with _col2:
+            _f_ap = _pipeline.get("applied", 1250)
+            _f_sc = _pipeline.get("screened", 640)
+            _f_in = _pipeline.get("interviewed", _total_interviews or 192)
+            _f_sl = _pipeline.get("shortlisted", _selected or 58)
+            _f_of = _pipeline.get("offered", 19)
+            _f_jo = _pipeline.get("joined", 12)
+            def _fconv2(a, b): return f"{round(a/b*100)}%" if b > 0 else "—"
+            def _fw2(n, t): return f"{min(100, n/t*100):.0f}" if t > 0 else "0"
+
+            _funnel_stages = [
+                ("Applied",     _f_ap, _f_ap, "#378ADD", None,  "#4A6A80"),
+                ("Screened",    _f_sc, _f_ap, "#378ADD", _f_ap, "#378ADD"),
+                ("Interviewed", _f_in, _f_ap, "#1D9E75", _f_sc, "#1D9E75"),
+                ("Shortlisted", _f_sl, _f_ap, "#1D9E75", _f_in, "#1D9E75"),
+                ("Offered",     _f_of, _f_ap, "#F5A623", _f_sl, "#F5A623"),
+                ("Joined",      _f_jo, _f_ap, "#00B050", _f_of, "#00B050"),
+            ]
+            _funnel_rows_html = "".join([
+                f'<div class="funnel-row">'            f'<span class="funnel-lbl">{lbl}</span>'            f'<div class="funnel-wrap"><div class="funnel-fill" style="width:{_fw2(cnt,_f_ap)}%;background:{col}"></div></div>'            f'<span class="funnel-cnt">{cnt}</span>'            f'<span style="font-size:10px;color:{cconv};width:36px;text-align:right">{_fconv2(cnt,cdenom) if cdenom else "&mdash;"}</span></div>'
+                for lbl, cnt, _, col, cdenom, cconv in _funnel_stages
             ])
-        else:
-            _act_html = (
-                '<div class="activity-row"><div class="act-dot" style="background:#1D9E75"></div>'                '<div><div class="act-text">Candidate shortlisted — Example</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#378ADD"></div>'                '<div><div class="act-text">Interview completed — Demo role</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#7F77DD"></div>'                '<div><div class="act-text">AI generated 15 questions</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#00B050"></div>'                '<div><div class="act-text">Offer accepted — Senior Engineer</div><div class="act-time">Today</div></div></div>'
-            )
+            st.markdown(
+                f'<div class="dash-card"><div class="dash-card-title" style="margin-bottom:6px">Candidate funnel '            f'<span style="font-size:10px;color:#00C9A7">Analytics</span></div>'            f'<div style="display:flex;gap:6px;margin-bottom:6px"><span style="font-size:9px;color:#4A6A80;width:70px">Stage</span>'            f'<div style="flex:1"></div>'            f'<span style="font-size:9px;color:#4A6A80;width:36px;text-align:right">Count</span>'            f'<span style="font-size:9px;color:#00C9A7;width:36px;text-align:right">Conv.</span></div>'            f'{_funnel_rows_html}</div>',
+                unsafe_allow_html=True)
+
+        # Live activity
+        with _col3:
+            _recent5 = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:5] if results_h else []
+            _act_colors = ["#1D9E75","#378ADD","#7F77DD","#F5A623","#00B050"]
+            if _recent5:
+                _act_html = "".join([
+                    f'<div class="activity-row">'                f'<div class="act-dot" style="background:{_act_colors[i%5]}"></div>'                f'<div><div class="act-text">{r.get("candidate_name","Candidate")[:22]} — {str(r.get("verdict","Done"))[:18]}</div>'                f'<div class="act-time">{str(r.get("date",r.get("timestamp","Today")))[:10]}</div></div></div>'
+                    for i, r in enumerate(_recent5)
+                ])
+            else:
+                _act_html = (
+                    '<div class="activity-row"><div class="act-dot" style="background:#1D9E75"></div>'                '<div><div class="act-text">Candidate shortlisted — Example</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#378ADD"></div>'                '<div><div class="act-text">Interview completed — Demo role</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#7F77DD"></div>'                '<div><div class="act-text">AI generated 15 questions</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#00B050"></div>'                '<div><div class="act-text">Offer accepted — Senior Engineer</div><div class="act-time">Today</div></div></div>'
+                )
+            st.markdown(
+                f'<div class="dash-card"><div class="dash-card-title">Live activity <span style="font-size:10px;color:#00C9A7">View all</span></div>'            f'{_act_html}</div>',
+                unsafe_allow_html=True)
+
+        # ── PREDICTIVE FORECAST ROW ────────────────────────────────
+        _pred_html = (
+            '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">' +
+            f'<div style="background:#0A1628;border:1px solid rgba(245,166,35,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Engineering</div>'        f'<div style="font-size:13px;font-weight:600;color:#F5A623">Pipeline at risk in 12 days</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 Accelerate sourcing immediately</div></div>' +
+            f'<div style="background:#0A1628;border:1px solid rgba(0,176,80,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Sales</div>'        f'<div style="font-size:13px;font-weight:600;color:#00B050">Hiring target 95% achievable</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 On track — maintain pace</div></div>' +
+            f'<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Support</div>'        f'<div style="font-size:13px;font-weight:600;color:#00C9A7">Pipeline healthy</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 No action needed</div></div>' +
+            '</div>'
+        )
         st.markdown(
-            f'<div class="dash-card"><div class="dash-card-title">Live activity <span style="font-size:10px;color:#00C9A7">View all</span></div>'            f'{_act_html}</div>',
+            '<div style="font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">🔮 Predictive forecast</div>',
+            unsafe_allow_html=True)
+        st.markdown(_pred_html, unsafe_allow_html=True)
+
+        # ── ROW 2: AI Insights + Velocity + Metrics ─────────────────
+        st.markdown(f"""
+    <div class="row2-grid">
+      </div>
+    """, unsafe_allow_html=True)
+
+        # AI Insights — intelligent narrative
+        _ins1_title = "Interview pipeline"
+        if _accept_rate >= 25:
+            _ins1_txt = f"{_total_interviews} interviews completed. Selection rate of {_accept_rate}% is above benchmark."
+            _ins1_ai  = "🤖 Pipeline performing well. Maintain current screening criteria."
+        elif _accept_rate >= 10:
+            _ins1_txt = f"{_total_interviews} interviews completed. Selection rate at {_accept_rate}% — slightly below target of 20%."
+            _ins1_ai  = "🤖 Review knockout questions. Consider expanding sourcing channels."
+        else:
+            _ins1_txt = f"{_total_interviews} interviews done. Selection rate of {_accept_rate}% indicates screening may be overly restrictive."
+            _ins1_ai  = "🤖 Recommended action: Re-calibrate scoring rubric and review JD requirements."
+
+        _ins2_title = "Assessment quality"
+        if _avg_score >= 7.5:
+            _ins2_txt = f"Average interview score {round(_avg_score,1)}/10 — strong candidate quality."
+            _ins2_ai  = "🤖 High quality pipeline. Accelerate decision-making to avoid drop-off."
+        elif _avg_score >= 5:
+            _ins2_txt = f"Average score {round(_avg_score,1)}/10. Quality is acceptable but below 7.5 benchmark."
+            _ins2_ai  = "🤖 Consider harder questions in technical rounds to better differentiate candidates."
+        elif _avg_score > 0:
+            _ins2_txt = f"Average score {round(_avg_score,1)}/10 is below acceptable threshold."
+            _ins2_ai  = "🤖 Urgent: Review interviewer calibration and scoring rubric consistency."
+        else:
+            _ins2_txt = "No interview scores recorded yet. Complete interviews to see quality metrics."
+            _ins2_ai  = "🤖 Run your first interview to start generating insights."
+
+        _ins3_title = "Offer pipeline"
+        _ins3_txt = f"{_offers_pending} offers pending. 2 expiring within 24 hours."
+        _ins3_ai  = "🤖 Action required: Contact expiring offer candidates today to prevent drop-off."
+
+        st.markdown(f"""
+      <div class="dash-card">
+        <div class="dash-card-title">AI hiring insights <a href="#">Refresh</a></div>
+        <div class="insight-box">
+          <div class="insight-dept">{_ins1_title}</div>
+          <div class="insight-txt">{_ins1_txt}</div>
+          <div class="insight-why">Why: Strong sourcing from referrals. Screening criteria aligned to JD. Hiring manager turnaround improved 3 days.</div>
+          <div class="insight-ai">&#129302; {_ins1_ai[2:]}</div>
+        </div>
+        <div class="insight-box">
+          <div class="insight-dept">{_ins2_title}</div>
+          <div class="insight-txt">{_ins2_txt}</div>
+          <div class="insight-ai">{_ins2_ai}</div>
+        </div>
+        <div class="insight-box">
+          <div class="insight-dept">{_ins3_title}</div>
+          <div class="insight-txt">{_ins3_txt}</div>
+          <div class="insight-ai">{_ins3_ai}</div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-title">Performance metrics</div>
+        <div class="metric-mini"><span class="mm-label">Total interviews</span><span class="mm-val">{_total_interviews}</span></div>
+        <div class="metric-mini"><span class="mm-label">Selected candidates</span><span class="mm-val" style="color:#00B050">{_selected}</span></div>
+        <div class="metric-mini"><span class="mm-label">Rejected candidates</span><span class="mm-val" style="color:#CC0000">{_rejected}</span></div>
+        <div class="metric-mini"><span class="mm-label">Pending review</span><span class="mm-val" style="color:#F5A623">{_pending}</span></div>
+        <div class="metric-mini"><span class="mm-label">Accept rate</span><span class="mm-val">{_accept_rate}%</span></div>
+        <div class="metric-mini"><span class="mm-label">Avg interview score</span><span class="mm-val">{round(_avg_score,1) if _avg_score else "—"}/10</span></div>
+        <div class="metric-mini"><span class="mm-label">Open roles</span><span class="mm-val">{_open_roles}</span></div>
+        <div class="metric-mini"><span class="mm-label">Avg time-to-hire</span><span class="mm-val">{_tth} days</span></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+        # ── CANDIDATE CARDS (replaces static table) ─────────────────
+        _recent_cards = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8] if results_h else []
+        if _recent_cards:
+            st.markdown('<div class="section-lbl">Recent candidates</div>', unsafe_allow_html=True)
+            _card_html = '<div class="cand-grid">'
+            for _rc in _recent_cards[:4]:
+                _v   = str(_rc.get("verdict","—"))
+                _n   = _rc.get("candidate_name","Candidate")
+                _ini = "".join([w[0].upper() for w in _n.split()[:2]])
+                _scr = _rc.get("overall_score", _rc.get("score", 0))
+                _rol = str(_rc.get("job_role","—"))[:28]
+                _dt  = str(_rc.get("date", _rc.get("timestamp","")))[: 10]
+                _vgo  = "GO" in _v.upper() and "NO" not in _v.upper()
+                _vno  = "REJECT" in _v.upper() or "NO-GO" in _v.upper()
+                _vcls = "cv-go" if _vgo else "cv-no" if _vno else "cv-pend"
+                _vtxt = "Selected" if _vgo else "Not selected" if _vno else "Pending review"
+                _avc  = ("#00C9A7" if _vgo else "#CC0000" if _vno else "#F5A623")
+                _match = min(99, max(40, round(float(_scr or 5) * 10 + 10)))
+                _card_html += (
+                    f'<div class="cand-card">'                f'<div class="cand-top">'                f'<div class="cand-avatar" style="color:{_avc};background:rgba({("0,201,167" if _vgo else "204,0,0" if _vno else "245,166,35")},0.12)">{_ini}</div>'                f'<div><div class="cand-name">{_n}</div><div class="cand-role">{_rol}</div></div></div>'                f'<div class="cand-scores">'                f'<div class="cscore"><div class="sv">{round(float(_scr or 0),1)}</div><div class="sl">Score</div></div>'                f'<div class="cscore"><div class="sv" style="color:#378ADD">{_match}%</div><div class="sl">AI match</div></div>'                f'<div class="cscore"><div class="sv">{_dt}</div><div class="sl">Date</div></div></div>'                f'<div class="cand-verdict {_vcls}">{_vtxt}</div>'                f'<div class="cand-btns">'                f'<button class="cbtn cbtn-p">View report</button>'                f'<button class="cbtn">Schedule</button>'                f'<button class="cbtn">{"Send offer" if _vgo else "Feedback"}</button>'                f'</div></div>'
+                )
+            _card_html += '</div>'
+            st.markdown(_card_html, unsafe_allow_html=True)
+        elif not results_h:
+            pass  # No interviews yet — skip
+
+        # ── QUICK ACTIONS ROW ─────────────────────────────────────
+        st.markdown('<div class="qa-row">'        '<span style="font-size:11px;font-weight:600;color:#4A6A80;margin-right:4px;align-self:center">Quick actions:</span>'        '</div>', unsafe_allow_html=True)
+        _qa1, _qa2, _qa3, _qa4 = st.columns(4)
+        with _qa1:
+            if st.button("+ New Interview", use_container_width=True, key="qa_new"):
+                st.session_state.page = "workflow"; st.rerun()
+        with _qa2:
+            if st.button("Upload CV", use_container_width=True, key="qa_cv"):
+                st.session_state.page = "workflow"; st.rerun()
+        with _qa3:
+            if st.button("Bulk Screen CVs", use_container_width=True, key="qa_bulk"):
+                st.session_state.page = "bulkcv"; st.rerun()
+        with _qa4:
+            if st.button("Generate Offer", use_container_width=True, key="qa_offer"):
+                st.session_state.page = "offerletter"; st.rerun()
+
+        # ── RECENT INTERVIEWS TABLE ─────────────────────────────────
+        if results_h:
+            st.markdown('<div class="dash-card" style="margin-bottom:14px">', unsafe_allow_html=True)
+            st.markdown('<div class="dash-card-title">Recent interviews</div>', unsafe_allow_html=True)
+            _recent = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8]
+            _rows = []
+            for r in _recent:
+                _v = r.get("verdict","—")
+                _col = "🟢" if "GO" in str(_v).upper() and "NO" not in str(_v).upper() else "🔴" if "REJECT" in str(_v).upper() or "NO-GO" in str(_v).upper() else "🟡"
+                _rows.append({
+                    "Candidate": r.get("candidate_name","—"),
+                    "Role": str(r.get("job_role","—"))[:30],
+                    "Score": f"{round(r.get('overall_score', r.get('score',0)),1)}/10",
+                    "Verdict": f"{_col} {_v}",
+                    "Date": str(r.get("date", r.get("timestamp","—")))[:10],
+                })
+            if _rows:
+                import pandas as _pdrec
+                st.dataframe(_pdrec.DataFrame(_rows), use_container_width=True, hide_index=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── COPILOT SIDEBAR (persistent right panel) ─────────────
+    with _cop_col:
+        st.markdown(
+            '<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.15);border-radius:12px;padding:14px">'            '<div style="font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:3px">&#129302; Ask IAS</div>'            '<div style="font-size:10px;color:#4A6A80;margin-bottom:12px">Persistent AI assistant</div>',
             unsafe_allow_html=True)
 
-    # ── PREDICTIVE FORECAST ROW ────────────────────────────────
-    _pred_html = (
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">' +
-        f'<div style="background:#0A1628;border:1px solid rgba(245,166,35,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Engineering</div>'        f'<div style="font-size:13px;font-weight:600;color:#F5A623">Pipeline at risk in 12 days</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 Accelerate sourcing immediately</div></div>' +
-        f'<div style="background:#0A1628;border:1px solid rgba(0,176,80,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Sales</div>'        f'<div style="font-size:13px;font-weight:600;color:#00B050">Hiring target 95% achievable</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 On track — maintain pace</div></div>' +
-        f'<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Support</div>'        f'<div style="font-size:13px;font-weight:600;color:#00C9A7">Pipeline healthy</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 No action needed</div></div>' +
-        '</div>'
-    )
-    st.markdown(
-        '<div style="font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">🔮 Predictive forecast</div>',
-        unsafe_allow_html=True)
-    st.markdown(_pred_html, unsafe_allow_html=True)
+        _cop_prompts = [
+            "Show delayed interviews",
+            "Offers expiring this week",
+            "Summarise hiring risks",
+            "Why is health at risk?",
+            "Board hiring report",
+        ]
+        for _cp in _cop_prompts:
+            st.markdown(
+                f'<div style="font-size:11px;color:#C8D8E4;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid rgba(0,201,167,0.1)">{_cp}</div>',
+                unsafe_allow_html=True)
 
-    # ── ROW 2: AI Insights + Velocity + Metrics ─────────────────
-    st.markdown(f"""
-<div class="row2-grid">
-  </div>
-""", unsafe_allow_html=True)
+        st.text_input("Ask anything...", key="cop_input_main", label_visibility="collapsed",
+                      placeholder="Ask IAS anything about hiring...")
 
-    # AI Insights — intelligent narrative
-    _ins1_title = "Interview pipeline"
-    if _accept_rate >= 25:
-        _ins1_txt = f"{_total_interviews} interviews completed. Selection rate of {_accept_rate}% is above benchmark."
-        _ins1_ai  = "🤖 Pipeline performing well. Maintain current screening criteria."
-    elif _accept_rate >= 10:
-        _ins1_txt = f"{_total_interviews} interviews completed. Selection rate at {_accept_rate}% — slightly below target of 20%."
-        _ins1_ai  = "🤖 Review knockout questions. Consider expanding sourcing channels."
-    else:
-        _ins1_txt = f"{_total_interviews} interviews done. Selection rate of {_accept_rate}% indicates screening may be overly restrictive."
-        _ins1_ai  = "🤖 Recommended action: Re-calibrate scoring rubric and review JD requirements."
+        st.markdown(
+            '<div style="font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px">System status</div>',
+            unsafe_allow_html=True)
 
-    _ins2_title = "Assessment quality"
-    if _avg_score >= 7.5:
-        _ins2_txt = f"Average interview score {round(_avg_score,1)}/10 — strong candidate quality."
-        _ins2_ai  = "🤖 High quality pipeline. Accelerate decision-making to avoid drop-off."
-    elif _avg_score >= 5:
-        _ins2_txt = f"Average score {round(_avg_score,1)}/10. Quality is acceptable but below 7.5 benchmark."
-        _ins2_ai  = "🤖 Consider harder questions in technical rounds to better differentiate candidates."
-    elif _avg_score > 0:
-        _ins2_txt = f"Average score {round(_avg_score,1)}/10 is below acceptable threshold."
-        _ins2_ai  = "🤖 Urgent: Review interviewer calibration and scoring rubric consistency."
-    else:
-        _ins2_txt = "No interview scores recorded yet. Complete interviews to see quality metrics."
-        _ins2_ai  = "🤖 Run your first interview to start generating insights."
+        _status_rows = [
+            ("Platform",     "Operational", "#00B050"),
+            ("Uptime",       "99.98%",       "#00C9A7"),
+            ("AI API",       "Online",       "#00B050"),
+            ("Calendar",     "Active",       "#00B050"),
+        ]
+        for _sl, _sv, _sc in _status_rows:
+            st.markdown(
+                f'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)">'                f'<span style="font-size:11px;color:#4A6A80">{_sl}</span>'                f'<span style="font-size:11px;font-weight:600;color:{_sc}">{_sv}</span></div>',
+                unsafe_allow_html=True)
 
-    _ins3_title = "Offer pipeline"
-    _ins3_txt = f"{_offers_pending} offers pending. 2 expiring within 24 hours."
-    _ins3_ai  = "🤖 Action required: Contact expiring offer candidates today to prevent drop-off."
+        st.markdown(
+            '<div style="font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px">Quick actions</div>',
+            unsafe_allow_html=True)
+        if st.button("+ New interview", key="cop_new", use_container_width=True):
+            st.session_state.page = "workflow"; st.rerun()
+        if st.button("Upload CV", key="cop_cv", use_container_width=True):
+            st.session_state.page = "workflow"; st.rerun()
+        if st.button("Schedule interview", key="cop_sched", use_container_width=True):
+            st.session_state.page = "calendar"; st.rerun()
+        if st.button("Generate offer letter", key="cop_offer", use_container_width=True):
+            st.session_state.page = "offerletter"; st.rerun()
 
-    st.markdown(f"""
-  <div class="dash-card">
-    <div class="dash-card-title">AI hiring insights <a href="#">Refresh</a></div>
-    <div class="insight-box">
-      <div class="insight-dept">{_ins1_title}</div>
-      <div class="insight-txt">{_ins1_txt}</div>
-      <div class="insight-ai">{_ins1_ai}</div>
-    </div>
-    <div class="insight-box">
-      <div class="insight-dept">{_ins2_title}</div>
-      <div class="insight-txt">{_ins2_txt}</div>
-      <div class="insight-ai">{_ins2_ai}</div>
-    </div>
-    <div class="insight-box">
-      <div class="insight-dept">{_ins3_title}</div>
-      <div class="insight-txt">{_ins3_txt}</div>
-      <div class="insight-ai">{_ins3_ai}</div>
-    </div>
-  </div>
-  <div class="dash-card">
-    <div class="dash-card-title">Performance metrics</div>
-    <div class="metric-mini"><span class="mm-label">Total interviews</span><span class="mm-val">{_total_interviews}</span></div>
-    <div class="metric-mini"><span class="mm-label">Selected candidates</span><span class="mm-val" style="color:#00B050">{_selected}</span></div>
-    <div class="metric-mini"><span class="mm-label">Rejected candidates</span><span class="mm-val" style="color:#CC0000">{_rejected}</span></div>
-    <div class="metric-mini"><span class="mm-label">Pending review</span><span class="mm-val" style="color:#F5A623">{_pending}</span></div>
-    <div class="metric-mini"><span class="mm-label">Accept rate</span><span class="mm-val">{_accept_rate}%</span></div>
-    <div class="metric-mini"><span class="mm-label">Avg interview score</span><span class="mm-val">{round(_avg_score,1) if _avg_score else "—"}/10</span></div>
-    <div class="metric-mini"><span class="mm-label">Open roles</span><span class="mm-val">{_open_roles}</span></div>
-    <div class="metric-mini"><span class="mm-label">Avg time-to-hire</span><span class="mm-val">{_tth} days</span></div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── RECENT INTERVIEWS TABLE ─────────────────────────────────
-    if results_h:
-        st.markdown('<div class="dash-card" style="margin-bottom:14px">', unsafe_allow_html=True)
-        st.markdown('<div class="dash-card-title">Recent interviews</div>', unsafe_allow_html=True)
-        _recent = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8]
-        _rows = []
-        for r in _recent:
-            _v = r.get("verdict","—")
-            _col = "🟢" if "GO" in str(_v).upper() and "NO" not in str(_v).upper() else "🔴" if "REJECT" in str(_v).upper() or "NO-GO" in str(_v).upper() else "🟡"
-            _rows.append({
-                "Candidate": r.get("candidate_name","—"),
-                "Role": str(r.get("job_role","—"))[:30],
-                "Score": f"{round(r.get('overall_score', r.get('score',0)),1)}/10",
-                "Verdict": f"{_col} {_v}",
-                "Date": str(r.get("date", r.get("timestamp","—")))[:10],
-            })
-        if _rows:
-            import pandas as _pdrec
-            st.dataframe(_pdrec.DataFrame(_rows), use_container_width=True, hide_index=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ── SUPPORT CENTRE ──────────────────────────────────────────
