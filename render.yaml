@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: gvs-ias
+    runtime: docker
+    dockerfilePath: Dockerfile.cloud
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+    autoDeploy: true
