@@ -3088,7 +3088,7 @@ if st.session_state.page == "home":
     KPI_H      = _json_home.loads(kpi_path_h.read_text(encoding="utf-8")) if kpi_path_h.exists() else {}
     _now_h     = _dth.now()
     _today_str = _now_h.strftime("%A, %d %B %Y  ·  %H:%M")
-   _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
+    _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
     _curr_ind    = st.session_state.get("selected_industry", "IT & Software")
 
     # ── Derived metrics ─────────────────────────────────────────
