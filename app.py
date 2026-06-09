@@ -8098,38 +8098,43 @@ elif st.session_state.page == "offerletter":
                 file_name=f"OfferLetter_{meta.get('name','candidate').replace(' ','_')}_{date.today()}.txt",
                 mime="text/plain", use_container_width=True)
         with dc2:
-            # DOCX via Node.js
+            # DOCX via python-docx (cloud compatible)
             if st.button("📄 Generate DOCX", type="primary", use_container_width=True):
-                import subprocess, json as _sj
-                OUT = ROOT / "output"
-                OUT.mkdir(exist_ok=True)
-                out_file = str(OUT / "OfferLetter.docx").replace("\\","/")
-                pkg_path = str(OUT / "node_modules" / "docx").replace("\\","/")
-                offer_escaped = st.session_state["_offer_text"].replace("\n","\\n").replace('"','\\\"')                    .replace("'","\\\'")
-                js_ol = f"""
-const {{Document,Packer,Paragraph,TextRun,AlignmentType}}=require('{pkg_path}');
-const fs=require('fs');
-const lines=`{st.session_state["_offer_text"]}`.split('\\n');
-const children=lines.map(l=>new Paragraph({{
-  spacing:{{before:120,after:60}},
-  children:[new TextRun({{text:l,font:"Calibri",size:22,color:"1a1a1a"}})]
-}}));
-const doc=new Document({{sections:[{{
-  properties:{{page:{{margin:{{top:1440,right:1440,bottom:1440,left:1440}}}}}},
-  children
-}}]}});
-Packer.toBuffer(doc).then(b=>{{fs.writeFileSync('{out_file}',b);console.log('OK');}})
-.catch(e=>{{console.error(e.message);process.exit(1);}});
-"""
-                js_path = OUT / "gen_offer.js"
-                js_path.write_text(js_ol, encoding="utf-8")
-                res = subprocess.run(["node",str(js_path)],capture_output=True,timeout=60)
-                if res.returncode == 0 and (OUT/"OfferLetter.docx").exists():
-                    with open(OUT/"OfferLetter.docx","rb") as f:
-                        st.session_state["_offer_docx"] = f.read()
-                    st.success("✅ DOCX ready")
-                else:
-                    st.error("DOCX failed — Node.js required")
+                try:
+                    from docx import Document as _DocxDoc
+                    from docx.shared import Pt, Inches, RGBColor
+                    from docx.enum.text import WD_ALIGN_PARAGRAPH
+                    import io as _io
+                    _doc = _DocxDoc()
+                    for _sec in _doc.sections:
+                        _sec.top_margin    = Inches(1)
+                        _sec.bottom_margin = Inches(1)
+                        _sec.left_margin   = Inches(1.2)
+                        _sec.right_margin  = Inches(1.2)
+                    # Company header
+                    _hdr = _doc.add_paragraph()
+                    _hdr.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    _hr = _hdr.add_run(meta.get("company","GVS Technologies"))
+                    _hr.font.name = "Calibri"; _hr.font.size = Pt(16); _hr.font.bold = True
+                    _hr.font.color.rgb = RGBColor(0x1F,0x38,0x64)
+                    _doc.add_paragraph()
+                    # Date line
+                    _dp = _doc.add_paragraph()
+                    _dp.add_run(f"Date: {date.today().strftime('%d %B %Y')}").font.size = Pt(11)
+                    _doc.add_paragraph()
+                    # Letter body
+                    for _line in st.session_state["_offer_text"].split("\n"):
+                        _p  = _doc.add_paragraph()
+                        _r  = _p.add_run(_line)
+                        _r.font.name = "Calibri"; _r.font.size = Pt(11)
+                        _p.paragraph_format.space_after = Pt(3)
+                    _buf = _io.BytesIO()
+                    _doc.save(_buf); _buf.seek(0)
+                    st.session_state["_offer_docx"] = _buf.read()
+                    st.success("✅ DOCX ready — click Download DOCX")
+                    st.rerun()
+                except Exception as _de:
+                    st.error(f"DOCX failed: {_de}")
         with dc3:
             if st.session_state.get("_offer_docx"):
                 st.download_button("⬇️ Download DOCX",
@@ -13788,6 +13793,51 @@ elif st.session_state.page == "copilot":
                 _sc2.metric("Remaining", len(_qs_todo))
                 _sc3.metric("Coverage", f"{round(len(_qs_done)/max(len(st.session_state.questions),1)*100)}%")
             with _cpb:
+                # ── PACING GUIDANCE ──────────────────────────────
+                _total_q = len(st.session_state.questions)
+                _done_q  = sum(1 for q in st.session_state.questions
+                               if st.session_state.notes.get(str(q.get("num",0)),"").strip())
+                _pct     = int(_done_q / _total_q * 100) if _total_q else 0
+                _pace_color = "#00C9A7" if _pct >= 60 else "#F5A623" if _pct >= 30 else "#FF4444"
+                st.markdown(
+                    f'<div style="background:rgba(0,0,0,0.2);border:1px solid rgba(0,201,167,0.2);'
+                    f'border-radius:8px;padding:10px 14px;margin-bottom:10px">'
+                    f'<div style="font-size:10px;color:#4A6A80;letter-spacing:0.1em;text-transform:uppercase">Interview Pace</div>'
+                    f'<div style="font-size:22px;font-weight:700;color:{_pace_color}">{_done_q}/{_total_q}</div>'
+                    f'<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:6px;margin-top:6px">'
+                    f'<div style="background:{_pace_color};width:{_pct}%;height:6px;border-radius:4px"></div></div>'
+                    f'<div style="font-size:10px;color:#4A6A80;margin-top:4px">'
+                    f'{"✅ On track" if _pct >= 60 else "⚡ Speed up" if _pct < 30 else "📊 Good pace"}</div>'
+                    f'</div>', unsafe_allow_html=True)
+
+                # ── QUICK FOLLOW-UP SUGGESTIONS ──────────────────
+                if st.button("💡 Follow-up Suggestions", use_container_width=True,
+                             disabled=not apikey.is_valid(),
+                             key="cop_followup_btn",
+                             help="AI suggests 3 follow-up questions for the current question"):
+                    _curr_idx = st.session_state.get("curr_q", 0)
+                    _curr_obj = st.session_state.questions[_curr_idx] if st.session_state.questions else {}
+                    with st.spinner("Generating..."):
+                        _fup = apikey.get_client().messages.create(
+                            model=apikey.get_model(), max_tokens=250,
+                            messages=[{"role":"user","content":
+                                f"Generate 3 sharp probing follow-up questions for:\n"
+                                f"Question: {_curr_obj.get('question','')}\n"
+                                f"Notes so far: {st.session_state.notes.get(str(_curr_obj.get('num',1)),'No notes')}\n"
+                                f"Role context: {st.session_state.jd_text[:100]}\n"
+                                f"Return 3 numbered follow-ups only."}])
+                    st.session_state["_cop_followups"] = _fup.content[0].text
+                    st.rerun()
+                if st.session_state.get("_cop_followups"):
+                    st.markdown(
+                        f'<div style="background:#0D1B2A;border:1px solid rgba(0,201,167,0.3);'
+                        f'border-radius:8px;padding:10px 12px;font-size:12px;color:#E8F2FF;line-height:1.7">'
+                        f'<div style="font-size:10px;color:#00C9A7;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">'
+                        f'💡 Follow-up Suggestions</div>'
+                        f'{st.session_state["_cop_followups"]}</div>',
+                        unsafe_allow_html=True)
+                st.divider()
+                # ── COMPETENCY ALERTS (existing) ──────────────────
                 st.markdown("#### Competency Alerts")
                 _noted_sk = set(q.get("skill","") for i,q in enumerate(st.session_state.questions) if st.session_state.notes.get(str(q.get("num",i+1)),"").strip())
                 _all_sk = set(q.get("skill","") for q in st.session_state.questions) - {""}
