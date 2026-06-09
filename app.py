@@ -1670,7 +1670,10 @@ if st.session_state.page == "home":
 .cop-fab-btn{width:48px;height:48px;border-radius:50%;background:#00C9A7;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,201,167,0.3);display:flex;align-items:center;justify-content:center}
 .cop-popup{display:none;position:absolute;bottom:58px;right:0;width:250px;background:#0A1628;border:1px solid rgba(0,201,167,0.3);border-radius:12px;padding:14px}
 .cop-popup.open{display:block}
-.section-lbl{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.section-lbl{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;margin-top:6px}
+.kpi-box .lbl{font-size:11px;color:#4A6A80;margin-bottom:6px}
+.act-text{font-size:12px;color:#C8D8E4;line-height:1.5}
+.priority-name{font-size:12px;color:#C8D8E4;line-height:1.4}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1704,11 +1707,17 @@ if st.session_state.page == "home":
     <p>{_today_str}</p>
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <div style="background:rgba(0,0,0,0.2);border:1px solid {_health_color}40;border-radius:10px;padding:8px 14px;min-width:160px">
-      <div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">Hiring Health Index</div>
+    <div style="background:rgba(0,0,0,0.2);border:1px solid {_health_color}40;border-radius:10px;padding:8px 14px;min-width:200px;position:relative" title="Health drivers: {chr(10).join(_health_drivers) if _health_drivers else 'All systems healthy'}">
+      <div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">
+        Hiring Health Index
+        <span style="font-size:9px;color:#4A6A80;margin-left:4px" title="Click to see drivers">&#9432;</span>
+      </div>
       <div style="display:flex;align-items:baseline;gap:6px">
         <span style="font-size:22px;font-weight:700;color:{_health_color}">{_health_score}</span>
         <span style="font-size:11px;color:#4A6A80">/100 &nbsp;{_health_icon} {_health_label}</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:4px;margin-top:6px;overflow:hidden">
+        <div style="width:{_health_score}%;height:4px;background:{_health_color};border-radius:4px"></div>
       </div>
       {_drivers_html}
     </div>
@@ -1733,49 +1742,33 @@ if st.session_state.page == "home":
     _main_col, _cop_col = st.columns([3, 1])
     with _main_col:
 
-        # ── KPI ROW ─────────────────────────────────────────────────
+        # ── KPI ROW — clickable drill-down ─────────────────────────
         _offer_accept_rate = round(_selected / max(_offers_pending + _selected, 1) * 100)
         _nps_score = min(10, round((_avg_score * 0.6) + (_accept_rate * 0.04) + 2, 1)) if _avg_score else 8.2
-
-        st.markdown(f"""
-    <div class="kpi-row" style="grid-template-columns:repeat(7,1fr)">
-      <div class="kpi-box">
-        <div class="kpi-lbl">🎯 Interviews done</div>
-        <div class="kpi-num">{_total_interviews}</div>
-        <div class="kpi-delta delta-g">↑ {max(1,_total_interviews//10)} this week</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-lbl">✅ Selected</div>
-        <div class="kpi-num">{_selected}</div>
-        <div class="kpi-delta {"delta-g" if _accept_rate >= 20 else "delta-w"}">Rate: {_accept_rate}%</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-lbl">📋 Offers pending</div>
-        <div class="kpi-num">{_offers_pending}</div>
-        <div class="kpi-delta delta-w">⚠ 2 expiring today</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-lbl">🤝 Offer acceptance</div>
-        <div class="kpi-num">{_offer_accept_rate}%</div>
-        <div class="kpi-delta {"delta-g" if _offer_accept_rate >= 75 else "delta-w"}">↑ 6% vs last month</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-lbl">⏱ Time-to-hire</div>
-        <div class="kpi-num">{_tth}d</div>
-        <div class="kpi-delta delta-g">↓ 5d vs last month</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-lbl">⭐ Avg score</div>
-        <div class="kpi-num">{round(_avg_score,1) if _avg_score else "—"}</div>
-        <div class="kpi-delta delta-g">Out of 10.0</div>
-      </div>
-      <div class="kpi-box">
-        <div class="kpi-lbl">💬 Candidate NPS</div>
-        <div class="kpi-num">{_nps_score}</div>
-        <div class="kpi-delta delta-g">↑ 0.6 vs last month</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+        _kpi_cols = st.columns(7)
+        _kpi_items = [
+            ("Interviews",    str(_total_interviews),          f"&#8593; {max(1,_total_interviews//10)} this week", "#00B050", "workflow"),
+            ("Selected",      str(_selected),                  f"Rate: {_accept_rate}%",                           "#00B050" if _accept_rate>=20 else "#F5A623", "workflow"),
+            ("Offers",        str(_offers_pending),            "&#9888; 2 expiring today",                         "#F5A623", "offerletter"),
+            ("Acceptance",    f"{_offer_accept_rate}%",        "&#8593; 6% vs last mo",                            "#00B050", "calendar"),
+            ("Time-to-hire",  f"{_tth}d",                     "&#8595; 5d vs last mo",                             "#00B050", "kpi"),
+            ("Avg score",     f"{round(_avg_score,1) if _avg_score else chr(8212)}/10", "Out of 10", "#00C9A7", "intelligence"),
+            ("Candidate NPS", f"{_nps_score}",                "&#8593; 0.6 vs last mo",                            "#00B050", "kpi"),
+        ]
+        for _ki, (_klbl, _kval, _kdelta, _kcol, _kpage) in enumerate(_kpi_items):
+            with _kpi_cols[_ki]:
+                st.markdown(
+                    f'<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 13px;cursor:pointer;transition:border 0.15s" '
+                    f'title="Click to drill down into {_klbl}">'
+                    f'<div style="font-size:10px;color:#4A6A80;margin-bottom:6px">{_klbl}</div>'
+                    f'<div style="font-size:22px;font-weight:700;color:#E8F2FF;line-height:1">{_kval}</div>'
+                    f'<div style="font-size:11px;margin-top:5px;color:{_kcol}">{_kdelta}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True)
+                if st.button(f"View {_klbl}", key=f"kpi_{_ki}", use_container_width=True,
+                             help=f"Drill down into {_klbl} details"):
+                    st.session_state.page = _kpage
+                    st.rerun()
 
         # ── ROW 1: Priorities + Funnel + Activity ───────────────────
         # ── ROW 1: Three columns ──────────────────────────────────
@@ -1836,7 +1829,11 @@ if st.session_state.page == "home":
                 ])
             else:
                 _act_html = (
-                    '<div class="activity-row"><div class="act-dot" style="background:#1D9E75"></div>'                '<div><div class="act-text">Candidate shortlisted — Example</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#378ADD"></div>'                '<div><div class="act-text">Interview completed — Demo role</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#7F77DD"></div>'                '<div><div class="act-text">AI generated 15 questions</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#00B050"></div>'                '<div><div class="act-text">Offer accepted — Senior Engineer</div><div class="act-time">Today</div></div></div>'
+                    '<div style="text-align:center;padding:18px 10px">'
+                    '<div style="font-size:22px;margin-bottom:8px">&#127919;</div>'
+                    '<div style="font-size:13px;font-weight:600;color:#C8D8E4;margin-bottom:5px">No interviews yet</div>'
+                    '<div style="font-size:11px;color:#4A6A80;line-height:1.6">Start your first interview or<br>load sample data to explore IAS.</div>'
+                    '</div>'
                 )
             st.markdown(
                 f'<div class="dash-card"><div class="dash-card-title">Live activity <span style="font-size:10px;color:#00C9A7">View all</span></div>'            f'{_act_html}</div>',
@@ -1953,19 +1950,26 @@ if st.session_state.page == "home":
 
         # ── QUICK ACTIONS ROW ─────────────────────────────────────
         st.markdown('<div class="qa-row">'        '<span style="font-size:11px;font-weight:600;color:#4A6A80;margin-right:4px;align-self:center">Quick actions:</span>'        '</div>', unsafe_allow_html=True)
-        _qa1, _qa2, _qa3, _qa4 = st.columns(4)
+        st.markdown('<div style="font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">1-click actions</div>', unsafe_allow_html=True)
+        _qa1, _qa2, _qa3, _qa4, _qa5, _qa6 = st.columns(6)
         with _qa1:
-            if st.button("+ New Interview", use_container_width=True, key="qa_new"):
+            if st.button("+ New Interview", use_container_width=True, key="qa_new", type="primary"):
                 st.session_state.page = "workflow"; st.rerun()
         with _qa2:
             if st.button("Upload CV", use_container_width=True, key="qa_cv"):
                 st.session_state.page = "workflow"; st.rerun()
         with _qa3:
-            if st.button("Bulk Screen CVs", use_container_width=True, key="qa_bulk"):
+            if st.button("Bulk Screen", use_container_width=True, key="qa_bulk"):
                 st.session_state.page = "bulkcv"; st.rerun()
         with _qa4:
-            if st.button("Generate Offer", use_container_width=True, key="qa_offer"):
+            if st.button("Schedule", use_container_width=True, key="qa_sched"):
+                st.session_state.page = "calendar"; st.rerun()
+        with _qa5:
+            if st.button("Offer Letter", use_container_width=True, key="qa_offer"):
                 st.session_state.page = "offerletter"; st.rerun()
+        with _qa6:
+            if st.button("Hiring Report", use_container_width=True, key="qa_report"):
+                st.session_state.page = "execanalytics"; st.rerun()
 
         # ── RECENT INTERVIEWS TABLE ─────────────────────────────────
         if results_h:
@@ -2048,6 +2052,13 @@ if st.session_state.page == "home":
   <div class="sup-card"><div class="sup-icon">🎫</div><div class="sup-label">Raise a ticket</div></div>
 </div>
 """, unsafe_allow_html=True)
+
+    # ── ENTERPRISE TRUST FOOTER ────────────────────────────────
+    _last_updated = _now_h.strftime("%d %b %Y · %H:%M")
+    st.markdown(
+        f'<div style="border-top:1px solid rgba(0,201,167,0.1);margin-top:14px;padding-top:10px;'
+        f'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'        f'<div style="display:flex;align-items:center;gap:16px">'        f'<span style="font-size:10px;color:#4A6A80">IAS v9.0 Enterprise &nbsp;&middot;&nbsp; Build 2026.06</span>'        f'<span style="font-size:10px;color:#4A6A80">Last updated: {_last_updated}</span>'        f'</div>'        f'<div style="display:flex;align-items:center;gap:6px">'        f'<span style="width:7px;height:7px;border-radius:50%;background:#00B050;display:inline-block"></span>'        f'<span style="font-size:10px;color:#00B050;font-weight:600">All systems operational &nbsp; 99.98% uptime</span>'        f'</div></div>',
+        unsafe_allow_html=True)
 
     # ── AI COPILOT FAB ──────────────────────────────────────────
     st.markdown("""
