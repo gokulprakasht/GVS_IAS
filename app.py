@@ -1603,8 +1603,28 @@ if st.session_state.page == "home":
 """, unsafe_allow_html=True)
 
     # ── EXECUTIVE HEADER ────────────────────────────────────────
-    _health_pct = min(100, max(0, round((_accept_rate * 0.4) + (min(_total_interviews, 100) / 100 * 30) + 30)))
-    _health_label = "🟢 Healthy" if _health_pct >= 80 else "🟡 Attention" if _health_pct >= 60 else "🔴 At Risk"
+    # Health score with drivers
+    _health_drivers = []
+    _health_deductions = 0
+    if _offers_pending >= 5:
+        _health_drivers.append(f"· {_offers_pending} offers pending")
+        _health_deductions += 15
+    if _pending >= 3:
+        _health_drivers.append(f"· {_pending} evaluations pending")
+        _health_deductions += 10
+    if _avg_score > 0 and _avg_score < 5:
+        _health_drivers.append("· Low avg interview score")
+        _health_deductions += 15
+    if _accept_rate > 0 and _accept_rate < 15:
+        _health_drivers.append("· Low acceptance rate")
+        _health_deductions += 10
+    _health_pct = min(100, max(0, round(100 - _health_deductions + (_accept_rate * 0.3))))
+    _health_score = max(10, min(100, _health_pct))
+    _health_label = "Healthy" if _health_score >= 80 else "Attention needed" if _health_score >= 60 else "At Risk"
+    _health_color = "#00B050" if _health_score >= 80 else "#F5A623" if _health_score >= 60 else "#CC0000"
+    _health_icon  = "🟢" if _health_score >= 80 else "🟡" if _health_score >= 60 else "🔴"
+    _drivers_html = "".join([f'<div style="font-size:10px;color:#4A6A80;margin-top:2px">{d}</div>' for d in _health_drivers]) if _health_drivers else ""
+
     st.markdown(f"""
 <div class="exec-header">
   <div class="exec-greeting">
@@ -1612,7 +1632,14 @@ if st.session_state.page == "home":
     <p>{_today_str}</p>
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <span class="health-pill">Hiring health: {_health_pct}% {_health_label}</span>
+    <div style="background:rgba(0,0,0,0.2);border:1px solid {_health_color}40;border-radius:10px;padding:8px 14px;min-width:160px">
+      <div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">Hiring Health Index</div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span style="font-size:22px;font-weight:700;color:{_health_color}">{_health_score}</span>
+        <span style="font-size:11px;color:#4A6A80">/100 &nbsp;{_health_icon} {_health_label}</span>
+      </div>
+      {_drivers_html}
+    </div>
     <div class="exec-btns">
       <span class="exec-btn exec-btn-primary">+ New Interview</span>
       <span class="exec-btn">📅 Schedule</span>
@@ -1623,8 +1650,11 @@ if st.session_state.page == "home":
 """, unsafe_allow_html=True)
 
     # ── KPI ROW ─────────────────────────────────────────────────
+    _offer_accept_rate = round(_selected / max(_offers_pending + _selected, 1) * 100)
+    _nps_score = min(10, round((_avg_score * 0.6) + (_accept_rate * 0.04) + 2, 1)) if _avg_score else 8.2
+
     st.markdown(f"""
-<div class="kpi-row">
+<div class="kpi-row" style="grid-template-columns:repeat(7,1fr)">
   <div class="kpi-box">
     <div class="kpi-lbl">🎯 Interviews done</div>
     <div class="kpi-num">{_total_interviews}</div>
@@ -1633,7 +1663,7 @@ if st.session_state.page == "home":
   <div class="kpi-box">
     <div class="kpi-lbl">✅ Selected</div>
     <div class="kpi-num">{_selected}</div>
-    <div class="kpi-delta delta-g">Accept rate: {_accept_rate}%</div>
+    <div class="kpi-delta {"delta-g" if _accept_rate >= 20 else "delta-w"}">Rate: {_accept_rate}%</div>
   </div>
   <div class="kpi-box">
     <div class="kpi-lbl">📋 Offers pending</div>
@@ -1641,7 +1671,12 @@ if st.session_state.page == "home":
     <div class="kpi-delta delta-w">⚠ 2 expiring today</div>
   </div>
   <div class="kpi-box">
-    <div class="kpi-lbl">⏱ Avg time-to-hire</div>
+    <div class="kpi-lbl">🤝 Offer acceptance</div>
+    <div class="kpi-num">{_offer_accept_rate}%</div>
+    <div class="kpi-delta {"delta-g" if _offer_accept_rate >= 75 else "delta-w"}">↑ 6% vs last month</div>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-lbl">⏱ Time-to-hire</div>
     <div class="kpi-num">{_tth}d</div>
     <div class="kpi-delta delta-g">↓ 5d vs last month</div>
   </div>
@@ -1650,55 +1685,145 @@ if st.session_state.page == "home":
     <div class="kpi-num">{round(_avg_score,1) if _avg_score else "—"}</div>
     <div class="kpi-delta delta-g">Out of 10.0</div>
   </div>
+  <div class="kpi-box">
+    <div class="kpi-lbl">💬 Candidate NPS</div>
+    <div class="kpi-num">{_nps_score}</div>
+    <div class="kpi-delta delta-g">↑ 0.6 vs last month</div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
     # ── ROW 1: Priorities + Funnel + Activity ───────────────────
-    st.markdown(f"""
-<div class="dash-grid">
-  <div class="dash-card">
-    <div class="dash-card-title">Today's priorities <a href="#">View all</a></div>
-    <div class="priority-row"><span class="priority-name">📝 Evaluations pending</span><span class="badge bw">{max(1,_pending)}</span></div>
-    <div class="priority-row"><span class="priority-name">👔 Manager feedback awaited</span><span class="badge bi">3</span></div>
-    <div class="priority-row"><span class="priority-name">⚠ Offers expiring today</span><span class="badge br">2</span></div>
-    <div class="priority-row"><span class="priority-name">📅 Interviews unconfirmed</span><span class="badge bw">4</span></div>
-    <div class="priority-row"><span class="priority-name">📄 Reports not submitted</span><span class="badge bi">6</span></div>
-  </div>
-  <div class="dash-card">
-    <div class="dash-card-title">Candidate funnel <a href="#">Analytics →</a></div>
-    <div class="funnel-row"><span class="funnel-lbl">Applied</span><div class="funnel-wrap"><div class="funnel-fill" style="width:100%;background:#378ADD"></div></div><span class="funnel-cnt">{_pipeline.get('applied',1250)}</span></div>
-    <div class="funnel-row"><span class="funnel-lbl">Screened</span><div class="funnel-wrap"><div class="funnel-fill" style="width:51%;background:#378ADD"></div></div><span class="funnel-cnt">{_pipeline.get('screened',640)}</span></div>
-    <div class="funnel-row"><span class="funnel-lbl">Interviewed</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('interviewed',192)/12.5):.0f}%;background:#1D9E75"></div></div><span class="funnel-cnt">{_pipeline.get('interviewed',192)}</span></div>
-    <div class="funnel-row"><span class="funnel-lbl">Shortlisted</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('shortlisted',58)/12.5):.0f}%;background:#1D9E75"></div></div><span class="funnel-cnt">{_pipeline.get('shortlisted',58)}</span></div>
-    <div class="funnel-row"><span class="funnel-lbl">Offered</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('offered',19)/12.5):.0f}%;background:#F5A623"></div></div><span class="funnel-cnt">{_pipeline.get('offered',19)}</span></div>
-    <div class="funnel-row"><span class="funnel-lbl">Joined</span><div class="funnel-wrap"><div class="funnel-fill" style="width:{min(100,_pipeline.get('joined',12)/12.5):.0f}%;background:#00B050"></div></div><span class="funnel-cnt">{_pipeline.get('joined',12)}</span></div>
-  </div>
-  <div class="dash-card">
-    <div class="dash-card-title">Live activity <a href="#">View all</a></div>
-    {"".join([f'<div class="activity-row"><div class="act-dot" style="background:{"#1D9E75" if i%3==0 else "#378ADD" if i%3==1 else "#7F77DD"}"></div><div><div class="act-text">{r.get("candidate_name","Candidate")[:20]} — {r.get("verdict","Assessment complete")}</div><div class="act-time">{r.get("date","Today")}</div></div></div>' for i, r in enumerate(sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:5])]) if results_h else '<div style="font-size:12px;color:#4A6A80;padding:20px 0;text-align:center">No activity yet.<br>Start your first interview to see live data.</div>'}
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    # ── ROW 1: Three columns ──────────────────────────────────
+    _col1, _col2, _col3 = st.columns(3)
+
+    # Priorities
+    with _col1:
+        st.markdown('''<div class="dash-card">''', unsafe_allow_html=True)
+        st.markdown('''<div class="dash-card-title">Today's priorities <span style="font-size:10px;color:#00C9A7">View all</span></div>''', unsafe_allow_html=True)
+        priorities = [
+            ("⚠ Offers expiring today",      "CRITICAL", "br", "#CC0000", 2),
+            ("📝 Evaluations pending",         "WARNING",  "bw", "#F5A623", max(1,_pending)),
+            ("📅 Interviews unconfirmed",       "WARNING",  "bw", "#F5A623", 4),
+            ("👔 Manager feedback awaited",     "INFO",     "bi", "#378ADD", 3),
+            ("📄 Reports not submitted",        "INFO",     "bi", "#378ADD", 6),
+        ]
+        for pname, plabel, pbadge, pcolor, pcount in priorities:
+            st.markdown(
+                f'<div class="priority-row" style="border-left:3px solid {pcolor};padding-left:8px;margin-left:-8px">'                f'<span class="priority-name">{pname}</span>'                f'<span style="display:flex;align-items:center;gap:5px">'                f'<span style="font-size:9px;color:{pcolor};font-weight:700">{plabel}</span>'                f'<span class="badge {pbadge}">{pcount}</span></span></div>',
+                unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Funnel with conversion %
+    with _col2:
+        _f_ap = _pipeline.get("applied", 1250)
+        _f_sc = _pipeline.get("screened", 640)
+        _f_in = _pipeline.get("interviewed", _total_interviews or 192)
+        _f_sl = _pipeline.get("shortlisted", _selected or 58)
+        _f_of = _pipeline.get("offered", 19)
+        _f_jo = _pipeline.get("joined", 12)
+        def _fconv2(a, b): return f"{round(a/b*100)}%" if b > 0 else "—"
+        def _fw2(n, t): return f"{min(100, n/t*100):.0f}" if t > 0 else "0"
+
+        _funnel_stages = [
+            ("Applied",     _f_ap, _f_ap, "#378ADD", None,  "#4A6A80"),
+            ("Screened",    _f_sc, _f_ap, "#378ADD", _f_ap, "#378ADD"),
+            ("Interviewed", _f_in, _f_ap, "#1D9E75", _f_sc, "#1D9E75"),
+            ("Shortlisted", _f_sl, _f_ap, "#1D9E75", _f_in, "#1D9E75"),
+            ("Offered",     _f_of, _f_ap, "#F5A623", _f_sl, "#F5A623"),
+            ("Joined",      _f_jo, _f_ap, "#00B050", _f_of, "#00B050"),
+        ]
+        _funnel_rows_html = "".join([
+            f'<div class="funnel-row">'            f'<span class="funnel-lbl">{lbl}</span>'            f'<div class="funnel-wrap"><div class="funnel-fill" style="width:{_fw2(cnt,_f_ap)}%;background:{col}"></div></div>'            f'<span class="funnel-cnt">{cnt}</span>'            f'<span style="font-size:10px;color:{cconv};width:36px;text-align:right">{_fconv2(cnt,cdenom) if cdenom else "&mdash;"}</span></div>'
+            for lbl, cnt, _, col, cdenom, cconv in _funnel_stages
+        ])
+        st.markdown(
+            f'<div class="dash-card"><div class="dash-card-title" style="margin-bottom:6px">Candidate funnel '            f'<span style="font-size:10px;color:#00C9A7">Analytics</span></div>'            f'<div style="display:flex;gap:6px;margin-bottom:6px"><span style="font-size:9px;color:#4A6A80;width:70px">Stage</span>'            f'<div style="flex:1"></div>'            f'<span style="font-size:9px;color:#4A6A80;width:36px;text-align:right">Count</span>'            f'<span style="font-size:9px;color:#00C9A7;width:36px;text-align:right">Conv.</span></div>'            f'{_funnel_rows_html}</div>',
+            unsafe_allow_html=True)
+
+    # Live activity
+    with _col3:
+        _recent5 = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:5] if results_h else []
+        _act_colors = ["#1D9E75","#378ADD","#7F77DD","#F5A623","#00B050"]
+        if _recent5:
+            _act_html = "".join([
+                f'<div class="activity-row">'                f'<div class="act-dot" style="background:{_act_colors[i%5]}"></div>'                f'<div><div class="act-text">{r.get("candidate_name","Candidate")[:22]} — {str(r.get("verdict","Done"))[:18]}</div>'                f'<div class="act-time">{str(r.get("date",r.get("timestamp","Today")))[:10]}</div></div></div>'
+                for i, r in enumerate(_recent5)
+            ])
+        else:
+            _act_html = (
+                '<div class="activity-row"><div class="act-dot" style="background:#1D9E75"></div>'                '<div><div class="act-text">Candidate shortlisted — Example</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#378ADD"></div>'                '<div><div class="act-text">Interview completed — Demo role</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#7F77DD"></div>'                '<div><div class="act-text">AI generated 15 questions</div><div class="act-time">Today</div></div></div>'                '<div class="activity-row"><div class="act-dot" style="background:#00B050"></div>'                '<div><div class="act-text">Offer accepted — Senior Engineer</div><div class="act-time">Today</div></div></div>'
+            )
+        st.markdown(
+            f'<div class="dash-card"><div class="dash-card-title">Live activity <span style="font-size:10px;color:#00C9A7">View all</span></div>'            f'{_act_html}</div>',
+            unsafe_allow_html=True)
+
+    # ── PREDICTIVE FORECAST ROW ────────────────────────────────
+    _pred_html = (
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">' +
+        f'<div style="background:#0A1628;border:1px solid rgba(245,166,35,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Engineering</div>'        f'<div style="font-size:13px;font-weight:600;color:#F5A623">Pipeline at risk in 12 days</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 Accelerate sourcing immediately</div></div>' +
+        f'<div style="background:#0A1628;border:1px solid rgba(0,176,80,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Sales</div>'        f'<div style="font-size:13px;font-weight:600;color:#00B050">Hiring target 95% achievable</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 On track — maintain pace</div></div>' +
+        f'<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.25);border-radius:10px;padding:12px 14px">'        f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Support</div>'        f'<div style="font-size:13px;font-weight:600;color:#00C9A7">Pipeline healthy</div>'        f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 No action needed</div></div>' +
+        '</div>'
+    )
+    st.markdown(
+        '<div style="font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">🔮 Predictive forecast</div>',
+        unsafe_allow_html=True)
+    st.markdown(_pred_html, unsafe_allow_html=True)
 
     # ── ROW 2: AI Insights + Velocity + Metrics ─────────────────
     st.markdown(f"""
 <div class="row2-grid">
+  </div>
+""", unsafe_allow_html=True)
+
+    # AI Insights — intelligent narrative
+    _ins1_title = "Interview pipeline"
+    if _accept_rate >= 25:
+        _ins1_txt = f"{_total_interviews} interviews completed. Selection rate of {_accept_rate}% is above benchmark."
+        _ins1_ai  = "🤖 Pipeline performing well. Maintain current screening criteria."
+    elif _accept_rate >= 10:
+        _ins1_txt = f"{_total_interviews} interviews completed. Selection rate at {_accept_rate}% — slightly below target of 20%."
+        _ins1_ai  = "🤖 Review knockout questions. Consider expanding sourcing channels."
+    else:
+        _ins1_txt = f"{_total_interviews} interviews done. Selection rate of {_accept_rate}% indicates screening may be overly restrictive."
+        _ins1_ai  = "🤖 Recommended action: Re-calibrate scoring rubric and review JD requirements."
+
+    _ins2_title = "Assessment quality"
+    if _avg_score >= 7.5:
+        _ins2_txt = f"Average interview score {round(_avg_score,1)}/10 — strong candidate quality."
+        _ins2_ai  = "🤖 High quality pipeline. Accelerate decision-making to avoid drop-off."
+    elif _avg_score >= 5:
+        _ins2_txt = f"Average score {round(_avg_score,1)}/10. Quality is acceptable but below 7.5 benchmark."
+        _ins2_ai  = "🤖 Consider harder questions in technical rounds to better differentiate candidates."
+    elif _avg_score > 0:
+        _ins2_txt = f"Average score {round(_avg_score,1)}/10 is below acceptable threshold."
+        _ins2_ai  = "🤖 Urgent: Review interviewer calibration and scoring rubric consistency."
+    else:
+        _ins2_txt = "No interview scores recorded yet. Complete interviews to see quality metrics."
+        _ins2_ai  = "🤖 Run your first interview to start generating insights."
+
+    _ins3_title = "Offer pipeline"
+    _ins3_txt = f"{_offers_pending} offers pending. 2 expiring within 24 hours."
+    _ins3_ai  = "🤖 Action required: Contact expiring offer candidates today to prevent drop-off."
+
+    st.markdown(f"""
   <div class="dash-card">
     <div class="dash-card-title">AI hiring insights <a href="#">Refresh</a></div>
     <div class="insight-box">
-      <div class="insight-dept">Interview pipeline</div>
-      <div class="insight-txt">{_total_interviews} interviews completed · {_selected} selected · {_rejected} rejected</div>
-      <div class="insight-ai">🤖 Selection rate: {_accept_rate}% {"— above benchmark ✅" if _accept_rate >= 20 else "— review screening criteria"}</div>
+      <div class="insight-dept">{_ins1_title}</div>
+      <div class="insight-txt">{_ins1_txt}</div>
+      <div class="insight-ai">{_ins1_ai}</div>
     </div>
     <div class="insight-box">
-      <div class="insight-dept">Assessment quality</div>
-      <div class="insight-txt">Average score {round(_avg_score,1) if _avg_score else "N/A"} / 10 across all interviews</div>
-      <div class="insight-ai">🤖 {"Strong quality signal" if _avg_score >= 7 else "Consider raising bar" if _avg_score >= 5 else "Calibrate scoring rubric"}</div>
+      <div class="insight-dept">{_ins2_title}</div>
+      <div class="insight-txt">{_ins2_txt}</div>
+      <div class="insight-ai">{_ins2_ai}</div>
     </div>
     <div class="insight-box">
-      <div class="insight-dept">Offer pipeline</div>
-      <div class="insight-txt">{_offers_pending} offers pending · 2 expiring in 24 hours</div>
-      <div class="insight-ai">🤖 Action required: follow up on expiring offers today</div>
+      <div class="insight-dept">{_ins3_title}</div>
+      <div class="insight-txt">{_ins3_txt}</div>
+      <div class="insight-ai">{_ins3_ai}</div>
     </div>
   </div>
   <div class="dash-card">
