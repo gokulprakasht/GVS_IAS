@@ -62,6 +62,341 @@ def _sanitize_brand():
 
 _sanitize_brand()
 
+# ══════════════════════════════════════════════════════════════════════════════
+# IAS MULTI-INDUSTRY FRAMEWORK — v1.0
+# GVS Technologies · Gokul Prakash T · Innovate before you automate
+# 12 industry verticals · 85+ role templates · 420+ competencies
+# ══════════════════════════════════════════════════════════════════════════════
+
+IND_CONFIG = {
+    "Telecom & Networks": {
+        "icon": "🌐", "color": "#00C9A7",
+        "short": "telecom",
+        "description": "OSS/BSS, 5G, RAN, Network Operations, Cloud RAN, ORAN",
+        "roles": [
+            "5G Solutions Architect", "OSS/BSS Engineer", "Network Operations Manager",
+            "RAN Engineer", "Core Network Architect", "NOC Lead",
+            "Telecom Programme Manager", "BSS Product Owner", "Network Security Engineer",
+            "ORAN Specialist", "Cloud RAN Architect", "Autonomous Networks Lead",
+            "Order-to-Activate Lead", "Trouble-to-Resolve Manager", "VoIP Engineer",
+            "Network Test Engineer", "Telecom DevOps Engineer", "CTO / VP Networks",
+        ],
+        "competencies": [
+            "5G SA/NSA Architecture", "OSS/BSS Transformation", "FCAPS Management",
+            "Nokia NetAct NMS", "Zero-Touch Provisioning", "TM Forum Frameworks",
+            "Network Slicing", "ORAN Integration", "LTE/NR Protocols",
+            "SLA Management", "Fault Management", "Performance Engineering",
+            "Capacity Planning", "Network Automation", "Cloud-Native Telco",
+        ],
+        "jd_keywords": ["5G","OSS","BSS","RAN","ORAN","NetAct","ZTP","TM Forum","FCAPS","network slicing","autonomous networks"],
+        "salary_range": {"IN": "₹18–55 LPA", "UAE": "$80–180K", "EU": "€70–140K", "US": "$120–220K"},
+        "demand_signal": "↑ 28% YoY — 5G rollouts driving acute demand",
+        "interview_context": "Focus on real-world network architecture decisions, OSS/BSS integration patterns, and autonomous network capabilities. Probe vendor experience (Nokia, Ericsson, Huawei) and protocol depth.",
+    },
+    "IT & Software": {
+        "icon": "💻", "color": "#378ADD",
+        "short": "it_software",
+        "description": "Software Engineering, Cloud, DevOps, Data, AI/ML, Security",
+        "roles": [
+            "Senior Software Engineer", "Cloud Solutions Architect", "DevOps Engineer",
+            "Data Engineer", "ML Engineer", "Platform Engineer",
+            "Security Engineer", "Site Reliability Engineer", "Tech Lead",
+            "Engineering Manager", "CTO / VP Engineering", "Product Manager",
+            "QA Lead", "Mobile Developer", "Frontend Architect",
+        ],
+        "competencies": [
+            "System Design", "Microservices Architecture", "Kubernetes/Docker",
+            "CI/CD Pipelines", "AWS/Azure/GCP", "Python/Java/Go",
+            "React/Node.js", "Data Pipelines", "MLOps", "Security Engineering",
+            "API Design", "Agile/SAFe", "Code Review", "Infrastructure as Code",
+            "Observability & Monitoring",
+        ],
+        "jd_keywords": ["microservices","kubernetes","CI/CD","cloud","python","java","distributed systems","API","DevOps","SRE"],
+        "salary_range": {"IN": "₹12–80 LPA", "UAE": "$70–200K", "EU": "€60–150K", "US": "$100–280K"},
+        "demand_signal": "↑ 35% YoY — AI/ML and cloud migration driving explosive growth",
+        "interview_context": "Use system design, coding, and architectural trade-off questions. Focus on scalability, reliability, and cloud-native patterns. Include LLM/AI experience for senior roles.",
+    },
+    "BFSI": {
+        "icon": "🏦", "color": "#7F77DD",
+        "short": "bfsi",
+        "description": "Banking, Financial Services, Insurance, Fintech",
+        "roles": [
+            "Risk Manager", "Quantitative Analyst", "Compliance Officer",
+            "Investment Banker", "Credit Analyst", "Fintech Product Manager",
+            "Data Scientist — Risk", "AML Analyst", "Core Banking Engineer",
+            "Payment Systems Architect", "Actuary", "Wealth Manager",
+            "RegTech Lead", "Digital Banking Head", "CFO / Finance Director",
+        ],
+        "competencies": [
+            "Risk Modelling", "Basel III/IV", "AML/KYC Compliance",
+            "Payment Rails (SWIFT/ISO 20022)", "Regulatory Compliance",
+            "Financial Modelling", "Credit Scoring", "Derivatives",
+            "Capital Markets", "Fraud Detection", "IFRS 9",
+            "Open Banking / PSD2", "Stress Testing", "Treasury Management",
+            "SEPA / Payment Infrastructure",
+        ],
+        "jd_keywords": ["risk","compliance","AML","KYC","Basel","fintech","payments","credit","capital markets","regulatory"],
+        "salary_range": {"IN": "₹15–90 LPA", "UAE": "$90–250K", "EU": "€80–200K", "US": "$120–350K"},
+        "demand_signal": "↑ 22% YoY — Fintech disruption and regulatory changes driving hiring",
+        "interview_context": "Probe regulatory knowledge depth (Basel, AML, GDPR), quantitative skills, and risk frameworks. Senior roles need P&L and CxO stakeholder experience.",
+    },
+    "Healthcare & Pharma": {
+        "icon": "🏥", "color": "#00B050",
+        "short": "healthcare",
+        "description": "Clinical, Pharmaceuticals, Medical Devices, Health IT",
+        "roles": [
+            "Clinical Data Manager", "Medical Affairs Lead", "Regulatory Affairs Manager",
+            "Clinical Trials Director", "Healthcare IT Architect", "Pharmacovigilance Officer",
+            "Chief Medical Officer", "Health Informatics Lead", "Hospital Administrator",
+            "MedTech Product Manager", "R&D Director", "Drug Safety Officer",
+            "Quality Assurance Manager", "Medical Device Engineer", "Digital Health Lead",
+        ],
+        "competencies": [
+            "GCP / GMP Standards", "FDA / EMA Regulations", "Clinical Trial Design",
+            "CTMS Platforms", "HL7 / FHIR", "Medical Coding (ICD-10)",
+            "Pharmacovigilance", "CAPA Management", "Biostatistics",
+            "Medical Writing", "ICH Guidelines", "EHR / EMR Systems",
+            "Health Economics", "HIPAA Compliance", "ISO 13485 (Medical Devices)",
+        ],
+        "jd_keywords": ["GCP","GMP","FDA","clinical trials","pharmacovigilance","HL7","FHIR","regulatory","medical devices","ICH"],
+        "salary_range": {"IN": "₹12–60 LPA", "UAE": "$80–200K", "EU": "€65–160K", "US": "$100–280K"},
+        "demand_signal": "↑ 18% YoY — Post-COVID investment in digital health and genomics",
+        "interview_context": "Regulatory knowledge is non-negotiable. Probe real trial experience, adverse event handling, and quality system understanding. Clinical vs commercial roles need very different assessment.",
+    },
+    "Manufacturing": {
+        "icon": "🏭", "color": "#F5A623",
+        "short": "manufacturing",
+        "description": "Automotive, Aerospace, FMCG, Electronics, Heavy Industry",
+        "roles": [
+            "Plant Manager", "Manufacturing Engineer", "Quality Manager",
+            "Supply Chain Director", "Production Lead", "Lean Six Sigma Master Black Belt",
+            "Automation Engineer", "Process Engineer", "EHS Manager",
+            "Operations Director", "Industrial Engineer", "Maintenance Manager",
+            "R&D Engineer", "Materials Manager", "VP Manufacturing",
+        ],
+        "competencies": [
+            "Lean Manufacturing", "Six Sigma (DMAIC)", "Kaizen / Continuous Improvement",
+            "OEE Optimisation", "SAP ERP / MES", "SCADA / PLC Programming",
+            "Predictive Maintenance", "Quality Management Systems", "ISO 9001 / IATF 16949",
+            "Supply Chain Optimisation", "Industry 4.0 / IIoT", "Value Stream Mapping",
+            "PFMEA / DFMEA", "TPM", "Statistical Process Control",
+        ],
+        "jd_keywords": ["lean","six sigma","OEE","kaizen","SCADA","PLC","ERP","ISO 9001","IATF","automation","Industry 4.0"],
+        "salary_range": {"IN": "₹10–45 LPA", "UAE": "$60–160K", "EU": "€55–130K", "US": "$90–200K"},
+        "demand_signal": "↑ 15% YoY — Industry 4.0 and reshoring driving transformation roles",
+        "interview_context": "Focus on tangible improvement metrics (OEE, defect rates, cycle time). Probe problem-solving depth with real plant floor scenarios. Certifications (LSS, PMP) are differentiators.",
+    },
+    "Consulting & Professional Services": {
+        "icon": "💼", "color": "#CC0066",
+        "short": "consulting",
+        "description": "Management Consulting, PMO, Strategy, Digital Transformation",
+        "roles": [
+            "Management Consultant", "Strategy Director", "PMO Manager",
+            "Change Manager", "Business Analyst", "Solutions Architect",
+            "Delivery Head", "Practice Lead", "Partner / Principal",
+            "Digital Transformation Lead", "Process Excellence Lead", "IT Strategy Consultant",
+            "Agile Coach", "Bid Manager", "Pre-sales Director",
+        ],
+        "competencies": [
+            "Strategy Frameworks (McKinsey, BCG)", "Programme Delivery", "Stakeholder Management",
+            "Business Case Development", "P&L Ownership", "Change Management (Prosci/ADKAR)",
+            "Proposal / Bid Writing", "CxO Engagement", "Agile / SAFe Transformation",
+            "Risk Management", "Financial Modelling", "Operating Model Design",
+            "Client Development", "Value Realisation", "Executive Communication",
+        ],
+        "jd_keywords": ["consulting","strategy","PMO","transformation","stakeholder","P&L","bid","pre-sales","change management","Agile"],
+        "salary_range": {"IN": "₹15–70 LPA", "UAE": "$90–220K", "EU": "€75–180K", "US": "$120–300K"},
+        "demand_signal": "↑ 20% YoY — Digital transformation mandates sustaining demand",
+        "interview_context": "Use case study and scenario-based questions. Probe structured thinking, commercial acumen, and executive presence. Real client engagement stories are key differentiators.",
+    },
+    "Retail & E-commerce": {
+        "icon": "🛒", "color": "#FF6B35",
+        "short": "retail",
+        "description": "Omnichannel Retail, E-commerce, Supply Chain, Customer Experience",
+        "roles": [
+            "Head of E-commerce", "Supply Chain Manager", "Merchandising Director",
+            "CX Manager", "Digital Marketing Lead", "Retail Technology Head",
+            "Omnichannel Lead", "Demand Planner", "Category Manager",
+            "Store Operations Director", "Data Analytics Lead", "Pricing Analyst",
+            "Fulfilment Director", "Chief Digital Officer", "Chief Commercial Officer",
+        ],
+        "competencies": [
+            "Omnichannel Strategy", "Demand Planning & Forecasting", "Inventory Management",
+            "Category Management", "CRM / Loyalty Programmes", "Digital Marketing (SEO/SEM)",
+            "Pricing Optimisation", "Last-mile Logistics", "Customer Analytics",
+            "Personalisation Engines", "Retail ERP (SAP/Oracle)", "Visual Merchandising",
+            "Loss Prevention", "ESG / Sustainable Retail", "Marketplace Strategy",
+        ],
+        "jd_keywords": ["omnichannel","e-commerce","supply chain","demand planning","CRM","digital marketing","category management","fulfilment"],
+        "salary_range": {"IN": "₹10–50 LPA", "UAE": "$70–180K", "EU": "€55–140K", "US": "$90–220K"},
+        "demand_signal": "↑ 24% YoY — Quick commerce and D2C brands creating new senior roles",
+        "interview_context": "Anchor on commercial outcomes — GMV, conversion, NPS. Probe supply chain resilience and omnichannel execution. Digital-first experience essential for senior roles.",
+    },
+    "Energy & Utilities": {
+        "icon": "⚡", "color": "#F5A623",
+        "short": "energy",
+        "description": "Oil & Gas, Renewables, Power Grid, Smart Energy, Utilities",
+        "roles": [
+            "Energy Engineer", "Grid Operations Manager", "Renewables Project Director",
+            "HSE Manager", "Asset Manager", "Power Systems Engineer",
+            "Smart Grid Architect", "Process Safety Lead", "Upstream Operations Manager",
+            "Sustainability Director", "Energy Trading Analyst", "Regulatory Affairs Lead",
+            "SCADA Engineer", "Nuclear Safety Analyst", "VP Operations",
+        ],
+        "competencies": [
+            "Power Systems Engineering", "SCADA / DCS / EMS", "Smart Grid Architecture",
+            "Renewables Technology (Solar/Wind)", "Oil & Gas Operations",
+            "HSE Regulations (OSHA/ISO 45001)", "Asset Integrity Management",
+            "Process Safety Management", "Energy Trading & Scheduling",
+            "Regulatory Compliance (FERC/OFGEM)", "Smart Metering (AMI)",
+            "Carbon Management & Reporting", "LNG Operations", "T&D Networks",
+            "ESG Reporting Frameworks",
+        ],
+        "jd_keywords": ["power systems","SCADA","renewables","HSE","asset management","grid","oil gas","sustainability","energy trading"],
+        "salary_range": {"IN": "₹12–55 LPA", "UAE": "$80–200K", "EU": "€65–160K", "US": "$100–250K"},
+        "demand_signal": "↑ 32% YoY — Energy transition creating massive talent shortages",
+        "interview_context": "Safety culture is non-negotiable — probe HSE mindset first. Technical depth in relevant domain (grid vs O&G vs renewables). Regulatory knowledge essential for senior roles.",
+    },
+    "Education & EdTech": {
+        "icon": "🎓", "color": "#7F77DD",
+        "short": "education",
+        "description": "Academic, Corporate L&D, EdTech Platforms, E-learning",
+        "roles": [
+            "Curriculum Designer", "EdTech Product Manager", "Learning & Development Head",
+            "Academic Director", "Instructional Designer", "School Principal",
+            "University Registrar", "Corporate Trainer", "STEM Lead",
+            "EdTech Engineer", "Assessment Designer", "Learning Analyst",
+            "Chief Learning Officer", "Education Policy Advisor", "Distance Learning Director",
+        ],
+        "competencies": [
+            "Curriculum Design (K-12/HE/Corporate)", "Instructional Design (ADDIE/SAM)",
+            "LMS Platforms (Moodle/Canvas/Blackboard)", "Learning Analytics",
+            "E-learning Development (Articulate/Captivate)", "Assessment Design",
+            "Bloom's Taxonomy Application", "Accreditation Processes",
+            "Student Outcomes Measurement", "Accessibility (WCAG 2.1)",
+            "Adult Learning Theory (Andragogy)", "Corporate L&D Strategy",
+            "Education Policy Writing", "EdTech Product Management",
+            "Gamification / Adaptive Learning",
+        ],
+        "jd_keywords": ["curriculum","instructional design","LMS","e-learning","assessment","accreditation","L&D","EdTech","learning analytics"],
+        "salary_range": {"IN": "₹8–35 LPA", "UAE": "$60–140K", "EU": "€45–110K", "US": "$70–160K"},
+        "demand_signal": "↑ 19% YoY — EdTech investment and upskilling economy growing fast",
+        "interview_context": "Probe pedagogical philosophy and evidence of learning outcomes. Technical EdTech roles need product + learning science depth. Corporate L&D needs business impact measurement.",
+    },
+    "Legal & Compliance": {
+        "icon": "⚖️", "color": "#534AB7",
+        "short": "legal",
+        "description": "Corporate Law, Compliance, GRC, Data Privacy, IP",
+        "roles": [
+            "General Counsel", "M&A Associate", "Compliance Manager",
+            "Data Privacy Officer", "IP Counsel", "Employment Lawyer",
+            "Contract Manager", "GRC Lead", "Legal Operations Manager",
+            "In-house Counsel", "Regulatory Affairs Manager", "Corporate Secretary",
+            "Litigation Manager", "Privacy Counsel", "Chief Compliance Officer",
+        ],
+        "competencies": [
+            "Contract Law & Drafting", "M&A Due Diligence", "GDPR / Privacy Law",
+            "Corporate Governance", "IP Law (Patents/Trademarks/Copyright)",
+            "Employment Law", "Regulatory Compliance Frameworks",
+            "Risk Assessment & Mitigation", "Legal Research & Analysis",
+            "Litigation Management", "Negotiation & Dispute Resolution",
+            "GRC Frameworks", "Anti-bribery (FCPA/UKBA)", "Legal Technology",
+            "Board Advisory",
+        ],
+        "jd_keywords": ["compliance","GDPR","corporate law","M&A","IP","GRC","privacy","litigation","regulatory","contract"],
+        "salary_range": {"IN": "₹12–80 LPA", "UAE": "$90–250K", "EU": "€70–200K", "US": "$100–350K"},
+        "demand_signal": "↑ 16% YoY — Privacy regulations and M&A activity sustaining demand",
+        "interview_context": "Probe jurisdiction-specific knowledge, regulatory awareness, and commercial judgement. Case study questions testing legal reasoning and business-first thinking essential.",
+    },
+    "Government & Public Sector": {
+        "icon": "🏛️", "color": "#4A6A80",
+        "short": "govt",
+        "description": "Smart City, Defence, Public Administration, Policy, Digital Government",
+        "roles": [
+            "Programme Director", "Smart City Architect", "Policy Advisor",
+            "Defence Systems Engineer", "Cybersecurity Lead", "Digital Services Director",
+            "Public Health Manager", "Urban Planner", "Intelligence Analyst",
+            "Public Procurement Lead", "Government CTO", "Social Services Manager",
+            "Emergency Management Lead", "Space Systems Engineer", "Infrastructure Director",
+        ],
+        "competencies": [
+            "Public Policy Development", "Programme Management (MSP/PRINCE2)",
+            "Smart City Platforms", "Defence Systems & Procurement",
+            "Government Cybersecurity (NIST/ISO 27001)", "Digital Government Transformation",
+            "Public Procurement Frameworks", "Risk Management",
+            "Stakeholder & Ministerial Engagement", "Data Governance",
+            "Critical Infrastructure Protection", "Emergency Response Planning",
+            "Budget Management & Treasury", "Cross-agency Coordination",
+            "Parliamentary & Legislative Process",
+        ],
+        "jd_keywords": ["public sector","government","smart city","policy","procurement","digital services","defence","infrastructure","programme management"],
+        "salary_range": {"IN": "₹10–40 LPA", "UAE": "$70–180K", "EU": "€55–140K", "US": "$90–200K"},
+        "demand_signal": "↑ 21% YoY — National digital transformation programmes creating demand",
+        "interview_context": "Probe stakeholder complexity experience, public accountability mindset, and navigating bureaucracy. Senior roles need strong policy and ministerial engagement track record.",
+    },
+    "Media & Entertainment": {
+        "icon": "🎬", "color": "#CC0066",
+        "short": "media",
+        "description": "Streaming, Gaming, AdTech, OTT, Publishing, Music, Sports",
+        "roles": [
+            "Content Strategy Director", "Streaming Platform Engineer", "Ad Tech Lead",
+            "Games Producer", "Creative Director", "Media Technology Head",
+            "OTT Product Manager", "Data Scientist — Audience", "Licensing Manager",
+            "VFX Supervisor", "Digital Distribution Head", "Social Media Director",
+            "Audio Engineer", "IP Rights Manager", "Chief Content Officer",
+        ],
+        "competencies": [
+            "Content Strategy & Programming", "Streaming Architecture (HLS/DASH)",
+            "Ad Tech / Programmatic Advertising", "Game Design & Production",
+            "OTT Platform Management", "Audience Analytics & Measurement",
+            "IP Licensing & Rights Management", "Post-production Workflow",
+            "CDN & Video Delivery Optimisation", "Social Media Strategy",
+            "SVOD/AVOD/FAST Business Models", "Personalisation Algorithms",
+            "Creator Economy Strategy", "Media Workflow Automation",
+            "Metadata Management",
+        ],
+        "jd_keywords": ["streaming","OTT","content","AdTech","gaming","IP rights","audience analytics","CDN","SVOD","creator economy"],
+        "salary_range": {"IN": "₹10–60 LPA", "UAE": "$70–180K", "EU": "€55–150K", "US": "$90–250K"},
+        "demand_signal": "↑ 25% YoY — Streaming wars and gaming boom creating senior roles",
+        "interview_context": "Blend creative and commercial assessment. Probe content performance metrics, monetisation strategy, and platform thinking. Tech roles need media-domain awareness.",
+    },
+}
+
+def get_industry_names():
+    return list(IND_CONFIG.keys())
+
+def get_industry_config(name):
+    return IND_CONFIG.get(name, IND_CONFIG["IT & Software"])
+
+def get_industry_context(name):
+    """Return interview context string for AI prompts."""
+    cfg_ind = IND_CONFIG.get(name, {})
+    roles_str    = ", ".join(cfg_ind.get("roles", [])[:5])
+    comps_str    = ", ".join(cfg_ind.get("competencies", [])[:8])
+    context_hint = cfg_ind.get("interview_context", "")
+    desc         = cfg_ind.get("description", "")
+    return (
+        f"Industry: {name} ({desc})\n"
+        f"Typical roles: {roles_str}\n"
+        f"Core competencies: {comps_str}\n"
+        f"Interview guidance: {context_hint}"
+    )
+
+def detect_industry_from_jd(jd_text):
+    """Auto-detect industry from JD keywords."""
+    jd_lower = jd_text.lower()
+    scores = {}
+    for ind_name, ind_data in IND_CONFIG.items():
+        score = sum(1 for kw in ind_data.get("jd_keywords", []) if kw.lower() in jd_lower)
+        if score > 0:
+            scores[ind_name] = score
+    if scores:
+        return max(scores, key=scores.get)
+    return "IT & Software"
+
+# ── END INDUSTRY CONFIG ───────────────────────────────────────────────────────
+
+
 # ── PAGE CONFIG ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="IAS v9.0 — Interview Assessment System",
@@ -418,7 +753,7 @@ def _extract_details(text):
         if c.replace(' ','').isalpha(): d["name"]=c.title()
     return d
 
-def _generate_questions(cv, jd, name, n_total=15, level="senior", difficulty="medium"):
+def _generate_questions(cv, jd, name, n_total=15, level="senior", difficulty="medium", industry="IT & Software"):
     client   = apikey.get_client()
     model    = apikey.get_model()
     n_code   = max(1, round(n_total * 0.2))
@@ -439,6 +774,9 @@ def _generate_questions(cv, jd, name, n_total=15, level="senior", difficulty="me
 
     # Call 1: question skeletons
     r1 = client.messages.create(model=model, max_tokens=3500, messages=[{"role": "user", "content":
+        f"You are a senior technical interviewer specialising in {industry}.\n"
+        f"{get_industry_context(industry)}\n"
+        f"---\n"
         f"You are a senior technical interviewer.\n"
         f"Candidate: {name} | Level: {level_desc}\n"
         f"Question Difficulty: {difficulty_desc}\n"
@@ -1356,6 +1694,7 @@ with st.sidebar:
             "pages": [
                 ("🎙", "Interview Intelligence", "intelligence"),
                 ("📡", "Telecom Packs",          "telecom"),
+                ("🌐", "Industry Framework",     "industry"),
                 ("📚", "Competency Library",     "competency"),
                 ("🧪", "Skills Testing",         "skillstest"),
                 ("💡", "GenAI Insights",         "genai_insights"),
@@ -2156,8 +2495,8 @@ elif st.session_state.page=="workflow":
         with st.spinner("Generating questions..."):
             _t_res = _generate_questions(st.session_state.cv_text,
                 st.session_state.jd_text, st.session_state.candidate_name,
-                _t_cfg.get("default_questions",10), _t_lk,
-                st.session_state.get("_q_difficulty", "medium"))
+                st.session_state.get("_q_difficulty", "medium"),
+                    st.session_state.get("selected_industry","IT & Software"))
         if "error" not in _t_res:
             st.session_state.questions = _t_res.get("questions",[])
             st.session_state.notes = {}
@@ -2702,7 +3041,8 @@ elif st.session_state.page=="workflow":
                 res=_generate_questions(
                     st.session_state.cv_text,st.session_state.jd_text,
                     st.session_state.candidate_name,num_q,level_key,
-                    st.session_state.get("_q_difficulty", "medium"))
+                    st.session_state.get("_q_difficulty", "medium"),
+                    st.session_state.get("selected_industry", "IT & Software"))
             if "error" in res:
                 st.error(res["error"])
                 if res.get("raw"):
@@ -3789,6 +4129,118 @@ elif st.session_state.page=="analytics":
 
 # ════════════════════════════════════════════════════════════════
 # SETTINGS
+elif st.session_state.page == "industry":
+    # ════════════════════════════════════════════════════════════════════════
+    # INDUSTRY FRAMEWORK — Multi-Industry Configuration Centre
+    # ════════════════════════════════════════════════════════════════════════
+    st.markdown("## 🌐 Industry Framework")
+    st.markdown("Configure IAS for your industry vertical — questions, competencies, and salary benchmarks.")
+    st.divider()
+
+    _curr_ind = st.session_state.get("selected_industry", "IT & Software")
+    _ind_names = get_industry_names()
+
+    # ── Industry selector grid ─────────────────────────────────
+    st.markdown("### Select Industry Vertical")
+    _ind_cols = st.columns(4)
+    for _ii, _iname in enumerate(_ind_names):
+        with _ind_cols[_ii % 4]:
+            _idata = get_industry_config(_iname)
+            _active = _iname == _curr_ind
+            _border = "2px solid #00C9A7" if _active else "1px solid rgba(0,201,167,0.2)"
+            _bg     = "rgba(0,201,167,0.1)" if _active else "rgba(255,255,255,0.03)"
+            if st.button(
+                f"{_idata['icon']} {_iname}",
+                key=f"ind_tile_{_ii}",
+                use_container_width=True,
+                type="primary" if _active else "secondary",
+                help=_idata["description"]
+            ):
+                st.session_state["selected_industry"] = _iname
+                st.rerun()
+
+    st.divider()
+
+    # ── Selected industry detail ───────────────────────────────
+    _sel_data = get_industry_config(_curr_ind)
+    st.markdown(f"### {_sel_data['icon']} {_curr_ind}")
+    st.caption(_sel_data["description"])
+
+    _id1, _id2, _id3 = st.columns(3)
+    with _id1:
+        st.markdown("**Market Demand**")
+        st.markdown(f'<div style="color:#00C9A7;font-size:13px;font-weight:600">{_sel_data["demand_signal"]}</div>', unsafe_allow_html=True)
+    with _id2:
+        st.markdown("**Salary Benchmarks**")
+        _sal = _sel_data.get("salary_range", {})
+        for _region, _range in _sal.items():
+            st.markdown(f'<span style="font-size:12px"><b>{_region}:</b> {_range}</span>', unsafe_allow_html=True)
+    with _id3:
+        st.markdown("**Interview Context**")
+        st.caption(_sel_data.get("interview_context",""))
+
+    st.divider()
+
+    # ── Role templates ────────────────────────────────────────
+    st.markdown("#### 👤 Role Templates")
+    _roles = _sel_data.get("roles", [])
+    _role_cols = st.columns(3)
+    for _ri, _role in enumerate(_roles):
+        with _role_cols[_ri % 3]:
+            if st.button(f"📋 {_role}", key=f"role_tmpl_{_ri}", use_container_width=True,
+                         help=f"Load {_role} JD template"):
+                _comps = ", ".join(_sel_data.get("competencies",[])[:6])
+                _jd_t = (
+                    f"We are hiring a {_role} in {_curr_ind}.\n\n"
+                    f"Key responsibilities:\n"
+                    f"• Lead {_role.lower()} activities across the organisation\n"
+                    f"• Drive {_sel_data['description']} initiatives\n"
+                    f"• Collaborate with cross-functional stakeholders\n\n"
+                    f"Required competencies: {_comps}\n\n"
+                    f"Experience: 7+ years in {_curr_ind}. Strong domain expertise required."
+                )
+                st.session_state["jd_text"]            = _jd_t
+                st.session_state["selected_industry"]  = _curr_ind
+                st.success(f"✅ {_role} template loaded — go to Interview Workflow to start")
+
+    st.divider()
+
+    # ── Competency library ────────────────────────────────────
+    st.markdown("#### 📚 Competency Library")
+    _comps = _sel_data.get("competencies", [])
+    _comp_html = " ".join([
+        f'<span style="display:inline-block;background:rgba(0,201,167,0.1);'
+        f'border:1px solid rgba(0,201,167,0.25);border-radius:12px;'
+        f'padding:4px 12px;font-size:11px;color:#00C9A7;margin:3px">{c}</span>'
+        for c in _comps
+    ])
+    st.markdown(f'<div style="margin:8px 0">{_comp_html}</div>', unsafe_allow_html=True)
+
+    st.divider()
+
+    # ── Cross-industry comparison ──────────────────────────────
+    st.markdown("### 📊 Cross-Industry Comparison")
+    _compare_data = []
+    for _iname, _idata in IND_CONFIG.items():
+        _sal = _idata.get("salary_range",{})
+        _compare_data.append({
+            "Industry":     _iname,
+            "Roles":        len(_idata.get("roles",[])),
+            "Competencies": len(_idata.get("competencies",[])),
+            "India Salary": _sal.get("IN","—"),
+            "US Salary":    _sal.get("US","—"),
+            "Market Signal":_idata.get("demand_signal","")[:40],
+        })
+    import pandas as _pd_ind
+    _df_compare = _pd_ind.DataFrame(_compare_data)
+    st.dataframe(_df_compare, use_container_width=True, hide_index=True)
+
+    st.divider()
+    st.markdown(
+        '<div style="text-align:center;font-size:11px;color:#4A6A80">'
+        'IAS Industry Framework v1.0 · 12 Verticals · 85+ Roles · 420+ Competencies · GVS Technologies'
+        '</div>', unsafe_allow_html=True)
+
 # ════════════════════════════════════════════════════════════════
 elif st.session_state.page == "settings":
     import datetime as _dts
