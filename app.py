@@ -1895,7 +1895,10 @@ def _clean_json(text):
 
 def _extract_text(f):
     import tempfile as tf, os as _os
+<<<<<<< HEAD
     from io import BytesIO
+=======
+>>>>>>> d7bc058e5ed6e6f607be409fb89d64143e965d38
     nm = f.name.lower()
     # Seek to start — Streamlit may have read the buffer already
     try: f.seek(0)
@@ -1904,6 +1907,7 @@ def _extract_text(f):
     if not raw:
         try: f.seek(0); raw = f.read()
         except: pass
+<<<<<<< HEAD
     if not raw:
         return "Error: file is empty or could not be read"
     # Use BytesIO (no filesystem) — works on Streamlit Cloud read-only fs
@@ -1941,6 +1945,24 @@ def _extract_text(f):
             return f"Error: unsupported file type ({nm.split('.')[-1]})"
     except Exception as e:
         return f"Error: {e}"
+=======
+    with tf.NamedTemporaryFile(delete=False, suffix=_os.path.splitext(nm)[1]) as t:
+        t.write(raw); tp = t.name
+    try:
+        if nm.endswith(".pdf"):
+            from pypdf import PdfReader
+            return " ".join(p.extract_text() or "" for p in PdfReader(tp).pages).strip()
+        elif nm.endswith(".docx"):
+            from docx import Document
+            return "\n".join(p.text for p in Document(tp).paragraphs if p.text.strip())
+        elif nm.endswith(".txt"):
+            return raw.decode("utf-8", "replace").strip()
+    except Exception as e: return f"Error: {e}"
+    finally:
+        try: _os.unlink(tp)
+        except: pass
+    return ""
+>>>>>>> d7bc058e5ed6e6f607be409fb89d64143e965d38
 
 def _extract_details(text):
     d={"name":"","email":"","phone":""}
@@ -3111,6 +3133,10 @@ if st.session_state.page == "home":
     _now_h     = _dth.now()
     _today_str = _now_h.strftime("%A, %d %B %Y  ·  %H:%M")
     _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
+<<<<<<< HEAD
+=======
+    _curr_ind    = st.session_state.get("selected_industry", "IT & Software")
+>>>>>>> d7bc058e5ed6e6f607be409fb89d64143e965d38
 
     # ── Derived metrics ─────────────────────────────────────────
     _total_interviews = stats_h.get("total", len(results_h))
