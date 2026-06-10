@@ -1,0 +1,16 @@
+[server]
+headless = true
+port = 8501
+runOnSave = true
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "dark"
+primaryColor = "#00C9A7"
+backgroundColor = "#0D1B2A"
+secondaryBackgroundColor = "#112236"
+textColor = "#E8F2FF"
+font = "sans serif"
