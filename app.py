@@ -17025,3 +17025,56 @@ elif st.session_state.page == "predictive":
                 file_name="HiringForecast_H2_2026.txt",
                 mime="text/plain", use_container_width=True)
 
+import streamlit as st
+import os, sys, json, re, smtplib
+from pathlib import Path
+from datetime import datetime, date
+
+# --- Executive Dashboard Modules ---
+from kpi_layer import show_kpi_layer
+from forecast import show_forecast
+from infographic import show_infographic
+
+def main():
+    st.sidebar.title("IAS v9.0 Navigation")
+    selected_tab = st.sidebar.radio(
+        "Go to",
+        ["Command Centre", "Executive Dashboard", "KPI & Analytics", "Exec Analytics", "Market Intel 2026", "Talent Intel"]
+    )
+
+    if selected_tab == "Command Centre":
+        st.title("Command Centre")
+        st.write("Welcome to IAS Command Centre")
+
+    elif selected_tab == "Executive Dashboard":
+        st.title("Executive Dashboard")
+
+        # --- Tactical recruiter metrics (already in your script) ---
+        st.metric("Offers", "11", "⚠ 2 expiring today")
+        st.metric("Acceptance", "0%", "+6% vs last month")
+        st.metric("Time-to-hire", "18d", "↓5d vs last month")
+        st.metric("Candidate NPS", "8.2", "+0.6 vs last month")
+
+        # --- Strategic modules ---
+        show_kpi_layer()
+        show_forecast()
+        show_infographic()
+
+    elif selected_tab == "KPI & Analytics":
+        st.title("KPI & Analytics")
+        st.write("Detailed KPI analytics will appear here.")
+
+    elif selected_tab == "Exec Analytics":
+        st.title("Exec Analytics")
+        st.write("Executive analytics dashboard.")
+
+    elif selected_tab == "Market Intel 2026":
+        st.title("Market Intel 2026")
+        st.write("Market intelligence reports for 2026.")
+
+    elif selected_tab == "Talent Intel":
+        st.title("Talent Intel")
+        st.write("Talent intelligence insights.")
+
+if __name__ == "__main__":
+    main()
