@@ -20,12 +20,15 @@ import apikey
 def _load_cloud_secrets():
     try:
         _sec = st.secrets
-        # API key
+        # API key — inject directly into memory (read-only filesystem safe)
         _ak = _sec.get("ANTHROPIC_API_KEY","")
         if _ak and _ak.startswith("sk-ant-"):
-            _kf = ROOT / "api_key.txt"
-            if not _kf.exists() or _kf.read_text().strip() != _ak:
+            apikey._KEY = _ak
+            try:
+                _kf = ROOT / "api_key.txt"
                 _kf.write_text(_ak)
+            except Exception:
+                pass
         # Gmail + settings
         _s = {}
         if _sec.get("GMAIL_SENDER"):      _s["sender_email"]         = _sec["GMAIL_SENDER"]

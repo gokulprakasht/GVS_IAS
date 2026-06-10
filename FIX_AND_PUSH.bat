@@ -1,55 +1,41 @@
 @echo off
-title IAS - Fix File Locations and Push
-cd /d C:\IAS\IAS_v8_Phase3\IAS_FINAL
-
 echo ============================================
-echo  STEP 1: Copy files to correct locations
+echo IAS v9.0 - Auto Fix and Push
 echo ============================================
 
-echo Copying app.py to root...
-copy /Y "%USERPROFILE%\Downloads\app.py" "app.py"
+cd /d C:\IAS\IAS_CLOUD_FULL
 
-echo Copying gmail_monitor.py to core\ folder...
-copy /Y "%USERPROFILE%\Downloads\gmail_monitor.py" "core\gmail_monitor.py"
+echo Step 1: Finding fixed app.py...
+set FOUND=0
 
-echo Copying config.py to core\ folder...
-copy /Y "%USERPROFILE%\Downloads\config.py" "core\config.py"
-
-echo.
-echo ============================================
-echo  STEP 2: Verify files are in right place
-echo ============================================
-echo Checking core\ folder:
-dir core\
-
-echo.
-echo ============================================
-echo  STEP 3: Git add ALL changed files
-echo ============================================
-git add app.py
-git add core\gmail_monitor.py
-git add core\config.py
-
-git status
-
-echo.
-echo ============================================
-echo  STEP 4: Commit and Push
-echo ============================================
-git commit -m "Fix: gmail_monitor + config in core/ + runtime mkdir patch"
-if errorlevel 1 (
-    echo Nothing to commit - forcing redeploy...
-    git commit --allow-empty -m "Force redeploy - gmail monitor + config fix"
+if exist "%USERPROFILE%\Downloads\app.py" (
+    echo Found in Downloads folder
+    copy /Y "%USERPROFILE%\Downloads\app.py" "C:\IAS\IAS_CLOUD_FULL\app.py"
+    set FOUND=1
 )
 
+if %FOUND%==0 (
+    echo.
+    echo ERROR: Could not find the fixed app.py
+    echo Please download it from Claude chat first
+    echo Then run this batch file again
+    pause
+    exit /b 1
+)
+
+echo.
+echo Step 2: Verifying file...
+dir app.py
+
+echo.
+echo Step 3: Pushing to GitHub...
+git add app.py
+git commit -m "Fix: CV upload BytesIO cloud compatible"
 git push origin main
 
 echo.
 echo ============================================
-echo  DONE - Wait 3 minutes then:
-echo  1. Open gvs-ias.onrender.com
-echo  2. Settings - Notifications
-echo  3. Enter Gmail + App Password
-echo  4. Click Save and Start Monitor
+echo DONE! Streamlit will redeploy in ~60 seconds
+echo Visit: https://gvs-ias.streamlit.app
 echo ============================================
 pause
