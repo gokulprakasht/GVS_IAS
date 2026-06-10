@@ -14,1576 +14,9 @@ sys.path.insert(0, str(ROOT / "core"))
 import config as cfg
 import apikey
 
-# ── STREAMLIT CLOUD SECRETS LOADER ───────────────────────────────
-# Loads secrets from Streamlit Cloud when deployed,
-# falls back to local api_key.txt and settings.json when running locally
-def _load_cloud_secrets():
-    try:
-        _sec = st.secrets
-        # API key
-        _ak = _sec.get("ANTHROPIC_API_KEY","")
-        if _ak and _ak.startswith("sk-ant-"):
-            _kf = ROOT / "api_key.txt"
-            if not _kf.exists() or _kf.read_text().strip() != _ak:
-                _kf.write_text(_ak)
-        # Gmail + settings
-        _s = {}
-        if _sec.get("GMAIL_SENDER"):      _s["sender_email"]         = _sec["GMAIL_SENDER"]
-        if _sec.get("GMAIL_APP_PWD"):     _s["gmail_app_password"]   = _sec["GMAIL_APP_PWD"]
-        if _sec.get("RECRUITER_EMAIL"):   _s["recruiter_email"]      = _sec["RECRUITER_EMAIL"]
-        if _sec.get("INTERVIEWER_NAME"):  _s["interviewer_name"]     = _sec["INTERVIEWER_NAME"]
-        if _sec.get("GCAL_CREDS_JSON"):   _s["gcal_creds_json"]      = _sec["GCAL_CREDS_JSON"]
-        if _sec.get("GCAL_CALENDAR_ID"):  _s["gcal_id"]              = _sec["GCAL_CALENDAR_ID"]
-        if _sec.get("TWILIO_SID"):        _s["twilio_sid"]           = _sec["TWILIO_SID"]
-        if _sec.get("TWILIO_TOKEN"):      _s["twilio_token"]         = _sec["TWILIO_TOKEN"]
-        if _sec.get("TWILIO_FROM"):       _s["twilio_from"]          = _sec["TWILIO_FROM"]
-        if _sec.get("TWILIO_TO"):         _s["twilio_test"]          = _sec["TWILIO_TO"]
-        if _s:
-            cfg.save_settings(_s)
-    except Exception:
-        pass  # Running locally — secrets not available, use local files
-
-_load_cloud_secrets()
-
-# ── BRAND SETTINGS SANITIZER ─────────────────────────────────
-def _sanitize_brand():
-    try:
-        _s = cfg.get_settings()
-        _chg = {}
-        _icon = _s.get("brand_icon","")
-        if _icon and all(ord(c)<128 for c in _icon) and len(_icon)>4:
-            _chg["brand_icon"] = "🎯"
-        if not _s.get("company_name"):
-            _chg["company_name"] = "GVS Technologies"
-        if _chg:
-            cfg.save_settings(_chg)
-    except Exception:
-        pass
-
-_sanitize_brand()
-
-# ══════════════════════════════════════════════════════════════════════════════
-# IAS MULTI-INDUSTRY FRAMEWORK — v1.0
-# GVS Technologies · Gokul Prakash T · Innovate before you automate
-# 12 industry verticals · 85+ role templates · 420+ competencies
-# ══════════════════════════════════════════════════════════════════════════════
-
-IND_CONFIG = {
-    "Telecom & Networks": {
-        "icon": "🌐", "color": "#00C9A7",
-        "short": "telecom",
-        "description": "OSS/BSS, 5G, RAN, Network Operations, Cloud RAN, ORAN",
-        "roles": [
-            "5G Solutions Architect", "OSS/BSS Engineer", "Network Operations Manager",
-            "RAN Engineer", "Core Network Architect", "NOC Lead",
-            "Telecom Programme Manager", "BSS Product Owner", "Network Security Engineer",
-            "ORAN Specialist", "Cloud RAN Architect", "Autonomous Networks Lead",
-            "Order-to-Activate Lead", "Trouble-to-Resolve Manager", "VoIP Engineer",
-            "Network Test Engineer", "Telecom DevOps Engineer", "CTO / VP Networks",
-        ],
-        "competencies": [
-            "5G SA/NSA Architecture", "OSS/BSS Transformation", "FCAPS Management",
-            "Nokia NetAct NMS", "Zero-Touch Provisioning", "TM Forum Frameworks",
-            "Network Slicing", "ORAN Integration", "LTE/NR Protocols",
-            "SLA Management", "Fault Management", "Performance Engineering",
-            "Capacity Planning", "Network Automation", "Cloud-Native Telco",
-        ],
-        "jd_keywords": ["5G","OSS","BSS","RAN","ORAN","NetAct","ZTP","TM Forum","FCAPS","network slicing","autonomous networks"],
-        "salary_range": {"IN": "₹18–55 LPA", "UAE": "$80–180K", "EU": "€70–140K", "US": "$120–220K"},
-        "demand_signal": "↑ 28% YoY — 5G rollouts driving acute demand",
-        "interview_context": "Focus on real-world network architecture decisions, OSS/BSS integration patterns, and autonomous network capabilities. Probe vendor experience (Nokia, Ericsson, Huawei) and protocol depth.",
-    },
-    "IT & Software": {
-        "icon": "💻", "color": "#378ADD",
-        "short": "it_software",
-        "description": "Software Engineering, Cloud, DevOps, Data, AI/ML, Security",
-        "roles": [
-            "Senior Software Engineer", "Cloud Solutions Architect", "DevOps Engineer",
-            "Data Engineer", "ML Engineer", "Platform Engineer",
-            "Security Engineer", "Site Reliability Engineer", "Tech Lead",
-            "Engineering Manager", "CTO / VP Engineering", "Product Manager",
-            "QA Lead", "Mobile Developer", "Frontend Architect",
-        ],
-        "competencies": [
-            "System Design", "Microservices Architecture", "Kubernetes/Docker",
-            "CI/CD Pipelines", "AWS/Azure/GCP", "Python/Java/Go",
-            "React/Node.js", "Data Pipelines", "MLOps", "Security Engineering",
-            "API Design", "Agile/SAFe", "Code Review", "Infrastructure as Code",
-            "Observability & Monitoring",
-        ],
-        "jd_keywords": ["microservices","kubernetes","CI/CD","cloud","python","java","distributed systems","API","DevOps","SRE"],
-        "salary_range": {"IN": "₹12–80 LPA", "UAE": "$70–200K", "EU": "€60–150K", "US": "$100–280K"},
-        "demand_signal": "↑ 35% YoY — AI/ML and cloud migration driving explosive growth",
-        "interview_context": "Use system design, coding, and architectural trade-off questions. Focus on scalability, reliability, and cloud-native patterns. Include LLM/AI experience for senior roles.",
-    },
-    "BFSI": {
-        "icon": "🏦", "color": "#7F77DD",
-        "short": "bfsi",
-        "description": "Banking, Financial Services, Insurance, Fintech",
-        "roles": [
-            "Risk Manager", "Quantitative Analyst", "Compliance Officer",
-            "Investment Banker", "Credit Analyst", "Fintech Product Manager",
-            "Data Scientist — Risk", "AML Analyst", "Core Banking Engineer",
-            "Payment Systems Architect", "Actuary", "Wealth Manager",
-            "RegTech Lead", "Digital Banking Head", "CFO / Finance Director",
-        ],
-        "competencies": [
-            "Risk Modelling", "Basel III/IV", "AML/KYC Compliance",
-            "Payment Rails (SWIFT/ISO 20022)", "Regulatory Compliance",
-            "Financial Modelling", "Credit Scoring", "Derivatives",
-            "Capital Markets", "Fraud Detection", "IFRS 9",
-            "Open Banking / PSD2", "Stress Testing", "Treasury Management",
-            "SEPA / Payment Infrastructure",
-        ],
-        "jd_keywords": ["risk","compliance","AML","KYC","Basel","fintech","payments","credit","capital markets","regulatory"],
-        "salary_range": {"IN": "₹15–90 LPA", "UAE": "$90–250K", "EU": "€80–200K", "US": "$120–350K"},
-        "demand_signal": "↑ 22% YoY — Fintech disruption and regulatory changes driving hiring",
-        "interview_context": "Probe regulatory knowledge depth (Basel, AML, GDPR), quantitative skills, and risk frameworks. Senior roles need P&L and CxO stakeholder experience.",
-    },
-    "Healthcare & Pharma": {
-        "icon": "🏥", "color": "#00B050",
-        "short": "healthcare",
-        "description": "Clinical, Pharmaceuticals, Medical Devices, Health IT",
-        "roles": [
-            "Clinical Data Manager", "Medical Affairs Lead", "Regulatory Affairs Manager",
-            "Clinical Trials Director", "Healthcare IT Architect", "Pharmacovigilance Officer",
-            "Chief Medical Officer", "Health Informatics Lead", "Hospital Administrator",
-            "MedTech Product Manager", "R&D Director", "Drug Safety Officer",
-            "Quality Assurance Manager", "Medical Device Engineer", "Digital Health Lead",
-        ],
-        "competencies": [
-            "GCP / GMP Standards", "FDA / EMA Regulations", "Clinical Trial Design",
-            "CTMS Platforms", "HL7 / FHIR", "Medical Coding (ICD-10)",
-            "Pharmacovigilance", "CAPA Management", "Biostatistics",
-            "Medical Writing", "ICH Guidelines", "EHR / EMR Systems",
-            "Health Economics", "HIPAA Compliance", "ISO 13485 (Medical Devices)",
-        ],
-        "jd_keywords": ["GCP","GMP","FDA","clinical trials","pharmacovigilance","HL7","FHIR","regulatory","medical devices","ICH"],
-        "salary_range": {"IN": "₹12–60 LPA", "UAE": "$80–200K", "EU": "€65–160K", "US": "$100–280K"},
-        "demand_signal": "↑ 18% YoY — Post-COVID investment in digital health and genomics",
-        "interview_context": "Regulatory knowledge is non-negotiable. Probe real trial experience, adverse event handling, and quality system understanding. Clinical vs commercial roles need very different assessment.",
-    },
-    "Manufacturing": {
-        "icon": "🏭", "color": "#F5A623",
-        "short": "manufacturing",
-        "description": "Automotive, Aerospace, FMCG, Electronics, Heavy Industry",
-        "roles": [
-            "Plant Manager", "Manufacturing Engineer", "Quality Manager",
-            "Supply Chain Director", "Production Lead", "Lean Six Sigma Master Black Belt",
-            "Automation Engineer", "Process Engineer", "EHS Manager",
-            "Operations Director", "Industrial Engineer", "Maintenance Manager",
-            "R&D Engineer", "Materials Manager", "VP Manufacturing",
-        ],
-        "competencies": [
-            "Lean Manufacturing", "Six Sigma (DMAIC)", "Kaizen / Continuous Improvement",
-            "OEE Optimisation", "SAP ERP / MES", "SCADA / PLC Programming",
-            "Predictive Maintenance", "Quality Management Systems", "ISO 9001 / IATF 16949",
-            "Supply Chain Optimisation", "Industry 4.0 / IIoT", "Value Stream Mapping",
-            "PFMEA / DFMEA", "TPM", "Statistical Process Control",
-        ],
-        "jd_keywords": ["lean","six sigma","OEE","kaizen","SCADA","PLC","ERP","ISO 9001","IATF","automation","Industry 4.0"],
-        "salary_range": {"IN": "₹10–45 LPA", "UAE": "$60–160K", "EU": "€55–130K", "US": "$90–200K"},
-        "demand_signal": "↑ 15% YoY — Industry 4.0 and reshoring driving transformation roles",
-        "interview_context": "Focus on tangible improvement metrics (OEE, defect rates, cycle time). Probe problem-solving depth with real plant floor scenarios. Certifications (LSS, PMP) are differentiators.",
-    },
-    "Consulting & Professional Services": {
-        "icon": "💼", "color": "#CC0066",
-        "short": "consulting",
-        "description": "Management Consulting, PMO, Strategy, Digital Transformation",
-        "roles": [
-            "Management Consultant", "Strategy Director", "PMO Manager",
-            "Change Manager", "Business Analyst", "Solutions Architect",
-            "Delivery Head", "Practice Lead", "Partner / Principal",
-            "Digital Transformation Lead", "Process Excellence Lead", "IT Strategy Consultant",
-            "Agile Coach", "Bid Manager", "Pre-sales Director",
-        ],
-        "competencies": [
-            "Strategy Frameworks (McKinsey, BCG)", "Programme Delivery", "Stakeholder Management",
-            "Business Case Development", "P&L Ownership", "Change Management (Prosci/ADKAR)",
-            "Proposal / Bid Writing", "CxO Engagement", "Agile / SAFe Transformation",
-            "Risk Management", "Financial Modelling", "Operating Model Design",
-            "Client Development", "Value Realisation", "Executive Communication",
-        ],
-        "jd_keywords": ["consulting","strategy","PMO","transformation","stakeholder","P&L","bid","pre-sales","change management","Agile"],
-        "salary_range": {"IN": "₹15–70 LPA", "UAE": "$90–220K", "EU": "€75–180K", "US": "$120–300K"},
-        "demand_signal": "↑ 20% YoY — Digital transformation mandates sustaining demand",
-        "interview_context": "Use case study and scenario-based questions. Probe structured thinking, commercial acumen, and executive presence. Real client engagement stories are key differentiators.",
-    },
-    "Retail & E-commerce": {
-        "icon": "🛒", "color": "#FF6B35",
-        "short": "retail",
-        "description": "Omnichannel Retail, E-commerce, Supply Chain, Customer Experience",
-        "roles": [
-            "Head of E-commerce", "Supply Chain Manager", "Merchandising Director",
-            "CX Manager", "Digital Marketing Lead", "Retail Technology Head",
-            "Omnichannel Lead", "Demand Planner", "Category Manager",
-            "Store Operations Director", "Data Analytics Lead", "Pricing Analyst",
-            "Fulfilment Director", "Chief Digital Officer", "Chief Commercial Officer",
-        ],
-        "competencies": [
-            "Omnichannel Strategy", "Demand Planning & Forecasting", "Inventory Management",
-            "Category Management", "CRM / Loyalty Programmes", "Digital Marketing (SEO/SEM)",
-            "Pricing Optimisation", "Last-mile Logistics", "Customer Analytics",
-            "Personalisation Engines", "Retail ERP (SAP/Oracle)", "Visual Merchandising",
-            "Loss Prevention", "ESG / Sustainable Retail", "Marketplace Strategy",
-        ],
-        "jd_keywords": ["omnichannel","e-commerce","supply chain","demand planning","CRM","digital marketing","category management","fulfilment"],
-        "salary_range": {"IN": "₹10–50 LPA", "UAE": "$70–180K", "EU": "€55–140K", "US": "$90–220K"},
-        "demand_signal": "↑ 24% YoY — Quick commerce and D2C brands creating new senior roles",
-        "interview_context": "Anchor on commercial outcomes — GMV, conversion, NPS. Probe supply chain resilience and omnichannel execution. Digital-first experience essential for senior roles.",
-    },
-    "Energy & Utilities": {
-        "icon": "⚡", "color": "#F5A623",
-        "short": "energy",
-        "description": "Oil & Gas, Renewables, Power Grid, Smart Energy, Utilities",
-        "roles": [
-            "Energy Engineer", "Grid Operations Manager", "Renewables Project Director",
-            "HSE Manager", "Asset Manager", "Power Systems Engineer",
-            "Smart Grid Architect", "Process Safety Lead", "Upstream Operations Manager",
-            "Sustainability Director", "Energy Trading Analyst", "Regulatory Affairs Lead",
-            "SCADA Engineer", "Nuclear Safety Analyst", "VP Operations",
-        ],
-        "competencies": [
-            "Power Systems Engineering", "SCADA / DCS / EMS", "Smart Grid Architecture",
-            "Renewables Technology (Solar/Wind)", "Oil & Gas Operations",
-            "HSE Regulations (OSHA/ISO 45001)", "Asset Integrity Management",
-            "Process Safety Management", "Energy Trading & Scheduling",
-            "Regulatory Compliance (FERC/OFGEM)", "Smart Metering (AMI)",
-            "Carbon Management & Reporting", "LNG Operations", "T&D Networks",
-            "ESG Reporting Frameworks",
-        ],
-        "jd_keywords": ["power systems","SCADA","renewables","HSE","asset management","grid","oil gas","sustainability","energy trading"],
-        "salary_range": {"IN": "₹12–55 LPA", "UAE": "$80–200K", "EU": "€65–160K", "US": "$100–250K"},
-        "demand_signal": "↑ 32% YoY — Energy transition creating massive talent shortages",
-        "interview_context": "Safety culture is non-negotiable — probe HSE mindset first. Technical depth in relevant domain (grid vs O&G vs renewables). Regulatory knowledge essential for senior roles.",
-    },
-    "Education & EdTech": {
-        "icon": "🎓", "color": "#7F77DD",
-        "short": "education",
-        "description": "Academic, Corporate L&D, EdTech Platforms, E-learning",
-        "roles": [
-            "Curriculum Designer", "EdTech Product Manager", "Learning & Development Head",
-            "Academic Director", "Instructional Designer", "School Principal",
-            "University Registrar", "Corporate Trainer", "STEM Lead",
-            "EdTech Engineer", "Assessment Designer", "Learning Analyst",
-            "Chief Learning Officer", "Education Policy Advisor", "Distance Learning Director",
-        ],
-        "competencies": [
-            "Curriculum Design (K-12/HE/Corporate)", "Instructional Design (ADDIE/SAM)",
-            "LMS Platforms (Moodle/Canvas/Blackboard)", "Learning Analytics",
-            "E-learning Development (Articulate/Captivate)", "Assessment Design",
-            "Bloom's Taxonomy Application", "Accreditation Processes",
-            "Student Outcomes Measurement", "Accessibility (WCAG 2.1)",
-            "Adult Learning Theory (Andragogy)", "Corporate L&D Strategy",
-            "Education Policy Writing", "EdTech Product Management",
-            "Gamification / Adaptive Learning",
-        ],
-        "jd_keywords": ["curriculum","instructional design","LMS","e-learning","assessment","accreditation","L&D","EdTech","learning analytics"],
-        "salary_range": {"IN": "₹8–35 LPA", "UAE": "$60–140K", "EU": "€45–110K", "US": "$70–160K"},
-        "demand_signal": "↑ 19% YoY — EdTech investment and upskilling economy growing fast",
-        "interview_context": "Probe pedagogical philosophy and evidence of learning outcomes. Technical EdTech roles need product + learning science depth. Corporate L&D needs business impact measurement.",
-    },
-    "Legal & Compliance": {
-        "icon": "⚖️", "color": "#534AB7",
-        "short": "legal",
-        "description": "Corporate Law, Compliance, GRC, Data Privacy, IP",
-        "roles": [
-            "General Counsel", "M&A Associate", "Compliance Manager",
-            "Data Privacy Officer", "IP Counsel", "Employment Lawyer",
-            "Contract Manager", "GRC Lead", "Legal Operations Manager",
-            "In-house Counsel", "Regulatory Affairs Manager", "Corporate Secretary",
-            "Litigation Manager", "Privacy Counsel", "Chief Compliance Officer",
-        ],
-        "competencies": [
-            "Contract Law & Drafting", "M&A Due Diligence", "GDPR / Privacy Law",
-            "Corporate Governance", "IP Law (Patents/Trademarks/Copyright)",
-            "Employment Law", "Regulatory Compliance Frameworks",
-            "Risk Assessment & Mitigation", "Legal Research & Analysis",
-            "Litigation Management", "Negotiation & Dispute Resolution",
-            "GRC Frameworks", "Anti-bribery (FCPA/UKBA)", "Legal Technology",
-            "Board Advisory",
-        ],
-        "jd_keywords": ["compliance","GDPR","corporate law","M&A","IP","GRC","privacy","litigation","regulatory","contract"],
-        "salary_range": {"IN": "₹12–80 LPA", "UAE": "$90–250K", "EU": "€70–200K", "US": "$100–350K"},
-        "demand_signal": "↑ 16% YoY — Privacy regulations and M&A activity sustaining demand",
-        "interview_context": "Probe jurisdiction-specific knowledge, regulatory awareness, and commercial judgement. Case study questions testing legal reasoning and business-first thinking essential.",
-    },
-    "Government & Public Sector": {
-        "icon": "🏛️", "color": "#4A6A80",
-        "short": "govt",
-        "description": "Smart City, Defence, Public Administration, Policy, Digital Government",
-        "roles": [
-            "Programme Director", "Smart City Architect", "Policy Advisor",
-            "Defence Systems Engineer", "Cybersecurity Lead", "Digital Services Director",
-            "Public Health Manager", "Urban Planner", "Intelligence Analyst",
-            "Public Procurement Lead", "Government CTO", "Social Services Manager",
-            "Emergency Management Lead", "Space Systems Engineer", "Infrastructure Director",
-        ],
-        "competencies": [
-            "Public Policy Development", "Programme Management (MSP/PRINCE2)",
-            "Smart City Platforms", "Defence Systems & Procurement",
-            "Government Cybersecurity (NIST/ISO 27001)", "Digital Government Transformation",
-            "Public Procurement Frameworks", "Risk Management",
-            "Stakeholder & Ministerial Engagement", "Data Governance",
-            "Critical Infrastructure Protection", "Emergency Response Planning",
-            "Budget Management & Treasury", "Cross-agency Coordination",
-            "Parliamentary & Legislative Process",
-        ],
-        "jd_keywords": ["public sector","government","smart city","policy","procurement","digital services","defence","infrastructure","programme management"],
-        "salary_range": {"IN": "₹10–40 LPA", "UAE": "$70–180K", "EU": "€55–140K", "US": "$90–200K"},
-        "demand_signal": "↑ 21% YoY — National digital transformation programmes creating demand",
-        "interview_context": "Probe stakeholder complexity experience, public accountability mindset, and navigating bureaucracy. Senior roles need strong policy and ministerial engagement track record.",
-    },
-    "Media & Entertainment": {
-        "icon": "🎬", "color": "#CC0066",
-        "short": "media",
-        "description": "Streaming, Gaming, AdTech, OTT, Publishing, Music, Sports",
-        "roles": [
-            "Content Strategy Director", "Streaming Platform Engineer", "Ad Tech Lead",
-            "Games Producer", "Creative Director", "Media Technology Head",
-            "OTT Product Manager", "Data Scientist — Audience", "Licensing Manager",
-            "VFX Supervisor", "Digital Distribution Head", "Social Media Director",
-            "Audio Engineer", "IP Rights Manager", "Chief Content Officer",
-        ],
-        "competencies": [
-            "Content Strategy & Programming", "Streaming Architecture (HLS/DASH)",
-            "Ad Tech / Programmatic Advertising", "Game Design & Production",
-            "OTT Platform Management", "Audience Analytics & Measurement",
-            "IP Licensing & Rights Management", "Post-production Workflow",
-            "CDN & Video Delivery Optimisation", "Social Media Strategy",
-            "SVOD/AVOD/FAST Business Models", "Personalisation Algorithms",
-            "Creator Economy Strategy", "Media Workflow Automation",
-            "Metadata Management",
-        ],
-        "jd_keywords": ["streaming","OTT","content","AdTech","gaming","IP rights","audience analytics","CDN","SVOD","creator economy"],
-        "salary_range": {"IN": "₹10–60 LPA", "UAE": "$70–180K", "EU": "€55–150K", "US": "$90–250K"},
-        "demand_signal": "↑ 25% YoY — Streaming wars and gaming boom creating senior roles",
-        "interview_context": "Blend creative and commercial assessment. Probe content performance metrics, monetisation strategy, and platform thinking. Tech roles need media-domain awareness.",
-    },
-}
-
-def get_industry_names():
-    return list(IND_CONFIG.keys())
-
-def get_industry_config(name):
-    return IND_CONFIG.get(name, IND_CONFIG["IT & Software"])
-
-def get_industry_context(name):
-    """Return interview context string for AI prompts."""
-    cfg_ind = IND_CONFIG.get(name, {})
-    roles_str    = ", ".join(cfg_ind.get("roles", [])[:5])
-    comps_str    = ", ".join(cfg_ind.get("competencies", [])[:8])
-    context_hint = cfg_ind.get("interview_context", "")
-    desc         = cfg_ind.get("description", "")
-    return (
-        f"Industry: {name} ({desc})\n"
-        f"Typical roles: {roles_str}\n"
-        f"Core competencies: {comps_str}\n"
-        f"Interview guidance: {context_hint}"
-    )
-
-def detect_industry_from_jd(jd_text):
-    """Auto-detect industry from JD keywords."""
-    jd_lower = jd_text.lower()
-    scores = {}
-    for ind_name, ind_data in IND_CONFIG.items():
-        score = sum(1 for kw in ind_data.get("jd_keywords", []) if kw.lower() in jd_lower)
-        if score > 0:
-            scores[ind_name] = score
-    if scores:
-        return max(scores, key=scores.get)
-    return "IT & Software"
-
-# ── END INDUSTRY CONFIG ───────────────────────────────────────────────────────
-
-# ══════════════════════════════════════════════════════════════════════════════
-# IAS INDUSTRY QUESTION BANK — Sprint 2
-# 300 questions · 12 industries · Easy / Medium / Hard
-# ══════════════════════════════════════════════════════════════════════════════
-# IAS v9.0 — Multi-Industry Question Bank
-# Sprint 2: 540 questions · 12 industries · Easy / Medium / Hard
-# GVS Technologies · Gokul Prakash T
-
-IND_QUESTION_BANK = {
-
-# ═══════════════════════════════════════════════════════════════
-"Telecom & Networks": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"OSS/BSS","type":"concept","question":"What is the difference between OSS and BSS in a telecom operator environment? Give two examples of each."},
-    {"skill":"5G","type":"concept","question":"Explain the difference between 5G NSA and SA architecture. Which deployment model is more common today and why?"},
-    {"skill":"FCAPS","type":"concept","question":"What does FCAPS stand for and how does it relate to network management?"},
-    {"skill":"Network Management","type":"concept","question":"What is a Network Management System (NMS) and what are its core functions? Name two vendors."},
-    {"skill":"Protocols","type":"concept","question":"What is the role of SNMP in network management? What are its three versions and key differences?"},
-    {"skill":"Network Operations","type":"scenario","question":"A network alarm fires at 2am showing a critical fault on a core router. Walk me through your first five steps as NOC engineer."},
-    {"skill":"Troubleshooting","type":"scenario","question":"A customer reports slow data speeds on 4G. List three possible causes you would investigate first."},
-    {"skill":"SLA","type":"concept","question":"What is a Service Level Agreement (SLA) in telecom? Name three key metrics typically included."},
-    {"skill":"VoIP","type":"concept","question":"What is VoIP and what are the two most common protocols used? What quality metrics matter most?"},
-    {"skill":"Cloud RAN","type":"concept","question":"What is Cloud RAN (C-RAN) and how does it differ from traditional distributed RAN?"},
-],
-"medium": [
-    {"skill":"OSS/BSS","type":"scenario","question":"You are leading an OSS/BSS modernisation programme for a Tier-1 operator. Their legacy Amdocs BSS is being replaced with a cloud-native stack. What are the top three integration risks and how do you mitigate them?"},
-    {"skill":"5G","type":"scenario","question":"An operator wants to deploy 5G network slicing for enterprise IoT, eMBB, and URLLC use cases. How would you architect the slice management framework?"},
-    {"skill":"Network Automation","type":"scenario","question":"Your team needs to reduce mean time to repair (MTTR) from 4 hours to 30 minutes using automation. Describe your approach and the tools you would deploy."},
-    {"skill":"TM Forum","type":"concept","question":"Explain the TM Forum Open API framework. How does eTOM map to real operational processes? Give two examples."},
-    {"skill":"ZTP","type":"scenario","question":"A new greenfield 5G site needs to be provisioned without on-site engineers. Walk me through a Zero-Touch Provisioning workflow end-to-end."},
-    {"skill":"Performance","type":"scenario","question":"KPIs show a cell site with declining throughput over 3 weeks but no alarms. How do you diagnose and resolve this?"},
-    {"skill":"ORAN","type":"concept","question":"What is the xApp ecosystem in ORAN architecture? How does the RAN Intelligent Controller (RIC) enable dynamic optimisation?"},
-    {"skill":"Order-to-Activate","type":"scenario","question":"A business customer's fibre order has been stuck in provisioning for 5 days. Walk through the Order-to-Activate process and where the likely blockages are."},
-    {"skill":"Security","type":"scenario","question":"You detect anomalous traffic patterns suggesting a DDoS attack on the core network. Describe your response playbook."},
-    {"skill":"Cloud Migration","type":"scenario","question":"How would you migrate a monolithic OSS platform to microservices without service disruption? What is your rollback strategy?"},
-],
-"hard": [
-    {"skill":"Autonomous Networks","type":"scenario","question":"Design an autonomous network closed-loop architecture for a 5G SA operator. How does the system progress from Level 0 (manual) to Level 4 (conditional autonomy)? What ML models power each closed loop?"},
-    {"skill":"OSS/BSS Architecture","type":"scenario","question":"A Tier-1 operator with 50M subscribers needs to consolidate three legacy OSS stacks (Nokia NetAct, HP OpenView, custom in-house) into a single cloud-native platform. Design the migration architecture, data model harmonisation approach, and zero-downtime cutover strategy."},
-    {"skill":"5G Core","type":"scenario","question":"Architect a 5G service-based architecture (SBA) for a national operator deploying private 5G for industrial IoT across 200 factories. Address network slicing, latency requirements (<5ms), edge compute placement, and end-to-end security."},
-    {"skill":"Network AI/ML","type":"scenario","question":"You need to build an ML model to predict cell site outages 4 hours before they occur. What features would you engineer from NetAct telemetry data? Which algorithm would you choose and why? How do you handle concept drift in production?"},
-    {"skill":"Programme Leadership","type":"scenario","question":"You are AVP responsible for a €20M OSS transformation programme that is 3 months behind and €2M over budget. The client's CTIO is threatening to terminate. How do you stabilise, recover, and restore confidence?"},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"IT & Software": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"System Design","type":"concept","question":"Explain the difference between horizontal and vertical scaling. When would you choose each?"},
-    {"skill":"APIs","type":"concept","question":"What is the difference between REST and GraphQL? Name two use cases where GraphQL is a better choice."},
-    {"skill":"DevOps","type":"concept","question":"What is CI/CD? Describe the stages of a typical CI/CD pipeline for a web application."},
-    {"skill":"Cloud","type":"concept","question":"What is the difference between IaaS, PaaS, and SaaS? Give one example of each from AWS, Azure, or GCP."},
-    {"skill":"Containers","type":"concept","question":"What is Docker and why do containers improve deployment consistency? How do containers differ from virtual machines?"},
-    {"skill":"Databases","type":"concept","question":"When would you choose a NoSQL database over a relational database? Give two specific use cases."},
-    {"skill":"Git","type":"scenario","question":"A developer accidentally pushed sensitive credentials to a public GitHub repo 10 minutes ago. What are your immediate steps?"},
-    {"skill":"Testing","type":"concept","question":"What is the difference between unit, integration, and end-to-end testing? Why is the testing pyramid important?"},
-    {"skill":"Agile","type":"concept","question":"Explain the difference between a Sprint and a Kanban workflow. When would you choose each?"},
-    {"skill":"Security","type":"concept","question":"What is SQL injection? How do you prevent it in a web application?"},
-],
-"medium": [
-    {"skill":"System Design","type":"scenario","question":"Design a URL shortening service (like bit.ly) that handles 100M requests/day. Address storage, hashing strategy, caching, and failover."},
-    {"skill":"Microservices","type":"scenario","question":"Your monolithic e-commerce app is experiencing 3-second page load times during flash sales. How would you decompose it into microservices and implement a caching strategy?"},
-    {"skill":"Kubernetes","type":"scenario","question":"A production pod is crashing with OOMKilled errors every 2 hours. Walk me through your diagnosis and long-term resolution."},
-    {"skill":"Data Engineering","type":"scenario","question":"Design a real-time fraud detection pipeline processing 50,000 transactions/second. What stream processing framework would you use and why?"},
-    {"skill":"Security","type":"scenario","question":"Your application's login endpoint is receiving 50,000 failed authentication attempts per minute. How do you respond and what controls do you implement?"},
-    {"skill":"Observability","type":"scenario","question":"A microservice in production is slow but shows no errors. How do you use distributed tracing, metrics, and logs to find the root cause?"},
-    {"skill":"API Design","type":"scenario","question":"You need to design a public REST API for a payments platform. How do you handle versioning, rate limiting, idempotency, and backward compatibility?"},
-    {"skill":"Architecture","type":"scenario","question":"Compare event-driven architecture vs request-response for a food delivery platform. What are the trade-offs for order management, notifications, and payment?"},
-    {"skill":"Performance","type":"scenario","question":"A SQL query that was running in 200ms is now taking 45 seconds after a data migration. How do you diagnose and optimise it?"},
-    {"skill":"CI/CD","type":"scenario","question":"Your team deploys 15 times a day. How do you implement blue-green deployments with automated rollback and feature flags?"},
-],
-"hard": [
-    {"skill":"Distributed Systems","type":"scenario","question":"Design a globally distributed database for a financial trading platform requiring sub-10ms latency, strong consistency for trades, and 99.999% uptime across 5 regions. How do you resolve the CAP theorem trade-offs?"},
-    {"skill":"System Design","type":"scenario","question":"Architect a real-time recommendation engine for a streaming platform with 200M users. Address feature engineering at scale, model serving latency (<50ms), A/B testing infrastructure, and feedback loops."},
-    {"skill":"Platform Engineering","type":"scenario","question":"Your company wants to build an internal developer platform (IDP) to reduce deployment time from 3 days to 30 minutes for 500 engineers. Design the golden path, self-service capabilities, and governance model."},
-    {"skill":"Engineering Leadership","type":"scenario","question":"You inherit an engineering team of 40 where attrition is 40% annually, deployment frequency is monthly, and defect escape rate is 30%. You have 6 months to transform it. What is your plan?"},
-    {"skill":"AI/ML","type":"scenario","question":"Design an LLM-powered coding assistant that understands your company's internal codebase of 2M lines across 50 repositories. Address RAG architecture, code embedding strategy, latency, hallucination mitigation, and security."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"BFSI": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Risk","type":"concept","question":"What is the difference between market risk, credit risk, and operational risk? Give one example of each."},
-    {"skill":"Compliance","type":"concept","question":"What is AML (Anti-Money Laundering)? Name three red flags that would trigger an AML investigation."},
-    {"skill":"Payments","type":"concept","question":"What is the difference between SWIFT, SEPA, and RTGS? When is each used?"},
-    {"skill":"Banking","type":"concept","question":"What is the difference between a retail bank and an investment bank? What products does each offer?"},
-    {"skill":"Regulations","type":"concept","question":"What is Basel III? What are its three pillars and why was it introduced?"},
-    {"skill":"KYC","type":"scenario","question":"A new corporate client applying for a business account has complex ownership structure across 4 jurisdictions. What KYC steps do you follow?"},
-    {"skill":"Credit","type":"concept","question":"What is a credit rating and who issues them? How does a credit rating affect borrowing costs?"},
-    {"skill":"Insurance","type":"concept","question":"What is the difference between life insurance, general insurance, and reinsurance?"},
-    {"skill":"Fintech","type":"concept","question":"What is open banking and what does PSD2 require European banks to do?"},
-    {"skill":"Trading","type":"concept","question":"What is the difference between an equity and a bond? How does duration risk affect bond portfolios?"},
-],
-"medium": [
-    {"skill":"Risk Management","type":"scenario","question":"Your bank's credit portfolio has 15% exposure to commercial real estate, which is showing early stress signals. How do you quantify the risk and what actions do you recommend to the ALCO?"},
-    {"skill":"Compliance","type":"scenario","question":"A suspicious transaction alert fires for a long-standing private banking client who transferred $2M to an offshore account. How do you handle this while maintaining the client relationship?"},
-    {"skill":"Technology","type":"scenario","question":"Your core banking system (30 years old) needs modernisation. How do you manage the migration to a cloud-native platform without a single hour of downtime?"},
-    {"skill":"Fraud","type":"scenario","question":"Design a real-time fraud detection system for a bank processing 5M transactions/day. What ML features matter most and how do you reduce false positives?"},
-    {"skill":"IFRS 9","type":"scenario","question":"Explain how IFRS 9 ECL (Expected Credit Loss) calculation works for a retail mortgage portfolio. What are the three stages and what triggers stage migration?"},
-    {"skill":"Trading","type":"scenario","question":"Explain Value at Risk (VaR) and its limitations. How would you supplement VaR with CVaR and stress testing for a trading desk?"},
-    {"skill":"Payments","type":"scenario","question":"Design a cross-border payment system handling 10 currencies with T+0 settlement. Address FX risk, correspondent banking relationships, and regulatory reporting."},
-    {"skill":"Digital Banking","type":"scenario","question":"Your bank wants to launch a neo-bank product. What is your product strategy, regulatory approach, and technology stack?"},
-    {"skill":"RegTech","type":"scenario","question":"GDPR and MiFID II are creating 200+ daily regulatory reports. How do you build a regulatory reporting platform that reduces manual effort by 80%?"},
-    {"skill":"Stress Testing","type":"scenario","question":"Walk me through how you would design and execute an ECB stress test scenario for a mid-sized European bank. What are the key assumptions and pitfalls?"},
-],
-"hard": [
-    {"skill":"Risk Architecture","type":"scenario","question":"Design an enterprise risk management framework for a global bank operating in 20 countries. How do you aggregate risk across market, credit, operational, and liquidity dimensions in real-time? What is your data architecture?"},
-    {"skill":"Digital Transformation","type":"scenario","question":"A traditional bank with €500B AUM is losing 20% of its Gen-Z customers annually to neobanks. Design a 3-year digital transformation strategy that maintains regulatory compliance while competing on customer experience and unit economics."},
-    {"skill":"Capital Markets","type":"scenario","question":"Design the technology architecture for a dark pool trading venue that needs to match orders in <1ms, maintain full audit trails for MiFID II, handle 2M orders/second at peak, and survive a DR scenario within 4 hours."},
-    {"skill":"Leadership","type":"scenario","question":"You are Group CRO of a bank that just acquired a fintech with embedded lending. The combined entity has conflicting risk frameworks, incompatible data models, and different regulatory licences. How do you harmonise risk management within 18 months?"},
-    {"skill":"AI in Finance","type":"scenario","question":"Design an explainable AI credit decisioning system for SME lending that satisfies ECOA/fair lending requirements, achieves <2s decisions, handles thin-file applicants, and maintains model performance above 0.72 Gini. How do you address model drift and regulatory scrutiny?"},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Healthcare & Pharma": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"GCP","type":"concept","question":"What is Good Clinical Practice (GCP) and why is it essential for clinical trials?"},
-    {"skill":"Regulatory","type":"concept","question":"What is the difference between an IND and an NDA in the FDA drug approval pathway?"},
-    {"skill":"Clinical Trials","type":"concept","question":"What are the four phases of clinical trials? What is the primary objective of each phase?"},
-    {"skill":"Pharmacovigilance","type":"concept","question":"What is an adverse drug reaction (ADR)? What is the difference between a serious and non-serious ADR?"},
-    {"skill":"Health IT","type":"concept","question":"What is HL7 FHIR and why has it become the standard for healthcare data exchange?"},
-    {"skill":"Quality","type":"concept","question":"What is a CAPA (Corrective and Preventive Action)? When is it triggered and what does it involve?"},
-    {"skill":"Regulatory","type":"scenario","question":"You receive a Form 483 observation from the FDA regarding incomplete batch records. What are your immediate steps?"},
-    {"skill":"Clinical Data","type":"concept","question":"What is CDASH and why is it used in clinical data collection? How does it relate to SDTM?"},
-    {"skill":"Medical Devices","type":"concept","question":"What is ISO 13485? How does it differ from ISO 9001 for medical device manufacturers?"},
-    {"skill":"Healthcare IT","type":"concept","question":"What is the difference between EHR and EMR? What is interoperability in the context of healthcare IT?"},
-],
-"medium": [
-    {"skill":"Clinical Trials","type":"scenario","question":"A Phase III trial shows your primary endpoint was missed but a pre-specified secondary endpoint shows strong efficacy. How do you handle this in the regulatory submission?"},
-    {"skill":"Pharmacovigilance","type":"scenario","question":"Post-marketing surveillance reveals a 3-fold increase in cardiac events for your blockbuster drug compared to the control population. Walk me through your response timeline and regulatory obligations."},
-    {"skill":"Regulatory Affairs","type":"scenario","question":"You are planning a global submission strategy for a novel oncology drug across FDA, EMA, and PMDA. What are the key differences in requirements and how do you align your dossier?"},
-    {"skill":"GMP","type":"scenario","question":"An out-of-specification (OOS) result is found during final batch release testing. Walk me through the OOS investigation process under GMP."},
-    {"skill":"Health IT","type":"scenario","question":"A large hospital network wants to implement a clinical decision support system integrated with their Epic EHR. What are the key implementation risks and how do you validate it for patient safety?"},
-    {"skill":"Digital Health","type":"scenario","question":"Design a remote patient monitoring solution for heart failure patients. Address device selection, data pipelines, alert thresholds, clinical workflow integration, and regulatory classification."},
-    {"skill":"Quality","type":"scenario","question":"During a GMP audit, you find that 3 SOPs have not been updated in 5 years and two involve validated computer systems. How do you manage this finding?"},
-    {"skill":"Clinical Operations","type":"scenario","question":"Patient enrolment in your Phase II trial is running 40% behind schedule at month 6. What interventions do you implement to recover?"},
-    {"skill":"Real World Evidence","type":"concept","question":"How can Real World Evidence (RWE) supplement randomised controlled trials? What are its limitations and FDA's current stance?"},
-    {"skill":"Biostatistics","type":"scenario","question":"Explain how you would power a non-inferiority trial for a new antibiotic against the standard of care. What margin would you select and why?"},
-],
-"hard": [
-    {"skill":"Regulatory Strategy","type":"scenario","question":"Your mRNA gene therapy shows strong Phase II data in a rare disease with 2,000 patients worldwide. Design a full regulatory strategy across FDA (Breakthrough Therapy), EMA (PRIME), and at least two other markets. Address adaptive trial design, surrogate endpoints, and post-marketing requirements."},
-    {"skill":"Digital Health","type":"scenario","question":"Design a Class II SaMD (Software as a Medical Device) for AI-powered radiology diagnosis. Address FDA's AI/ML action plan, algorithm change protocol, predicate device selection, and post-market performance monitoring for a system used in 200 hospitals."},
-    {"skill":"Clinical Operations","type":"scenario","question":"You are VP Clinical Operations responsible for a 15,000-patient global Phase III trial across 40 countries that is 18 months from primary endpoint readout. An audit reveals systematic protocol deviations at 30 sites. How do you protect data integrity, manage the timeline, and address the root cause?"},
-    {"skill":"CMC","type":"scenario","question":"Design the CMC development strategy for a biologic (monoclonal antibody) from cell line development through commercial manufacturing. Address comparability studies, scale-up challenges, and regulatory submission requirements for a global launch."},
-    {"skill":"AI in Healthcare","type":"scenario","question":"A hospital system wants to deploy an LLM to assist clinical documentation and summarise patient records. Design the validation framework, safeguards against hallucination, HIPAA compliance architecture, and physician workflow integration — including how you demonstrate clinical equivalence."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Manufacturing": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Lean","type":"concept","question":"What are the 8 wastes of Lean manufacturing (TIMWOODS)? Give a real example of each."},
-    {"skill":"Six Sigma","type":"concept","question":"What is DMAIC? What happens in each phase and what tools are commonly used?"},
-    {"skill":"OEE","type":"concept","question":"What is Overall Equipment Effectiveness (OEE)? How is it calculated? What is considered world-class OEE?"},
-    {"skill":"Quality","type":"concept","question":"What is the difference between quality assurance and quality control? Give an example of each in a manufacturing context."},
-    {"skill":"Safety","type":"concept","question":"What is 5S methodology? Describe each S and its purpose on a factory floor."},
-    {"skill":"FMEA","type":"concept","question":"What is a Process FMEA (PFMEA)? What does the Risk Priority Number (RPN) represent?"},
-    {"skill":"Maintenance","type":"concept","question":"What is the difference between preventive, predictive, and corrective maintenance? When is each most appropriate?"},
-    {"skill":"Production Planning","type":"scenario","question":"A machine breaks down during a peak production run with orders due tomorrow. How do you prioritise and manage the situation?"},
-    {"skill":"Kaizen","type":"concept","question":"What is a Kaizen event? How does it differ from a Six Sigma project?"},
-    {"skill":"ERP","type":"concept","question":"What is MES (Manufacturing Execution System) and how does it interface with an ERP system?"},
-],
-"medium": [
-    {"skill":"Lean","type":"scenario","question":"A production line has a 35% defect rate for a new component. Using DMAIC, describe the first three phases and the tools you would deploy."},
-    {"skill":"OEE","type":"scenario","question":"OEE has dropped from 78% to 61% over the last month. Availability is unchanged but performance has dropped from 88% to 72%. How do you diagnose the root cause?"},
-    {"skill":"Industry 4.0","type":"scenario","question":"A plant manager wants to implement predictive maintenance for 50 CNC machines. Design the sensor strategy, data pipeline, ML model approach, and integration with the CMMS."},
-    {"skill":"Quality","type":"scenario","question":"You receive a major customer complaint about a batch of products with surface finish defects that passed your inspection. How do you manage the customer, investigate, and prevent recurrence?"},
-    {"skill":"Supply Chain","type":"scenario","question":"A key supplier has just filed for bankruptcy. You have 3 weeks of inventory and no qualified alternative. Walk me through your immediate response and 90-day recovery plan."},
-    {"skill":"Value Stream Mapping","type":"scenario","question":"Map the value stream for a machined component from raw material to delivery. The current lead time is 14 days but value-added time is only 4 hours. Identify three improvement opportunities."},
-    {"skill":"Automation","type":"scenario","question":"The board has approved ₹5 crore for factory automation. How do you identify, prioritise, and build the business case for automation investments?"},
-    {"skill":"IATF 16949","type":"scenario","question":"Your automotive plant is preparing for IATF 16949 certification. What are the five additional requirements beyond ISO 9001 and how do you implement them?"},
-    {"skill":"TPM","type":"scenario","question":"Implement Total Productive Maintenance (TPM) in a plant where operators see maintenance as 'not their job'. How do you drive the cultural and operational change?"},
-    {"skill":"Statistical Process Control","type":"scenario","question":"A control chart shows your process is in statistical control but producing 2% defectives. How do you reduce defects to below 0.1%?"},
-],
-"hard": [
-    {"skill":"Factory Transformation","type":"scenario","question":"A 30-year-old automotive stamping plant needs to be transformed into an Industry 4.0 facility while maintaining production volume. Design the 3-year transformation roadmap covering digital twin implementation, IIoT connectivity for 200 machines, AI-driven quality inspection, and change management for 800 unionised workers."},
-    {"skill":"Supply Chain Resilience","type":"scenario","question":"Post-COVID analysis shows your supply chain has single points of failure for 40% of your top 100 SKUs. Design a supplier diversification strategy, regional buffering model, and supply chain visibility platform for a manufacturer with €2B in annual procurement."},
-    {"skill":"Quality System","type":"scenario","question":"Your global quality system needs harmonisation across 12 plants in 6 countries with different ERP systems and quality management standards. Design the harmonised QMS architecture, data governance model, and global rollout plan without disrupting production."},
-    {"skill":"Leadership","type":"scenario","question":"You are VP Operations at a plant running at 65% capacity utilisation with €8M annual losses. The board gives you 18 months to reach profitability or they will close it. What is your turnaround plan?"},
-    {"skill":"Sustainability","type":"scenario","question":"Design a net-zero manufacturing roadmap for a steel plant producing 2M tonnes annually. Address energy transition (coal to hydrogen DRI), scope 3 emissions in the supply chain, green premium pricing, and regulatory compliance across three jurisdictions."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Consulting & Professional Services": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Problem Solving","type":"concept","question":"What is the MECE principle? Why is it important in consulting problem structuring?"},
-    {"skill":"Frameworks","type":"concept","question":"When would you use a McKinsey 7-S framework vs a SWOT analysis? Give an example of each."},
-    {"skill":"Project Management","type":"concept","question":"What is the difference between a project, a programme, and a portfolio? Give a real consulting example of each."},
-    {"skill":"Stakeholder Management","type":"concept","question":"What is a RACI matrix? How do you use it to manage stakeholder expectations on a complex programme?"},
-    {"skill":"Change Management","type":"concept","question":"What is the ADKAR model? How does it differ from Kotter's 8-step model?"},
-    {"skill":"Agile","type":"concept","question":"What is the difference between Agile and Waterfall? When would you recommend each to a client?"},
-    {"skill":"Communication","type":"scenario","question":"A mid-level client manager is resistant to a recommendation your team has made. How do you handle this without escalating?"},
-    {"skill":"Business Analysis","type":"concept","question":"What is a business case? What are the five key components you always include?"},
-    {"skill":"Risk Management","type":"concept","question":"What is a risk register? What are the five typical fields you would include for each risk?"},
-    {"skill":"Estimation","type":"scenario","question":"How many petrol stations are there in India? Walk me through your estimation approach."},
-],
-"medium": [
-    {"skill":"Strategy","type":"scenario","question":"A telecom operator with declining ARPU wants to enter the fintech space. Conduct a strategic assessment of this diversification move."},
-    {"skill":"Programme Delivery","type":"scenario","question":"You are leading a ₹200 crore ERP implementation that is 4 months behind schedule. The client's CFO is threatening penalties. How do you stabilise and recover the programme?"},
-    {"skill":"Change Management","type":"scenario","question":"You are implementing an AI-powered workflow tool for 5,000 back-office employees who fear job losses. How do you design and execute the change management programme?"},
-    {"skill":"Process Excellence","type":"scenario","question":"A shared services centre is processing invoices at an average of 12 days. The benchmark is 3 days. Walk me through your approach to diagnose and close this performance gap."},
-    {"skill":"Client Development","type":"scenario","question":"After completing a cost-reduction project, the client is satisfied. How do you convert this into a larger digital transformation mandate?"},
-    {"skill":"Pre-sales","type":"scenario","question":"You have 48 hours to submit a bid for a £5M digital transformation programme. You have limited information. How do you structure your response?"},
-    {"skill":"Operating Model","type":"scenario","question":"A bank wants to create a shared services centre for finance, HR, and IT across 8 countries. Design the target operating model including governance, location strategy, and transition approach."},
-    {"skill":"Benefits Realisation","type":"scenario","question":"6 months after a process improvement project, the projected £2M savings have not materialised. How do you diagnose the root cause and get back on track?"},
-    {"skill":"Agile Transformation","type":"scenario","question":"A 1,000-person IT department wants to adopt SAFe. How do you approach the assessment, programme increment planning, and first 90 days?"},
-    {"skill":"Data Strategy","type":"scenario","question":"A retailer's board wants a data strategy in 6 weeks. How do you structure the engagement, and what are the five key components of the deliverable?"},
-],
-"hard": [
-    {"skill":"Digital Transformation","type":"scenario","question":"A traditional insurance company with €10B GWP is losing 3 percentage points of market share annually to insurtech competitors. Design a 5-year digital transformation strategy covering customer experience, product innovation, operational efficiency, and technology modernisation — including how you fund it through existing cost takeout."},
-    {"skill":"M&A Integration","type":"scenario","question":"Your consulting firm has been engaged to lead the integration of two banks post-merger with combined assets of $200B. Design the 100-day integration management office structure, synergy capture methodology, and customer retention programme."},
-    {"skill":"Operating Model","type":"scenario","question":"A global manufacturing company with operations in 25 countries wants to centralise its procurement function from decentralised country operations to a global shared service. Design the full target operating model, change management programme, and 3-year transition plan."},
-    {"skill":"AI Strategy","type":"scenario","question":"A Fortune 500 retailer asks you to develop their enterprise AI strategy. How do you conduct the opportunity assessment, build the governance framework, design the capability roadmap, and demonstrate ROI within 12 months?"},
-    {"skill":"Turnaround","type":"scenario","question":"A mid-market manufacturing company with €500M revenue is 90 days from insolvency. You are engaged as interim CEO. What are your actions in the first 72 hours, 30 days, and 90 days to stabilise and chart a recovery path?"},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Retail & E-commerce": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Omnichannel","type":"concept","question":"What is omnichannel retail? How does it differ from multichannel? Give three examples of omnichannel execution."},
-    {"skill":"Metrics","type":"concept","question":"What is GMV and how does it differ from net revenue? What other metrics do you track for e-commerce health?"},
-    {"skill":"Supply Chain","type":"concept","question":"What is ABC analysis in inventory management? How do you classify and manage each category differently?"},
-    {"skill":"Merchandising","type":"concept","question":"What is a planogram and why is it important? How does it differ between physical and digital retail?"},
-    {"skill":"Digital Marketing","type":"concept","question":"What is the difference between SEO and SEM? When would you invest more in each?"},
-    {"skill":"Customer Experience","type":"scenario","question":"A customer tweets about a damaged delivery to 50,000 followers. How do you respond in the next 30 minutes?"},
-    {"skill":"Pricing","type":"concept","question":"What is dynamic pricing? Name three retailers that use it effectively and the data inputs they rely on."},
-    {"skill":"Logistics","type":"concept","question":"What is the difference between first-mile, mid-mile, and last-mile in retail logistics?"},
-    {"skill":"Category Management","type":"concept","question":"What is the category management process? What are the eight steps in the ECR category management framework?"},
-    {"skill":"Loyalty","type":"concept","question":"What is the difference between a points-based and a tiered loyalty programme? What are the pros and cons of each?"},
-],
-"medium": [
-    {"skill":"Demand Planning","type":"scenario","question":"Sales for your hero SKU have been 40% above forecast for 3 consecutive weeks. You have 10 days of inventory. How do you respond?"},
-    {"skill":"Digital Commerce","type":"scenario","question":"Your e-commerce conversion rate has dropped from 3.2% to 1.8% over 6 weeks. Nothing changed in the checkout flow. How do you diagnose and fix this?"},
-    {"skill":"Supply Chain","type":"scenario","question":"Your primary supplier in China announces a 6-week factory shutdown due to regulatory inspection. You have €20M of orders in pipeline. Walk me through your crisis response."},
-    {"skill":"Pricing","type":"scenario","question":"A competitor has permanently dropped prices by 15% on your top 50 SKUs. How do you respond without destroying your margin structure?"},
-    {"skill":"Personalisation","type":"scenario","question":"Design a personalisation engine for a fashion retailer with 10M monthly active users. What data inputs, ML models, and A/B testing framework would you use?"},
-    {"skill":"Omnichannel","type":"scenario","question":"Your buy-online-pick-up-in-store (BOPIS) NPS is 42 vs 71 for pure delivery. What are the likely root causes and how do you close the gap?"},
-    {"skill":"Marketplace","type":"scenario","question":"Your brand wants to launch on Amazon India while protecting your brand equity and direct-to-consumer channel. How do you design the marketplace strategy?"},
-    {"skill":"Sustainability","type":"scenario","question":"A major retail client wants to achieve net-zero scope 3 emissions in its supply chain by 2030. How do you build the supplier engagement programme and measurement framework?"},
-    {"skill":"Quick Commerce","type":"scenario","question":"Design the unit economics model for a 10-minute grocery delivery business. What are the key levers to reach profitability?"},
-    {"skill":"Analytics","type":"scenario","question":"Your CLTV model shows your best customers have dropped from ₹18,000 average annual spend to ₹11,000 this year. How do you diagnose causes and design a retention intervention?"},
-],
-"hard": [
-    {"skill":"Digital Transformation","type":"scenario","question":"A 200-store traditional fashion retailer with €800M revenue is facing existential threat from fast fashion e-commerce. Design a full digital-physical integration strategy covering customer data platform, inventory visibility, last-mile fulfilment, and digital product discovery — with a 3-year P&L impact model."},
-    {"skill":"Platform Strategy","type":"scenario","question":"Design a marketplace platform strategy for a grocery retailer that wants to open their logistics network and dark stores to third-party sellers while protecting their brand and customer data. Address technology architecture, seller onboarding, trust & safety, and revenue model."},
-    {"skill":"Supply Chain Resilience","type":"scenario","question":"Design a supply chain resilience framework for a global fashion brand with 800 suppliers across 30 countries. Address supplier risk scoring, nearshoring strategy, inventory positioning, and a technology platform that gives live visibility into tier-2 supplier disruptions."},
-    {"skill":"Customer Strategy","type":"scenario","question":"Your loyalty programme has 20M members but only 8% are active. Design a full loyalty programme transformation covering segmentation, rewards redesign, gamification, coalition partnerships, and a 3-year activation roadmap."},
-    {"skill":"Technology","type":"scenario","question":"Architect the technology stack for an omnichannel retailer expanding from 3 to 15 countries. Address ERP/OMS/WMS selection, composable commerce architecture, data residency compliance, and a headless CMS strategy that supports 15 localised storefronts from a single platform."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Energy & Utilities": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Power Systems","type":"concept","question":"What is the difference between AC and DC power transmission? Why is HVDC used for long-distance transmission?"},
-    {"skill":"Safety","type":"concept","question":"What is a Permit to Work (PTW) system? Why is it critical in energy operations?"},
-    {"skill":"Renewables","type":"concept","question":"What is the capacity factor for wind and solar? How does it compare to gas-fired power plants?"},
-    {"skill":"Grid","type":"concept","question":"What is baseload vs peaking power? Give one example of each technology."},
-    {"skill":"SCADA","type":"concept","question":"What is SCADA in an energy context? What are its core functions in a power utility?"},
-    {"skill":"Oil & Gas","type":"concept","question":"What is the difference between upstream, midstream, and downstream operations in oil and gas?"},
-    {"skill":"Safety","type":"scenario","question":"During a routine inspection, you discover a gas leak near a compressor station. What are your immediate actions?"},
-    {"skill":"Sustainability","type":"concept","question":"What is the difference between Scope 1, 2, and 3 greenhouse gas emissions? Give one example of each for a utility company."},
-    {"skill":"Asset Management","type":"concept","question":"What is asset integrity management? Why is it critical for ageing infrastructure?"},
-    {"skill":"Smart Grid","type":"concept","question":"What is an Advanced Metering Infrastructure (AMI)? What benefits does it deliver versus traditional metering?"},
-],
-"medium": [
-    {"skill":"Grid Management","type":"scenario","question":"A major transmission line trips during peak demand, causing a potential frequency event. Walk me through the grid operator response in the first 10 minutes."},
-    {"skill":"Renewables","type":"scenario","question":"A 200MW solar farm is underperforming by 18% versus P50 projections. What are the possible causes and how do you investigate?"},
-    {"skill":"Asset Management","type":"scenario","question":"Your transformer fleet has 35% of assets past their design life. How do you build a risk-based asset replacement programme with limited capex?"},
-    {"skill":"HSE","type":"scenario","question":"A high-potential safety incident occurs at an offshore platform — a near-miss involving dropped objects. How do you manage the immediate response, investigation, and systemic improvement?"},
-    {"skill":"Energy Trading","type":"scenario","question":"Spot prices spike to €800/MWh during a cold snap. You have 500MW of flexible gas capacity. How do you optimise your trading position while managing fuel supply risk?"},
-    {"skill":"Smart Grid","type":"scenario","question":"Design a demand response programme for a utility with 2M residential customers to manage peak demand without building new generation capacity."},
-    {"skill":"Decarbonisation","type":"scenario","question":"A gas distribution company needs to repurpose its network for hydrogen. What are the material, safety, and regulatory challenges? Design a 5-year transition roadmap."},
-    {"skill":"Regulatory","type":"scenario","question":"OFGEM has launched a price control review that proposes to cut your allowed revenues by 15%. How do you build your regulatory submission to defend your capex plan?"},
-    {"skill":"Predictive Maintenance","type":"scenario","question":"Design an AI-powered predictive maintenance system for a 1,500km gas transmission pipeline. What sensor data, ML models, and operational integration would you deploy?"},
-    {"skill":"Operations","type":"scenario","question":"A refinery unit has an unplanned shutdown with 2 weeks of product inventory. How do you manage the recovery and minimise financial impact?"},
-],
-"hard": [
-    {"skill":"Energy Transition","type":"scenario","question":"A coal utility generating 8GW needs to transition its entire portfolio to renewables and storage by 2035 while maintaining grid reliability and shareholder returns. Design the full transition strategy including asset retirement, new build pipeline, workforce reskilling, and financing structure."},
-    {"skill":"Grid Architecture","type":"scenario","question":"Design the grid architecture for a country adding 50GW of variable renewables (wind and solar) to a 100GW synchronous grid. Address inertia replacement, storage sizing and placement, flexible demand integration, and market design changes required."},
-    {"skill":"Digital Utility","type":"scenario","question":"Design a digital twin for a 500km transmission network that enables real-time N-1 security analysis, predictive maintenance, and asset investment planning. Address data ingestion from 10,000 sensors, model fidelity, and integration with EMS/SCADA."},
-    {"skill":"Leadership","type":"scenario","question":"You are CEO of a regional utility facing three simultaneous crises: a cybersecurity attack on SCADA systems, a major storm causing 500,000 customer outages, and a regulator announcing a review of your licence. How do you manage all three?"},
-    {"skill":"Hydrogen","type":"scenario","question":"Design the full value chain architecture for a green hydrogen hub producing 100,000 tonnes/year from offshore wind. Address electrolyser procurement and financing, storage and transportation (pipeline vs liquid vs ammonia), offtake agreements, and the business case at current and projected hydrogen pricing."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Education & EdTech": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Curriculum Design","type":"concept","question":"What is Bloom's Taxonomy? Give one example of a learning objective at each of the six levels."},
-    {"skill":"Instructional Design","type":"concept","question":"What is the ADDIE model? Describe what happens in each phase."},
-    {"skill":"Learning Technology","type":"concept","question":"What is an LMS? Name three platforms and describe their primary use case."},
-    {"skill":"Assessment","type":"concept","question":"What is the difference between formative and summative assessment? Give two examples of each."},
-    {"skill":"Adult Learning","type":"concept","question":"What is andragogy? How does it differ from pedagogy? Name three principles of adult learning."},
-    {"skill":"E-learning","type":"concept","question":"What is SCORM and why does it matter for e-learning content? What replaced it?"},
-    {"skill":"Accessibility","type":"concept","question":"What is WCAG 2.1 and why does it matter for EdTech products? Name three key requirements."},
-    {"skill":"Learning Design","type":"scenario","question":"A classroom session is not landing well with adult learners who keep checking their phones. How do you redesign it?"},
-    {"skill":"Corporate L&D","type":"concept","question":"What is Kirkpatrick's Four Levels of Training Evaluation? How would you measure Level 3 (Behaviour)?"},
-    {"skill":"EdTech","type":"concept","question":"What is gamification in education? Name three mechanics that improve engagement and learning outcomes."},
-],
-"medium": [
-    {"skill":"Curriculum Design","type":"scenario","question":"You need to design a 12-week data analytics curriculum for 500 non-technical employees of a bank. How do you approach needs analysis, content design, and learning pathway?"},
-    {"skill":"Learning Analytics","type":"scenario","question":"Your LMS data shows 70% of learners drop off on Module 3 of a mandatory compliance course. How do you diagnose the problem and redesign?"},
-    {"skill":"EdTech Product","type":"scenario","question":"Design an adaptive learning platform for K-12 mathematics. What data model, recommendation algorithm, and teacher dashboard would you build?"},
-    {"skill":"Corporate L&D","type":"scenario","question":"The CEO wants to see the ROI of the ₹2 crore L&D budget. How do you design a measurement framework that demonstrates business impact?"},
-    {"skill":"Digital Learning","type":"scenario","question":"A university wants to launch an online MBA programme competing with Coursera. Design the learning experience, technology stack, faculty engagement model, and student support system."},
-    {"skill":"Change Management","type":"scenario","question":"Teachers at a 50-school district are resisting a new EdTech platform. How do you design an adoption programme that goes from 20% to 85% active use within one academic year?"},
-    {"skill":"Assessment Design","type":"scenario","question":"Design a competency-based assessment framework for a software engineering apprenticeship programme. How do you ensure fairness, reliability, and employer relevance?"},
-    {"skill":"Instructional Design","type":"scenario","question":"Convert a 3-day instructor-led leadership training programme into a blended learning experience. What elements stay face-to-face and what moves online? How do you maintain social learning?"},
-    {"skill":"Personalisation","type":"scenario","question":"Design a personalised learning pathway system for an enterprise upskilling platform with 50,000 employees across 20 job families. How do you balance employee choice with business skill priorities?"},
-    {"skill":"Impact Measurement","type":"scenario","question":"Three months after a sales training programme, revenue per rep has increased by 8%. How do you determine whether the training caused this and what other factors you need to control for?"},
-],
-"hard": [
-    {"skill":"National Education System","type":"scenario","question":"You are appointed to lead the digital transformation of a national K-12 education system in a country with 20M students, 800,000 teachers, and significant digital divide between urban and rural areas. Design the 5-year strategy covering infrastructure, teacher development, content localisation, and learning outcomes measurement."},
-    {"skill":"EdTech Scale","type":"scenario","question":"Design an AI tutoring system for STEM subjects that can serve 10M students simultaneously, adapts to individual learning pace, works on low-bandwidth connections, and demonstrates measurable learning gains equivalent to one-to-one tutoring. Address AI safety for minors and algorithmic bias."},
-    {"skill":"Corporate University","type":"scenario","question":"A Fortune 500 company with 100,000 employees wants to build a corporate university that replaces 60% of external training spend and becomes a competitive advantage for talent attraction. Design the full operating model, technology stack, faculty model, and 3-year business case."},
-    {"skill":"Accreditation","type":"scenario","question":"An online university with 50,000 students is applying for regional accreditation for the first time. Design the self-study preparation process, evidence collection framework, and continuous improvement system to meet the 18-month accreditation timeline."},
-    {"skill":"Learning Ecosystem","type":"scenario","question":"Design an enterprise learning ecosystem that integrates formal training, social learning, experience-based development, and AI coaching for a global professional services firm of 30,000 people in 40 countries. Address content governance, skills taxonomy, career pathing, and demonstrate how learning data informs workforce planning."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Legal & Compliance": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Contract Law","type":"concept","question":"What are the essential elements of a valid contract? Give an example of a situation where each element is missing."},
-    {"skill":"GDPR","type":"concept","question":"What are the six lawful bases for processing personal data under GDPR? Give one example of each."},
-    {"skill":"Corporate Governance","type":"concept","question":"What are the duties of a company director? Name three fiduciary duties and explain each."},
-    {"skill":"IP Law","type":"concept","question":"What is the difference between a patent, trademark, copyright, and trade secret? Give one example of each."},
-    {"skill":"Employment Law","type":"concept","question":"What is the difference between an employee, a worker, and a self-employed contractor? Why does the distinction matter?"},
-    {"skill":"Regulatory","type":"concept","question":"What is the difference between a regulator and a legislator? Give two examples of UK financial regulators and their remit."},
-    {"skill":"Compliance","type":"scenario","question":"An employee reports that their manager asked them to backdate a document. How do you handle this as the compliance officer?"},
-    {"skill":"Risk","type":"concept","question":"What is a legal risk register? What are the five fields you would include for each entry?"},
-    {"skill":"Data Privacy","type":"concept","question":"What is the difference between a Data Controller and a Data Processor under GDPR? Give a practical example."},
-    {"skill":"Contract","type":"scenario","question":"A supplier has delivered goods 3 weeks late causing you €50,000 of consequential losses. Your contract has a liquidated damages clause capped at €10,000. What are your options?"},
-],
-"medium": [
-    {"skill":"M&A","type":"scenario","question":"You are conducting legal due diligence on a tech acquisition target. What are your top 10 priority areas and what red flags would cause you to recommend against proceeding?"},
-    {"skill":"GDPR","type":"scenario","question":"Your company suffers a data breach affecting 100,000 EU customer records. Walk me through your obligations under GDPR for the next 72 hours and 30 days."},
-    {"skill":"Employment","type":"scenario","question":"A senior executive is being dismissed for gross misconduct after an investigation into expenses fraud. They are threatening an unfair dismissal claim. How do you manage the process?"},
-    {"skill":"Commercial","type":"scenario","question":"You are negotiating a €10M SaaS contract with a large enterprise customer. They want uncapped liability, no limitation of liability, and full indemnity for all consequential losses. How do you respond?"},
-    {"skill":"Regulatory","type":"scenario","question":"The FCA launches a supervisory visit focusing on your firm's financial crime controls. What are your key preparation steps and how do you manage the on-site review?"},
-    {"skill":"IP","type":"scenario","question":"A competitor has launched a product that appears to infringe your patent. Walk me through your response strategy from initial assessment to litigation decision."},
-    {"skill":"Data Privacy","type":"scenario","question":"A customer exercises their right to erasure under GDPR for all their personal data. Your CRM system cannot delete records without breaking referential integrity. How do you respond?"},
-    {"skill":"Corporate","type":"scenario","question":"The board wants to proceed with a related-party transaction involving a director's family member. What governance process do you apply and what are the disclosure requirements?"},
-    {"skill":"Compliance Programme","type":"scenario","question":"You are the new CCO of a company that has never had a formal compliance programme. How do you build one from scratch with a budget of £500,000 in the first year?"},
-    {"skill":"Sanctions","type":"scenario","question":"A new customer passes your KYC check but you later discover they are connected to a sanctioned entity through a third-degree ownership relationship. What do you do?"},
-],
-"hard": [
-    {"skill":"Legal Strategy","type":"scenario","question":"Your company faces a class action lawsuit from 50,000 consumers alleging your AI product caused psychological harm. The potential liability is $2B. Design the full legal response strategy covering immediate steps, document preservation, expert witnesses, litigation versus settlement analysis, and regulatory co-ordination across 5 jurisdictions."},
-    {"skill":"M&A","type":"scenario","question":"You are General Counsel advising on a hostile takeover bid. The target's board has triggered a poison pill and there are regulatory approval requirements in 7 countries with contradictory remedies. Design the legal strategy for the next 6 months."},
-    {"skill":"Regulatory Crisis","type":"scenario","question":"Your bank receives simultaneous enforcement actions from the FCA, PRA, and US DOJ for AML failures, with potential fines exceeding £500M. Design the crisis management response, including board governance, regulatory engagement strategy, and remediation programme."},
-    {"skill":"Data Privacy","type":"scenario","question":"Your company wants to use employee behavioural data from 50,000 staff across 20 countries for an AI workforce management system. Design the global privacy compliance framework addressing GDPR (EU), CCPA (US), PDPA (India), and PIPL (China) — including data transfer mechanisms, consent architecture, and algorithmic transparency obligations."},
-    {"skill":"AI Governance","type":"scenario","question":"Your company is deploying an AI system that makes employment decisions (hiring, promotion, performance management) for 100,000 employees. Design the legal and compliance framework covering EU AI Act obligations, employment law requirements across 10 jurisdictions, bias testing methodology, and algorithmic accountability governance."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Government & Public Sector": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Public Policy","type":"concept","question":"What is the policy cycle? Name and describe each stage with an example."},
-    {"skill":"Programme Management","type":"concept","question":"What is the difference between PRINCE2 and MSP? When would you use each in a government context?"},
-    {"skill":"Procurement","type":"concept","question":"What is the OJEU (Official Journal of the EU) procurement threshold? What procedure applies above it?"},
-    {"skill":"Digital Government","type":"concept","question":"What is the GDS (Government Digital Service) design principle 'start with user needs'? Why does it differ from traditional government IT?"},
-    {"skill":"Public Finance","type":"concept","question":"What is the difference between capital expenditure and revenue expenditure in public sector budgeting?"},
-    {"skill":"Governance","type":"concept","question":"What is the Nolan Principles framework? Name all seven principles and explain one in detail."},
-    {"skill":"Risk","type":"scenario","question":"A critical government IT system is approaching end-of-life with no budget approved for replacement. How do you manage this risk?"},
-    {"skill":"Stakeholder","type":"concept","question":"Who are the typical stakeholders in a local government digital transformation? How do you prioritise their needs?"},
-    {"skill":"Smart City","type":"concept","question":"What are three core components of a smart city? Give a real-world example of each from any country."},
-    {"skill":"Cybersecurity","type":"concept","question":"What is the NCSC's Cyber Essentials scheme? What are the five technical controls it requires?"},
-],
-"medium": [
-    {"skill":"Digital Transformation","type":"scenario","question":"A government department has 150 legacy IT systems with 30-year-old COBOL code. 40% have no documentation. Design a 5-year modernisation roadmap that maintains public services throughout."},
-    {"skill":"Procurement","type":"scenario","question":"You are running an OJEU procurement for a £20M digital platform. Three of the four bidders score very closely. Walk me through your evaluation and award process including how you manage unsuccessful bidder challenges."},
-    {"skill":"Programme Delivery","type":"scenario","question":"A high-profile Universal Credit-type programme is 2 years behind schedule and £500M over budget. You are brought in as Programme Director. What do you do in the first 30 days?"},
-    {"skill":"Smart City","type":"scenario","question":"Design a smart traffic management system for a city of 3 million people that reduces congestion by 25% and emergency vehicle response time by 30%. Address data privacy, procurement, and legacy infrastructure integration."},
-    {"skill":"Cybersecurity","type":"scenario","question":"A ransomware attack has encrypted the systems of a regional hospital trust, affecting patient records and scheduling. You are the CISO. Walk me through your incident response for the first 24 hours."},
-    {"skill":"Policy Implementation","type":"scenario","question":"You are implementing a major welfare reform affecting 500,000 citizens. Early indicators show a 30% error rate in benefit payments. How do you diagnose and fix this at scale?"},
-    {"skill":"Data Strategy","type":"scenario","question":"Design a national data strategy that enables cross-department data sharing to improve public service delivery while complying with GDPR and building public trust."},
-    {"skill":"Stakeholder Management","type":"scenario","question":"Your digital transformation programme is opposed by the civil service union, three senior ministers, and two prominent media outlets. How do you build political and public support?"},
-    {"skill":"Defence Procurement","type":"scenario","question":"A £2B defence system is delivered 3 years late by the prime contractor. The system fails acceptance testing in 15% of scenarios. How do you manage the contractual response and operational risk?"},
-    {"skill":"AI in Government","type":"scenario","question":"A government department wants to use AI to prioritise benefit fraud investigations. What ethical framework, oversight model, and safeguards do you apply?"},
-],
-"hard": [
-    {"skill":"National Digital Strategy","type":"scenario","question":"You are appointed Digital Secretary with a mandate to make your country a global digital economy leader within 5 years. Design the national digital strategy covering broadband infrastructure, digital skills, AI governance, public sector modernisation, and tech sector investment — including how you fund it and measure success."},
-    {"skill":"Crisis Management","type":"scenario","question":"A nation-state cyberattack has simultaneously compromised the power grid, HMRC tax systems, and NHS patient records affecting 10M people. You are the National Cyber Security Coordinator. Design the response across the first 24 hours, 7 days, and 90 days."},
-    {"skill":"Government Transformation","type":"scenario","question":"Design a whole-of-government data architecture that allows 50 departments to securely share citizen data to deliver joined-up public services, while complying with GDPR, building public trust, and reducing the £3B annual duplication cost in current siloed systems."},
-    {"skill":"Public Sector Programme","type":"scenario","question":"A major new social housing programme must deliver 100,000 homes in 5 years across 300 local authorities with a £15B budget. Design the programme governance, delivery model, performance management framework, and risk management approach for this scale of public investment."},
-    {"skill":"AI Policy","type":"scenario","question":"Your government wants to be the first to pass comprehensive AI legislation that protects citizens without stifling innovation. Design the regulatory framework covering foundation model governance, sector-specific rules, enforcement mechanisms, and international co-ordination — and advise on how to navigate the political economy of regulating Big Tech."},
-],
-},
-
-# ═══════════════════════════════════════════════════════════════
-"Media & Entertainment": {
-# ═══════════════════════════════════════════════════════════════
-"easy": [
-    {"skill":"Streaming","type":"concept","question":"What is the difference between SVOD, AVOD, and FAST streaming models? Give one example of each."},
-    {"skill":"Content Strategy","type":"concept","question":"What is a content calendar? What are the three key questions it answers for a media team?"},
-    {"skill":"Ad Tech","type":"concept","question":"What is programmatic advertising? What is the difference between RTB (Real-Time Bidding) and programmatic direct?"},
-    {"skill":"Gaming","type":"concept","question":"What is the difference between a GaaS (Games as a Service) and a traditional boxed game model? How does monetisation differ?"},
-    {"skill":"IP Rights","type":"concept","question":"What is a synchronisation licence? When do you need one and who grants it?"},
-    {"skill":"Audience","type":"concept","question":"What is the difference between reach, impressions, and engagement rate in media measurement?"},
-    {"skill":"OTT","type":"scenario","question":"Subscriber churn on your OTT platform spikes to 8% in Q4. What are the three most likely causes you investigate first?"},
-    {"skill":"Production","type":"concept","question":"What is the difference between pre-production, production, and post-production in a film or TV context?"},
-    {"skill":"Distribution","type":"concept","question":"What is a windowing strategy in film distribution? Why is the theatrical window important and how has it changed?"},
-    {"skill":"Social Media","type":"concept","question":"What is the algorithm difference between TikTok and Instagram Reels? How does it affect content strategy?"},
-],
-"medium": [
-    {"skill":"Content Strategy","type":"scenario","question":"A streaming platform with 8M subscribers has seen 15% growth in churn for 3 consecutive months. Content investment has doubled. How do you diagnose whether this is a content, pricing, or product problem?"},
-    {"skill":"Ad Tech","type":"scenario","question":"Advertisers are reporting a 35% drop in their ROAS on your digital ad platform. Your CPMs are unchanged. Walk me through the diagnosis and response."},
-    {"skill":"Streaming Architecture","type":"scenario","question":"Design the video delivery architecture for a live sports streaming service expecting 5M concurrent viewers for a major event. Address CDN strategy, adaptive bitrate, failover, and latency targets."},
-    {"skill":"Gaming","type":"scenario","question":"Your mobile game hit 10M downloads but 30-day retention is only 8%. How do you redesign the onboarding and early gameplay loop to improve retention to 25%?"},
-    {"skill":"Rights Management","type":"scenario","question":"You are licensing a premium sports package across 15 countries. Each country has different blackout rules, device restrictions, and commercial terms. Design the rights management system and enforcement approach."},
-    {"skill":"Creator Economy","type":"scenario","question":"Design a creator monetisation programme for a video platform competing with YouTube. How do you balance creator economics, advertiser safety, and platform sustainability?"},
-    {"skill":"Personalisation","type":"scenario","question":"Design a content recommendation engine for a music streaming service with 100M tracks and 60M users. What signals, models, and feedback loops drive recommendations? How do you address the filter bubble problem?"},
-    {"skill":"Production Technology","type":"scenario","question":"A major TV network wants to virtualise its broadcast infrastructure using cloud production. Design the hybrid architecture, latency management, and broadcast quality assurance approach."},
-    {"skill":"Audience Development","type":"scenario","question":"A news publisher has 95% of its traffic from social media referrals, making it highly vulnerable to algorithm changes. Design a direct audience development strategy."},
-    {"skill":"Licensing","type":"scenario","question":"A Hollywood studio wants to negotiate a 5-year licensing deal with your streaming platform for 500 titles across 50 countries with revenue share. What are your negotiation priorities and red lines?"},
-],
-"hard": [
-    {"skill":"Streaming Strategy","type":"scenario","question":"A premium streaming service with 40M subscribers is losing $2B annually and facing pressure to merge. Design a path to profitability that addresses content investment ROI, advertising tier launch, password sharing enforcement, and international expansion — with a 3-year financial model."},
-    {"skill":"Gaming Platform","type":"scenario","question":"Design a cloud gaming platform that delivers AAA games at 4K/60fps with <20ms latency to 50M users across 30 countries. Address infrastructure architecture, game streaming protocol, licensing model with publishers, and monetisation strategy."},
-    {"skill":"Media Transformation","type":"scenario","question":"A traditional broadcast network with €1B revenue is losing 15% of its audience annually to streaming. Design a full digital transformation strategy covering IP strategy, streaming platform launch, news product reinvention, and advertiser migration — including how you manage the transition period where linear and streaming revenues overlap."},
-    {"skill":"AI in Media","type":"scenario","question":"Design a generative AI strategy for a media company covering AI-assisted scriptwriting, synthetic voices for localisation, AI-generated imagery for editorial, and deepfake detection. Address rights ownership questions, talent union concerns, editorial integrity safeguards, and the competitive advantage model."},
-    {"skill":"Global Expansion","type":"scenario","question":"A US streaming platform wants to expand into India, Brazil, and Japan simultaneously. Design the content localisation strategy (dubbing vs subtitling vs local originals), technology localisation, payment methods, pricing strategy, and partnership model for each market — addressing how you balance global platform consistency with local market requirements."},
-],
-},
-
-} # End IND_QUESTION_BANK
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# IAS INDUSTRY SCORING RUBRICS + MARKET INTELLIGENCE — Sprint 3
-# 12 industries · Weighted competency dimensions · Salary benchmarks
-# ══════════════════════════════════════════════════════════════════════════════
-# IAS v9.0 — Sprint 3: Industry Scoring Rubrics + Market Intelligence
-# GVS Technologies · Gokul Prakash T
-
-# ══════════════════════════════════════════════════════════════════════════════
-# INDUSTRY SCORING RUBRICS
-# Each industry has weighted competency dimensions for fair, domain-specific scoring
-# ══════════════════════════════════════════════════════════════════════════════
-
-IND_RUBRICS = {
-
-    "Telecom & Networks": {
-        "dimensions": [
-            {"id": "tech_depth",      "label": "Technical Domain Depth",        "weight": 0.30, "desc": "OSS/BSS, 5G, RAN, network protocols, vendor platforms"},
-            {"id": "arch_thinking",   "label": "Architecture & Design Thinking", "weight": 0.20, "desc": "End-to-end system design, integration patterns, trade-offs"},
-            {"id": "ops_excellence",  "label": "Operational Excellence",         "weight": 0.20, "desc": "FCAPS, SLA management, incident response, NOC experience"},
-            {"id": "problem_solving", "label": "Problem Solving",                "weight": 0.15, "desc": "Root cause analysis, troubleshooting methodology, MTTR focus"},
-            {"id": "communication",   "label": "Communication & Stakeholders",   "weight": 0.10, "desc": "Technical communication, CxO engagement, cross-team collaboration"},
-            {"id": "innovation",      "label": "Innovation & Automation",        "weight": 0.05, "desc": "Automation mindset, AI/ML in networks, continuous improvement"},
-        ],
-        "score_anchors": {
-            1: "No domain knowledge. Cannot describe basic network concepts.",
-            2: "Basic awareness only. Limited hands-on experience with tools or platforms.",
-            3: "Solid practitioner. Handles standard scenarios with good domain knowledge.",
-            4: "Strong expert. Deep technical depth, handles complex scenarios confidently.",
-            5: "Industry leader. Exceptional expertise, thought leadership, strategic vision.",
-        },
-        "red_flags": ["No FCAPS knowledge", "Never worked with OSS/BSS platforms", "Cannot describe 5G SA vs NSA", "No SLA management experience"],
-        "green_flags": ["Nokia NetAct/Ericsson ENM hands-on", "Real ZTP deployments", "ORAN experience", "Autonomous networks background"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "IT & Software": {
-        "dimensions": [
-            {"id": "coding_design",   "label": "Coding & System Design",         "weight": 0.30, "desc": "Code quality, algorithms, system design, architecture patterns"},
-            {"id": "cloud_devops",    "label": "Cloud & DevOps",                  "weight": 0.20, "desc": "Cloud platforms, CI/CD, containers, IaC, SRE practices"},
-            {"id": "problem_solving", "label": "Problem Solving",                 "weight": 0.20, "desc": "Debugging, analytical thinking, first-principles approach"},
-            {"id": "collab_culture",  "label": "Collaboration & Culture",         "weight": 0.15, "desc": "Team working, code reviews, Agile mindset, documentation"},
-            {"id": "data_ai",         "label": "Data & AI Literacy",              "weight": 0.10, "desc": "SQL, data pipelines, ML fundamentals, LLM awareness"},
-            {"id": "security",        "label": "Security Mindset",                "weight": 0.05, "desc": "Secure coding, threat modelling, dependency management"},
-        ],
-        "score_anchors": {
-            1: "Cannot write basic code or explain system concepts.",
-            2: "Writes simple code but struggles with design decisions and scalability.",
-            3: "Competent engineer. Good code, understands distributed systems fundamentals.",
-            4: "Strong engineer. Designs scalable systems, leads technical decisions confidently.",
-            5: "Exceptional. Deep expertise across stack, strong architectural vision, mentors others.",
-        },
-        "red_flags": ["Cannot explain trade-offs in system design", "No version control experience", "Never deployed to production", "No awareness of security basics"],
-        "green_flags": ["Open source contributions", "Production incidents handled at scale", "Polyglot programming", "Strong CS fundamentals with practical experience"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "BFSI": {
-        "dimensions": [
-            {"id": "regulatory",      "label": "Regulatory & Compliance Knowledge","weight": 0.30, "desc": "Basel, AML/KYC, IFRS, MiFID, FCA/PRA, GDPR in financial context"},
-            {"id": "domain_expertise","label": "Financial Domain Expertise",       "weight": 0.25, "desc": "Products, markets, risk types, banking/insurance/capital markets"},
-            {"id": "risk_mgmt",       "label": "Risk Management",                  "weight": 0.20, "desc": "Risk identification, quantification, mitigation, reporting"},
-            {"id": "technology",      "label": "FinTech & Technology Acumen",      "weight": 0.15, "desc": "Core banking, payments, data, AI in finance"},
-            {"id": "communication",   "label": "Communication & Judgement",        "weight": 0.10, "desc": "Board-level communication, commercial judgement, stakeholder management"},
-        ],
-        "score_anchors": {
-            1: "No financial domain knowledge. Unaware of key regulations.",
-            2: "General awareness only. Limited regulatory or product depth.",
-            3: "Solid practitioner. Good regulatory knowledge and domain product understanding.",
-            4: "Strong professional. Deep expertise, regulatory fluency, strategic thinking.",
-            5: "Exceptional. Thought leader, regulatory mastery, board-level presence.",
-        },
-        "red_flags": ["Unaware of AML obligations", "Cannot explain Basel III", "No risk framework experience", "Confuses product types"],
-        "green_flags": ["Regulatory exam qualifications (CFA, FRM, ACCA)", "Regulator engagement experience", "Built financial models from scratch", "Multi-jurisdiction experience"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Healthcare & Pharma": {
-        "dimensions": [
-            {"id": "regulatory",      "label": "Regulatory & Quality Knowledge",  "weight": 0.35, "desc": "GCP/GMP, FDA/EMA, ICH, CAPA, audit readiness"},
-            {"id": "clinical",        "label": "Clinical & Scientific Depth",     "weight": 0.25, "desc": "Trial design, pharmacology, biostatistics, medical writing"},
-            {"id": "patient_safety",  "label": "Patient Safety Mindset",          "weight": 0.20, "desc": "Pharmacovigilance, signal detection, risk-benefit assessment"},
-            {"id": "tech_digital",    "label": "Digital Health & Technology",     "weight": 0.10, "desc": "HL7/FHIR, EDC, EHR, clinical data management"},
-            {"id": "communication",   "label": "Scientific Communication",        "weight": 0.10, "desc": "Regulatory submissions, cross-functional communication, stakeholder management"},
-        ],
-        "score_anchors": {
-            1: "No regulatory or clinical knowledge. Cannot describe GCP basics.",
-            2: "Theoretical knowledge only. Limited practical trial or regulatory experience.",
-            3: "Competent practitioner. Solid GCP/GMP knowledge with hands-on experience.",
-            4: "Strong expert. Deep regulatory strategy, manages complex submissions.",
-            5: "Exceptional. Shapes regulatory strategy, industry thought leader.",
-        },
-        "red_flags": ["Cannot describe CAPA process", "No GCP training", "Unaware of adverse event reporting timelines", "No data integrity experience"],
-        "green_flags": ["FDA/EMA submission experience", "NDA/MAA involvement", "Multiple Phase II/III trials", "Qualified Person (QP) status"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Manufacturing": {
-        "dimensions": [
-            {"id": "lean_excellence", "label": "Lean & Continuous Improvement",   "weight": 0.30, "desc": "Lean, Six Sigma, Kaizen, VSM, problem-solving tools"},
-            {"id": "quality",         "label": "Quality Management",              "weight": 0.25, "desc": "QMS, FMEA, SPC, ISO/IATF standards, customer complaints"},
-            {"id": "operations",      "label": "Operations & Planning",           "weight": 0.20, "desc": "Production planning, OEE, scheduling, supply chain"},
-            {"id": "technology",      "label": "Manufacturing Technology",        "weight": 0.15, "desc": "Automation, SCADA, MES, Industry 4.0, maintenance"},
-            {"id": "leadership",      "label": "People & Safety Leadership",      "weight": 0.10, "desc": "HSE culture, team development, union relations, change management"},
-        ],
-        "score_anchors": {
-            1: "No manufacturing knowledge. Cannot describe basic quality or safety concepts.",
-            2: "Theoretical only. Limited shopfloor or improvement project experience.",
-            3: "Solid practitioner. Good lean/quality knowledge with measurable results.",
-            4: "Strong leader. Deep technical expertise with significant improvement track record.",
-            5: "Exceptional. Industry-leading expertise, transforms operations at enterprise scale.",
-        },
-        "red_flags": ["No OEE experience", "Cannot describe DMAIC", "No safety incident management experience", "Never led a Kaizen event"],
-        "green_flags": ["LSS Black Belt certification", "Quantified OEE improvements", "IATF 16949 lead auditor", "Industry 4.0 transformation experience"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Consulting & Professional Services": {
-        "dimensions": [
-            {"id": "problem_solving", "label": "Structured Problem Solving",      "weight": 0.30, "desc": "MECE thinking, hypothesis-driven, frameworks, case study ability"},
-            {"id": "delivery",        "label": "Programme & Delivery Excellence", "weight": 0.25, "desc": "PMO, risk management, milestone delivery, RAID management"},
-            {"id": "client_mgmt",     "label": "Client & Stakeholder Management", "weight": 0.20, "desc": "CxO engagement, influence, trust-building, commercial acumen"},
-            {"id": "domain",          "label": "Domain & Industry Knowledge",     "weight": 0.15, "desc": "Industry-specific knowledge relevant to consulting focus area"},
-            {"id": "communication",   "label": "Communication & Presence",        "weight": 0.10, "desc": "Executive storytelling, presentation, written communication"},
-        ],
-        "score_anchors": {
-            1: "Cannot structure a problem. No consulting frameworks or delivery experience.",
-            2: "Limited structured thinking. Some project experience but no client-facing delivery.",
-            3: "Competent consultant. Good frameworks, solid delivery, handles client interactions.",
-            4: "Strong senior consultant. Independent workstream leadership, trusted advisor.",
-            5: "Exceptional. Partner-track presence, drives revenue, shapes practice strategy.",
-        },
-        "red_flags": ["Cannot apply MECE", "No client engagement experience", "Misses commercial considerations in analysis", "Cannot estimate or build business cases"],
-        "green_flags": ["Big 4/MBB experience", "Led £1M+ workstreams independently", "Repeat client relationships", "Published thought leadership"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Retail & E-commerce": {
-        "dimensions": [
-            {"id": "commercial",      "label": "Commercial Acumen",              "weight": 0.30, "desc": "P&L, margin management, GMV, pricing, category performance"},
-            {"id": "customer",        "label": "Customer & Brand Understanding",  "weight": 0.25, "desc": "CX, NPS, loyalty, brand positioning, customer segmentation"},
-            {"id": "operations",      "label": "Supply Chain & Operations",       "weight": 0.20, "desc": "Inventory, logistics, demand planning, supplier management"},
-            {"id": "digital",         "label": "Digital & Data Literacy",         "weight": 0.15, "desc": "E-commerce, analytics, personalisation, digital marketing"},
-            {"id": "leadership",      "label": "Leadership & Change",             "weight": 0.10, "desc": "Team leadership, change management, cross-functional influence"},
-        ],
-        "score_anchors": {
-            1: "No retail or commercial understanding. Cannot describe basic retail KPIs.",
-            2: "General awareness. Limited P&L or operational hands-on experience.",
-            3: "Solid practitioner. Good commercial understanding with category or channel results.",
-            4: "Strong leader. P&L ownership, significant commercial outcomes.",
-            5: "Exceptional. Enterprise-level commercial leadership, industry innovator.",
-        },
-        "red_flags": ["Cannot describe GMV vs revenue", "No inventory management experience", "Unaware of omnichannel dynamics", "No customer data experience"],
-        "green_flags": ["P&L ownership >£10M", "Launched new categories or channels", "Measurable NPS or CLTV improvements", "Marketplace strategy experience"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Energy & Utilities": {
-        "dimensions": [
-            {"id": "safety",          "label": "Safety & HSE Culture",           "weight": 0.30, "desc": "HSE mindset, process safety, permit to work, incident management"},
-            {"id": "technical",       "label": "Technical & Engineering Depth",  "weight": 0.25, "desc": "Power systems, SCADA, asset management, domain engineering"},
-            {"id": "regulatory",      "label": "Regulatory & Compliance",        "weight": 0.20, "desc": "OFGEM/FERC/sector regulations, licence conditions, ESG reporting"},
-            {"id": "operations",      "label": "Operations & Reliability",       "weight": 0.15, "desc": "Asset integrity, maintenance strategy, grid/plant operations"},
-            {"id": "sustainability",  "label": "Sustainability & Energy Transition","weight": 0.10, "desc": "Decarbonisation, renewables, net zero strategy, scope 3"},
-        ],
-        "score_anchors": {
-            1: "No safety culture. Cannot describe basic HSE requirements.",
-            2: "Awareness only. Limited operational or engineering experience.",
-            3: "Solid practitioner. Good technical depth with hands-on operational experience.",
-            4: "Strong expert. Deep domain expertise, regulatory fluency, safety leadership.",
-            5: "Exceptional. Industry thought leader, shapes regulatory landscape.",
-        },
-        "red_flags": ["Dismissive of safety culture", "No permit to work experience", "Cannot describe asset integrity", "No regulatory awareness"],
-        "green_flags": ["NEBOSH/IOSH certified", "Zero LTI record", "Major project delivery (>£100M)", "Renewable energy transition leadership"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Education & EdTech": {
-        "dimensions": [
-            {"id": "pedagogy",        "label": "Pedagogical Expertise",          "weight": 0.30, "desc": "Learning theory, curriculum design, assessment, instructional design"},
-            {"id": "learner_focus",   "label": "Learner-Centred Design",         "weight": 0.25, "desc": "Needs analysis, accessibility, differentiation, learner outcomes"},
-            {"id": "technology",      "label": "Technology & Platform Acumen",   "weight": 0.20, "desc": "LMS, EdTech tools, e-learning authoring, data analytics"},
-            {"id": "measurement",     "label": "Impact Measurement",             "weight": 0.15, "desc": "Kirkpatrick levels, ROI, learning analytics, evidence of outcomes"},
-            {"id": "leadership",      "label": "Stakeholder & Leadership",       "weight": 0.10, "desc": "Faculty/facilitator management, institutional stakeholders, change"},
-        ],
-        "score_anchors": {
-            1: "No learning theory knowledge. Cannot describe basic instructional design.",
-            2: "Awareness only. Limited curriculum or programme delivery experience.",
-            3: "Solid practitioner. Good pedagogical grounding with programme delivery results.",
-            4: "Strong expert. Evidence-based design, measurable learning outcomes.",
-            5: "Exceptional. Shapes learning strategy at enterprise or national level.",
-        },
-        "red_flags": ["Cannot explain Bloom's Taxonomy", "No evidence of learning outcomes measurement", "No LMS experience", "No accessibility awareness"],
-        "green_flags": ["Published learning research", "National curriculum contribution", "Measurable ROI on L&D programmes", "EdTech product built and launched"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Legal & Compliance": {
-        "dimensions": [
-            {"id": "legal_knowledge", "label": "Legal Knowledge & Expertise",    "weight": 0.35, "desc": "Jurisdiction-specific law, regulatory frameworks, case law awareness"},
-            {"id": "commercial",      "label": "Commercial & Business Judgement", "weight": 0.25, "desc": "Balancing legal risk with commercial objectives, pragmatic advice"},
-            {"id": "risk_compliance", "label": "Risk & Compliance Management",   "weight": 0.20, "desc": "Compliance programme design, risk registers, regulatory engagement"},
-            {"id": "communication",   "label": "Communication & Influence",      "weight": 0.15, "desc": "Board communication, cross-functional influence, external counsel management"},
-            {"id": "tech_innovation", "label": "Legal Tech & Innovation",        "weight": 0.05, "desc": "Legal technology, contract automation, RegTech, AI in law"},
-        ],
-        "score_anchors": {
-            1: "No legal or compliance knowledge relevant to the role.",
-            2: "Limited practical experience. Theoretical knowledge only.",
-            3: "Competent practitioner. Solid legal knowledge with commercial awareness.",
-            4: "Strong expert. Deep legal expertise, trusted business partner.",
-            5: "Exceptional. General Counsel calibre, shapes regulatory landscape.",
-        },
-        "red_flags": ["Purely academic, no in-house or firm experience", "No commercial awareness", "Cannot describe GDPR obligations", "Never drafted a contract"],
-        "green_flags": ["Magic Circle / top-tier firm background", "Regulatory engagement experience", "Multi-jurisdiction expertise", "Legal tech implementation"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Government & Public Sector": {
-        "dimensions": [
-            {"id": "public_service",  "label": "Public Service Ethos & Values",  "weight": 0.25, "desc": "Accountability, transparency, Nolan principles, public interest"},
-            {"id": "policy_delivery", "label": "Policy & Programme Delivery",    "weight": 0.30, "desc": "Policy cycle, programme management, cross-agency delivery"},
-            {"id": "stakeholders",    "label": "Political & Stakeholder Acumen",  "weight": 0.20, "desc": "Ministerial engagement, public consultation, media relations"},
-            {"id": "technical",       "label": "Technical & Digital Literacy",   "weight": 0.15, "desc": "GDS standards, digital transformation, procurement, data"},
-            {"id": "commercial",      "label": "Commercial & Financial",         "weight": 0.10, "desc": "Public procurement, budget management, VFM, business cases"},
-        ],
-        "score_anchors": {
-            1: "No public sector awareness. Unaware of accountability or procurement frameworks.",
-            2: "Private sector only. No understanding of public sector constraints.",
-            3: "Solid practitioner. Good public sector delivery with stakeholder management.",
-            4: "Strong leader. Navigates political complexity, delivers at scale.",
-            5: "Exceptional. Senior Civil Service calibre, shapes national policy.",
-        },
-        "red_flags": ["No understanding of public accountability", "Cannot describe procurement thresholds", "No experience with ministerial submissions", "Dismissive of public sector constraints"],
-        "green_flags": ["SCS/SES experience", "Cross-departmental programme leadership", "Successful GDS service assessment", "Published policy papers"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-
-    "Media & Entertainment": {
-        "dimensions": [
-            {"id": "content_strategy","label": "Content & Creative Strategy",    "weight": 0.25, "desc": "Content strategy, editorial judgement, audience development, IP value"},
-            {"id": "commercial",      "label": "Commercial & Monetisation",      "weight": 0.25, "desc": "Revenue models, advertising, licensing, subscriber economics"},
-            {"id": "technology",      "label": "Media Technology",               "weight": 0.20, "desc": "Streaming platforms, CDN, production tech, OTT architecture"},
-            {"id": "audience",        "label": "Audience & Data Intelligence",   "weight": 0.20, "desc": "Audience analytics, recommendation, personalisation, A/B testing"},
-            {"id": "creative",        "label": "Creative & Cultural Awareness",  "weight": 0.10, "desc": "Market trends, cultural sensitivity, brand positioning, talent relations"},
-        ],
-        "score_anchors": {
-            1: "No media or entertainment domain knowledge.",
-            2: "Consumer awareness only. No professional media or technology experience.",
-            3: "Solid practitioner. Good domain knowledge with commercial or technology results.",
-            4: "Strong professional. Deep expertise, delivered significant audience or revenue outcomes.",
-            5: "Exceptional. Industry thought leader, shapes media landscape.",
-        },
-        "red_flags": ["No audience metrics knowledge", "Cannot explain SVOD vs AVOD economics", "No platform or distribution experience", "No IP rights awareness"],
-        "green_flags": ["Significant subscriber growth track record", "Launched streaming product", "Award-winning content commissioning", "Cross-border rights deal experience"],
-        "verdict_threshold": {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0},
-    },
-}
-
-# ══════════════════════════════════════════════════════════════════════════════
-# MARKET INTELLIGENCE DATA
-# Real salary benchmarks + demand signals per industry
-# ══════════════════════════════════════════════════════════════════════════════
-
-IND_MARKET_INTEL = {
-    "Telecom & Networks": {
-        "demand_yoy": 28,
-        "demand_direction": "up",
-        "demand_driver": "5G SA rollouts, ORAN adoption, autonomous network transformation",
-        "shortage_roles": ["5G Core Architect","ORAN Specialist","Autonomous Networks Lead","Cloud RAN Engineer"],
-        "emerging_skills": ["AI/ML in networks","ORAN","Network as Code","Digital Twin","Network APIs"],
-        "avg_hiring_days": 52,
-        "interview_rounds": 3,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹6–12","mid":"₹15–28","senior":"₹30–55","lead":"₹55–90","head":"₹90–150+"},
-            "UAE ($K)":     {"junior":"$40–65","mid":"$70–110","senior":"$110–160","lead":"$160–220","head":"$220–350"},
-            "Europe (€K)":  {"junior":"€35–55","mid":"€60–90","senior":"€90–130","lead":"€130–180","head":"€180–280"},
-            "US ($K)":      {"junior":"$70–100","mid":"$110–150","senior":"$150–200","lead":"$200–270","head":"$270–400"},
-        },
-    },
-    "IT & Software": {
-        "demand_yoy": 35,
-        "demand_direction": "up",
-        "demand_driver": "AI/ML adoption, cloud migration, platform engineering, GenAI products",
-        "shortage_roles": ["ML Engineer","Platform Engineer","Security Engineer","AI/ML Architect"],
-        "emerging_skills": ["LLM/GenAI","Rust","Platform Engineering","FinOps","AI Security"],
-        "avg_hiring_days": 38,
-        "interview_rounds": 4,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹5–12","mid":"₹14–28","senior":"₹30–60","lead":"₹60–100","head":"₹100–200+"},
-            "UAE ($K)":     {"junior":"$35–60","mid":"$65–100","senior":"$100–150","lead":"$150–220","head":"$220–400"},
-            "Europe (€K)":  {"junior":"€30–50","mid":"€55–85","senior":"€85–130","lead":"€130–190","head":"€190–350"},
-            "US ($K)":      {"junior":"$70–110","mid":"$120–170","senior":"$170–240","lead":"$240–320","head":"$320–600"},
-        },
-    },
-    "BFSI": {
-        "demand_yoy": 22,
-        "demand_direction": "up",
-        "demand_driver": "Fintech disruption, Basel IV compliance, digital banking transformation",
-        "shortage_roles": ["Quantitative Analyst","AML Technology Lead","RegTech Specialist","Chief Risk Officer"],
-        "emerging_skills": ["AI in Credit","RegTech","Embedded Finance","CBDC","Open Banking APIs"],
-        "avg_hiring_days": 61,
-        "interview_rounds": 4,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹6–14","mid":"₹16–32","senior":"₹35–70","lead":"₹70–120","head":"₹120–250+"},
-            "UAE ($K)":     {"junior":"$45–75","mid":"$80–130","senior":"$130–200","lead":"$200–280","head":"$280–500"},
-            "Europe (€K)":  {"junior":"€40–65","mid":"€70–110","senior":"€110–160","lead":"€160–230","head":"€230–450"},
-            "US ($K)":      {"junior":"$80–120","mid":"$130–190","senior":"$190–270","lead":"$270–380","head":"$380–700"},
-        },
-    },
-    "Healthcare & Pharma": {
-        "demand_yoy": 18,
-        "demand_direction": "up",
-        "demand_driver": "Post-COVID health investment, mRNA platforms, digital health expansion",
-        "shortage_roles": ["Regulatory Affairs Director","Pharmacovigilance Lead","Clinical Data Scientist","Digital Health Architect"],
-        "emerging_skills": ["Real World Evidence","AI Drug Discovery","Decentralised Trials","SaMD Regulatory","Digital Biomarkers"],
-        "avg_hiring_days": 68,
-        "interview_rounds": 4,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹5–10","mid":"₹12–24","senior":"₹26–50","lead":"₹50–90","head":"₹90–160+"},
-            "UAE ($K)":     {"junior":"$40–65","mid":"$70–110","senior":"$110–165","lead":"$165–220","head":"$220–400"},
-            "Europe (€K)":  {"junior":"€35–58","mid":"€60–95","senior":"€95–145","lead":"€145–210","head":"€210–380"},
-            "US ($K)":      {"junior":"$65–100","mid":"$110–160","senior":"$160–230","lead":"$230–310","head":"$310–550"},
-        },
-    },
-    "Manufacturing": {
-        "demand_yoy": 15,
-        "demand_direction": "up",
-        "demand_driver": "Industry 4.0, reshoring, EV transition, defence spending increase",
-        "shortage_roles": ["Industrial Automation Engineer","Digital Manufacturing Lead","Hydrogen Process Engineer","EV Powertrain Engineer"],
-        "emerging_skills": ["Digital Twin","AI Quality Inspection","Collaborative Robotics","Green Manufacturing","Additive Manufacturing"],
-        "avg_hiring_days": 45,
-        "interview_rounds": 3,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹4–8","mid":"₹10–20","senior":"₹22–42","lead":"₹42–75","head":"₹75–130+"},
-            "UAE ($K)":     {"junior":"$35–55","mid":"$60–95","senior":"$95–145","lead":"$145–200","head":"$200–350"},
-            "Europe (€K)":  {"junior":"€30–50","mid":"€55–85","senior":"€85–125","lead":"€125–175","head":"€175–300"},
-            "US ($K)":      {"junior":"$55–85","mid":"$90–130","senior":"$130–185","lead":"$185–255","head":"$255–420"},
-        },
-    },
-    "Consulting & Professional Services": {
-        "demand_yoy": 20,
-        "demand_direction": "up",
-        "demand_driver": "Digital transformation mandates, AI strategy demand, post-merger integration",
-        "shortage_roles": ["AI Strategy Director","Change Management Lead","Data Strategy Partner","Sustainability Consultant"],
-        "emerging_skills": ["GenAI Strategy","ESG Advisory","Operating Model Design","AI Governance","Value Architecture"],
-        "avg_hiring_days": 42,
-        "interview_rounds": 5,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹6–12","mid":"₹15–30","senior":"₹32–65","lead":"₹65–110","head":"₹110–200+"},
-            "UAE ($K)":     {"junior":"$45–70","mid":"$75–120","senior":"$120–180","lead":"$180–260","head":"$260–500"},
-            "Europe (€K)":  {"junior":"€38–62","mid":"€65–105","senior":"€105–160","lead":"€160–230","head":"€230–450"},
-            "US ($K)":      {"junior":"$75–115","mid":"$120–180","senior":"$180–260","lead":"$260–380","head":"$380–700"},
-        },
-    },
-    "Retail & E-commerce": {
-        "demand_yoy": 24,
-        "demand_direction": "up",
-        "demand_driver": "Quick commerce explosion, D2C brand growth, omnichannel investment",
-        "shortage_roles": ["Quick Commerce Director","D2C Growth Lead","Personalisation Engineer","Marketplace Strategist"],
-        "emerging_skills": ["Conversational Commerce","Social Commerce","Last-mile Optimisation","Sustainability in Retail","Composable Commerce"],
-        "avg_hiring_days": 36,
-        "interview_rounds": 3,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹4–9","mid":"₹10–22","senior":"₹24–48","lead":"₹48–85","head":"₹85–150+"},
-            "UAE ($K)":     {"junior":"$35–58","mid":"$60–95","senior":"$95–145","lead":"$145–200","head":"$200–380"},
-            "Europe (€K)":  {"junior":"€28–48","mid":"€52–82","senior":"€82–125","lead":"€125–175","head":"€175–320"},
-            "US ($K)":      {"junior":"$55–85","mid":"$90–135","senior":"$135–190","lead":"$190–265","head":"$265–450"},
-        },
-    },
-    "Energy & Utilities": {
-        "demand_yoy": 32,
-        "demand_direction": "up",
-        "demand_driver": "Energy transition, hydrogen economy, smart grid investment, offshore wind",
-        "shortage_roles": ["Hydrogen Engineer","Offshore Wind Director","Smart Grid Architect","Battery Storage Engineer"],
-        "emerging_skills": ["Green Hydrogen","BESS Technology","Virtual Power Plants","Carbon Capture","AI Grid Optimisation"],
-        "avg_hiring_days": 55,
-        "interview_rounds": 3,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹5–10","mid":"₹12–24","senior":"₹26–52","lead":"₹52–90","head":"₹90–160+"},
-            "UAE ($K)":     {"junior":"$40–65","mid":"$70–115","senior":"$115–170","lead":"$170–235","head":"$235–420"},
-            "Europe (€K)":  {"junior":"€35–58","mid":"€62–98","senior":"€98–148","lead":"€148–215","head":"€215–390"},
-            "US ($K)":      {"junior":"$65–100","mid":"$105–155","senior":"$155–215","lead":"$215–295","head":"$295–520"},
-        },
-    },
-    "Education & EdTech": {
-        "demand_yoy": 19,
-        "demand_direction": "up",
-        "demand_driver": "EdTech investment surge, corporate upskilling economy, AI tutoring platforms",
-        "shortage_roles": ["AI Learning Designer","Corporate CLO","EdTech Product Lead","Learning Analytics Engineer"],
-        "emerging_skills": ["AI Tutoring","Adaptive Learning","Learning in the Flow of Work","Skills Taxonomy Design","Micro-credentials"],
-        "avg_hiring_days": 40,
-        "interview_rounds": 3,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹3–7","mid":"₹8–18","senior":"₹20–38","lead":"₹38–65","head":"₹65–110+"},
-            "UAE ($K)":     {"junior":"$35–55","mid":"$58–90","senior":"$90–135","lead":"$135–185","head":"$185–320"},
-            "Europe (€K)":  {"junior":"€28–45","mid":"€48–78","senior":"€78–118","lead":"€118–165","head":"€165–285"},
-            "US ($K)":      {"junior":"$50–80","mid":"$85–125","senior":"$125–175","lead":"$175–240","head":"$240–400"},
-        },
-    },
-    "Legal & Compliance": {
-        "demand_yoy": 16,
-        "demand_direction": "up",
-        "demand_driver": "AI Act compliance, privacy regulation expansion, M&A activity, ESG obligations",
-        "shortage_roles": ["AI Governance Counsel","Data Privacy Officer","ESG Legal Lead","Sanctions Compliance Specialist"],
-        "emerging_skills": ["EU AI Act","DORA (Digital Operational Resilience)","ESG Disclosure Law","Privacy-Enhancing Tech","Legal AI Tools"],
-        "avg_hiring_days": 58,
-        "interview_rounds": 4,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹6–12","mid":"₹14–30","senior":"₹32–65","lead":"₹65–110","head":"₹110–200+"},
-            "UAE ($K)":     {"junior":"$45–75","mid":"$80–130","senior":"$130–195","lead":"$195–270","head":"$270–500"},
-            "Europe (€K)":  {"junior":"€38–62","mid":"€65–105","senior":"€105–158","lead":"€158–225","head":"€225–430"},
-            "US ($K)":      {"junior":"$75–115","mid":"$120–180","senior":"$180–260","lead":"$260–380","head":"$380–700"},
-        },
-    },
-    "Government & Public Sector": {
-        "demand_yoy": 21,
-        "demand_direction": "up",
-        "demand_driver": "National digital transformation, AI governance, defence investment, infrastructure programmes",
-        "shortage_roles": ["Digital Service Director","Government CTO","AI Policy Lead","Critical Infrastructure Specialist"],
-        "emerging_skills": ["Sovereign AI","Digital Identity","GovTech","Cyber Resilience","Data-Driven Policy"],
-        "avg_hiring_days": 72,
-        "interview_rounds": 3,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹4–8","mid":"₹9–18","senior":"₹20–38","lead":"₹38–65","head":"₹65–110+"},
-            "UAE ($K)":     {"junior":"$40–65","mid":"$68–105","senior":"$105–155","lead":"$155–215","head":"$215–380"},
-            "Europe (€K)":  {"junior":"€30–50","mid":"€55–85","senior":"€85–128","lead":"€128–180","head":"€180–320"},
-            "US ($K)":      {"junior":"$60–92","mid":"$95–140","senior":"$140–195","lead":"$195–265","head":"$265–430"},
-        },
-    },
-    "Media & Entertainment": {
-        "demand_yoy": 25,
-        "demand_direction": "up",
-        "demand_driver": "Streaming wars, gaming boom, AI content tools, creator economy growth",
-        "shortage_roles": ["Streaming Technology Lead","AI Content Engineer","Gaming Live-ops Director","Sports Rights Executive"],
-        "emerging_skills": ["Generative AI in Media","FAST Channels","Spatial Computing","Creator Economy Tech","Immersive Experiences"],
-        "avg_hiring_days": 42,
-        "interview_rounds": 3,
-        "salary_bands": {
-            "India (LPA)":  {"junior":"₹4–9","mid":"₹10–22","senior":"₹24–50","lead":"₹50–88","head":"₹88–155+"},
-            "UAE ($K)":     {"junior":"$38–62","mid":"$65–105","senior":"$105–158","lead":"$158–215","head":"$215–380"},
-            "Europe (€K)":  {"junior":"€30–52","mid":"€55–88","senior":"€88–132","lead":"€132–185","head":"€185–330"},
-            "US ($K)":      {"junior":"$60–95","mid":"$98–145","senior":"$145–205","lead":"$205–285","head":"$285–500"},
-        },
-    },
-}
-
-
-def get_industry_rubric(industry_name):
-    """Get scoring rubric for an industry."""
-    return IND_RUBRICS.get(industry_name, IND_RUBRICS.get("IT & Software", {}))
-
-def get_market_intel(industry_name):
-    """Get market intelligence for an industry."""
-    return IND_MARKET_INTEL.get(industry_name, {})
-
-def calculate_weighted_score(dimension_scores, industry_name):
-    """Calculate weighted overall score from dimension scores."""
-    rubric = get_industry_rubric(industry_name)
-    dims   = rubric.get("dimensions", [])
-    if not dims or not dimension_scores:
-        raw = list(dimension_scores.values())
-        return round(sum(raw) / len(raw), 2) if raw else 0.0
-    total_weight = 0.0
-    weighted_sum = 0.0
-    for dim in dims:
-        dim_id = dim["id"]
-        score  = dimension_scores.get(dim_id, 0)
-        weight = dim["weight"]
-        weighted_sum += score * weight
-        total_weight += weight
-    return round(weighted_sum / total_weight, 2) if total_weight else 0.0
-
-def get_verdict_from_score(score, industry_name):
-    """Get verdict string from weighted score."""
-    rubric     = get_industry_rubric(industry_name)
-    thresholds = rubric.get("verdict_threshold", {"SELECTED": 3.5, "HOLD": 2.8, "REJECTED": 0})
-    if score >= thresholds.get("SELECTED", 3.5):
-        return "SELECTED"
-    elif score >= thresholds.get("HOLD", 2.8):
-        return "HOLD — FURTHER REVIEW"
-    else:
-        return "REJECTED"
-
-def format_rubric_for_prompt(industry_name):
-    """Format rubric as text for AI scoring prompt."""
-    rubric = get_industry_rubric(industry_name)
-    dims   = rubric.get("dimensions", [])
-    lines  = [f"Industry: {industry_name}", "Scoring dimensions (weight):"]
-    for d in dims:
-        lines.append(f"  {d['id']} — {d['label']} ({int(d['weight']*100)}%): {d['desc']}")
-    lines.append("\nScore anchors (1–5):")
-    for score, anchor in rubric.get("score_anchors", {}).items():
-        lines.append(f"  {score}: {anchor}")
-    lines.append(f"\nGreen flags: {', '.join(rubric.get('green_flags', []))}")
-    lines.append(f"Red flags: {', '.join(rubric.get('red_flags', []))}")
-    return "\n".join(lines)
-
-
-
-def get_industry_questions(industry_name, difficulty="medium", count=15):
-    """Get questions from the pre-built bank for an industry and difficulty."""
-    bank = IND_QUESTION_BANK.get(industry_name, IND_QUESTION_BANK.get("IT & Software", {}))
-    questions = bank.get(difficulty, bank.get("medium", []))
-    import random
-    if len(questions) > count:
-        questions = random.sample(questions, count)
-    # Add num field
-    result = []
-    for i, q in enumerate(questions):
-        q_out = dict(q)
-        q_out["num"] = i + 1
-        result.append(q_out)
-    return result
-
-def get_question_bank_stats():
-    """Return stats about the question bank."""
-    total = 0
-    by_industry = {}
-    for ind, levels in IND_QUESTION_BANK.items():
-        count = sum(len(qs) for qs in levels.values())
-        by_industry[ind] = count
-        total += count
-    return {"total": total, "by_industry": by_industry, "industries": len(IND_QUESTION_BANK)}
-
-
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# IAS MULTI-TENANT WHITE-LABEL ENGINE — Sprint 4
-# Organisation profiles · Industry dashboards · White-label branding
-# ══════════════════════════════════════════════════════════════════════════════
-
-import copy as _copy_mod
-
-# ── Default tenant template ───────────────────────────────────────────────────
-_TENANT_DEFAULTS = {
-    "org_name":         "GVS Technologies",
-    "org_type":         "Staffing Agency",      # Staffing Agency / RPO / Enterprise / Independent
-    "industry":         "IT & Software",
-    "primary_color":    "#00C9A7",
-    "secondary_color":  "#0D1B3E",
-    "logo_emoji":       "🎯",
-    "platform_name":    "IAS",
-    "tagline":          "AI-Powered · Zero Touch · Multi-Industry",
-    "footer_line":      "Powered by IAS v9.0 · GVS Technologies",
-    "interviewer_name": "Interviewer",
-    "recruiter_email":  "",
-    "active_industry":  "IT & Software",
-    "dashboard_mode":   "Executive",           # Executive / Recruiter / Hiring Manager / Panel
-    "show_salary_band": True,
-    "show_market_intel":True,
-    "max_questions":    15,
-    "default_difficulty":"medium",
-    "report_template":  "standard",           # standard / detailed / executive
-    "subscriptiontier": "Growth",             # Starter / Growth / Enterprise
-    "created_at":       "",
-}
-
-def get_tenant_config():
-    """Load current tenant configuration from settings."""
-    settings = cfg.get_settings()
-    tenant = _copy_mod.deepcopy(_TENANT_DEFAULTS)
-    # Map existing settings keys to tenant config
-    mappings = {
-        "company_name":   "org_name",
-        "brand_company":  "org_name",
-        "industry":       "active_industry",
-        "brand_color":    "primary_color",
-        "brand_name":     "platform_name",
-        "brand_tagline":  "tagline",
-        "brand_footer":   "footer_line",
-        "interviewer_name":"interviewer_name",
-    }
-    for src_key, dst_key in mappings.items():
-        if settings.get(src_key):
-            tenant[dst_key] = settings[src_key]
-    # Also sync selected_industry from session
-    try:
-        import streamlit as _st_tenant
-        _sess_ind = _st_tenant.session_state.get("selected_industry","")
-        if _sess_ind:
-            tenant["active_industry"] = _sess_ind
-    except Exception:
-        pass
-    return tenant
-
-def save_tenant_config(tenant_dict):
-    """Save tenant configuration to settings."""
-    cfg.save_settings({
-        "company_name":    tenant_dict.get("org_name",""),
-        "brand_company":   tenant_dict.get("org_name",""),
-        "industry":        tenant_dict.get("active_industry",""),
-        "brand_color":     tenant_dict.get("primary_color","#00C9A7"),
-        "brand_name":      tenant_dict.get("platform_name","IAS"),
-        "brand_tagline":   tenant_dict.get("tagline",""),
-        "brand_footer":    tenant_dict.get("footer_line",""),
-        "interviewer_name":tenant_dict.get("interviewer_name",""),
-    })
-
-# ── Industry-specific dashboard config ────────────────────────────────────────
-IND_DASHBOARD_CONFIG = {
-    "Telecom & Networks": {
-        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","NPS","Acceptance"],
-        "priority_items": [
-            ("Network Architect offers expiring",   "CRITICAL", "#CC0000"),
-            ("5G Specialist evaluations pending",   "WARNING",  "#F5A623"),
-            ("OSS Engineer interviews unconfirmed", "WARNING",  "#F5A623"),
-            ("NOC Lead reports not submitted",      "INFO",     "#378ADD"),
-        ],
-        "forecast_items": [
-            ("5G Talent Pipeline",  "At risk — 28% demand surge outpacing supply", "#F5A623"),
-            ("OSS/BSS Specialist",  "Healthy — Strong applicant pipeline",          "#00C9A7"),
-            ("ORAN Engineers",      "Critical shortage — expand sourcing now",      "#CC0000"),
-        ],
-        "insight_template": "Telecom hiring velocity is {trend}. Focus areas: {shortage_roles}.",
-        "hero_metric": "5G specialists interviewed this month",
-        "accent_color": "#00C9A7",
-    },
-    "IT & Software": {
-        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","NPS","Acceptance"],
-        "priority_items": [
-            ("ML Engineer offers expiring",         "CRITICAL", "#CC0000"),
-            ("Senior Engineer evaluations pending", "WARNING",  "#F5A623"),
-            ("DevOps interviews unconfirmed",       "WARNING",  "#F5A623"),
-            ("Platform Engineer reports pending",   "INFO",     "#378ADD"),
-        ],
-        "forecast_items": [
-            ("AI/ML Engineers",     "Critical shortage — 35% YoY demand growth",   "#CC0000"),
-            ("Cloud Architects",    "At risk — salary benchmarks rising fast",      "#F5A623"),
-            ("Platform Engineers",  "Healthy — steady supply pipeline",             "#00C9A7"),
-        ],
-        "insight_template": "Engineering hiring is {trend}. AI/ML roles are the hardest to fill.",
-        "hero_metric": "Engineers onboarded this quarter",
-        "accent_color": "#378ADD",
-    },
-    "BFSI": {
-        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","Compliance Rate","Acceptance"],
-        "priority_items": [
-            ("Risk Manager offers expiring",        "CRITICAL", "#CC0000"),
-            ("Compliance Officer evaluations",      "WARNING",  "#F5A623"),
-            ("AML Analyst interviews unconfirmed",  "WARNING",  "#F5A623"),
-            ("Regulatory reviews pending",          "INFO",     "#378ADD"),
-        ],
-        "forecast_items": [
-            ("AML/Compliance Talent",   "Critical — regulatory change driving demand", "#CC0000"),
-            ("Quant Analysts",          "At risk — fintech competition for talent",     "#F5A623"),
-            ("Core Banking Engineers",  "Healthy — steady pipeline",                   "#00C9A7"),
-        ],
-        "insight_template": "BFSI hiring at {trend}. Regulatory expertise is the top differentiator.",
-        "hero_metric": "Compliance-certified candidates screened",
-        "accent_color": "#7F77DD",
-    },
-    "Healthcare & Pharma": {
-        "kpi_labels": ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","GCP Rate","Acceptance"],
-        "priority_items": [
-            ("Regulatory Affairs offers expiring",  "CRITICAL", "#CC0000"),
-            ("Clinical Lead evaluations pending",   "WARNING",  "#F5A623"),
-            ("Pharmacovigilance interviews",        "WARNING",  "#F5A623"),
-            ("Clinical Data reports pending",       "INFO",     "#378ADD"),
-        ],
-        "forecast_items": [
-            ("Regulatory Affairs",  "Critical shortage globally",                   "#CC0000"),
-            ("Digital Health Leads","At risk — new specialty, limited talent pool", "#F5A623"),
-            ("Clinical Operations", "Healthy — established training pipelines",     "#00C9A7"),
-        ],
-        "insight_template": "Healthcare hiring is {trend}. GCP certification is a key filter.",
-        "hero_metric": "GCP-certified candidates assessed",
-        "accent_color": "#00B050",
-    },
-}
-# Fill remaining industries with generic config
-for _ind_fill in get_industry_names():
-    if _ind_fill not in IND_DASHBOARD_CONFIG:
-        _idata_fill = get_industry_config(_ind_fill)
-        IND_DASHBOARD_CONFIG[_ind_fill] = {
-            "kpi_labels":    ["Interviews","Selected","Offers Pending","Time-to-Hire","Avg Score","NPS","Acceptance"],
-            "priority_items": [
-                (f"{_ind_fill.split(' &')[0]} offers expiring",     "CRITICAL", "#CC0000"),
-                (f"Senior evaluations pending",                     "WARNING",  "#F5A623"),
-                (f"Specialist interviews unconfirmed",               "WARNING",  "#F5A623"),
-                (f"Reports not submitted",                           "INFO",     "#378ADD"),
-            ],
-            "forecast_items": [
-                (_idata_fill.get("shortage_roles",["Specialist"])[0] if _idata_fill.get("shortage_roles") else "Specialist",
-                 "High demand — limited supply", "#F5A623"),
-                ("Senior Professionals",  "Healthy pipeline", "#00C9A7"),
-                ("Leadership Roles",      "Monitoring closely", "#378ADD"),
-            ],
-            "insight_template": f"{_ind_fill} hiring at {{trend}}. Focus on key competencies.",
-            "hero_metric":  f"{_ind_fill.split(' &')[0]} specialists assessed",
-            "accent_color": _idata_fill.get("color","#00C9A7"),
-        }
-
-def get_industry_dashboard_config(industry_name):
-    """Get industry-specific dashboard configuration."""
-    return IND_DASHBOARD_CONFIG.get(industry_name, IND_DASHBOARD_CONFIG.get("IT & Software", {}))
-
-# ── Org type presets ──────────────────────────────────────────────────────────
-ORG_PRESETS = {
-    "Staffing Agency": {
-        "description": "High-volume recruitment for client companies",
-        "default_mode": "Recruiter",
-        "key_features": ["Bulk CV Screening","Interview Workflow","Offer Letter","Client Reports"],
-        "recommended_tier": "Growth",
-        "typical_users": "5–20 recruiters",
-    },
-    "RPO (Recruitment Process Outsourcing)": {
-        "description": "End-to-end hiring management for enterprise clients",
-        "default_mode": "Executive",
-        "key_features": ["Executive Dashboard","Multi-Industry","White-label","ATS Integration"],
-        "recommended_tier": "Enterprise",
-        "typical_users": "20–100+ recruiters",
-    },
-    "Enterprise HR Team": {
-        "description": "Internal talent acquisition for large organisations",
-        "default_mode": "Hiring Manager",
-        "key_features": ["Interview Workflow","Competency Library","Analytics","Compliance"],
-        "recommended_tier": "Growth",
-        "typical_users": "3–15 hiring managers",
-    },
-    "Independent Interviewer": {
-        "description": "Single interviewer on platforms like eTeki, FloCareer, BarRaiser",
-        "default_mode": "Panel",
-        "key_features": ["Interview Workflow","Report Generation","Question Bank","Quick Scoring"],
-        "recommended_tier": "Starter",
-        "typical_users": "1 interviewer",
-    },
-    "Consulting / Advisory Firm": {
-        "description": "Hiring intelligence for consulting and advisory practices",
-        "default_mode": "Executive",
-        "key_features": ["Executive Dashboard","AI Insights","Market Intel","Pitch Deck"],
-        "recommended_tier": "Growth",
-        "typical_users": "2–10 partners/managers",
-    },
-}
-
-def get_org_preset(org_type):
-    return ORG_PRESETS.get(org_type, ORG_PRESETS["Staffing Agency"])
-
-# ── END SPRINT 4 MULTI-TENANT ENGINE ─────────────────────────────────────────
-
 # ── PAGE CONFIG ──────────────────────────────────────────────────
 st.set_page_config(
-    page_title="IAS v9.0 — Interview Assessment System",
+    page_title="IAS v8 — Interview Assessment System",
     page_icon="🎯", layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -1650,9 +83,6 @@ hr{border-color:var(--bd)!important;margin:16px 0!important;}
 [data-testid="stDownloadButton"]>button:hover{background:rgba(255,107,0,0.18)!important;border-color:var(--o5)!important;}
 div[data-testid="stMetricValue"]{font-size:2rem;font-weight:700}
 #MainMenu{visibility:hidden!important;}footer{visibility:hidden!important;}
-[data-testid="stSidebarHeader"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;}
-[data-testid="stSidebar"] .stButton>button{margin-bottom:0!important;margin-top:0!important;}
-[data-testid="stSidebar"] .stButton{margin:0!important;padding:1px 0!important;}
 </style>""", unsafe_allow_html=True)
 
 # ── VENDOR REGISTRY ──────────────────────────────────────────────
@@ -1895,10 +325,6 @@ def _clean_json(text):
 
 def _extract_text(f):
     import tempfile as tf, os as _os
-<<<<<<< HEAD
-    from io import BytesIO
-=======
->>>>>>> d7bc058e5ed6e6f607be409fb89d64143e965d38
     nm = f.name.lower()
     # Seek to start — Streamlit may have read the buffer already
     try: f.seek(0)
@@ -1907,45 +333,6 @@ def _extract_text(f):
     if not raw:
         try: f.seek(0); raw = f.read()
         except: pass
-<<<<<<< HEAD
-    if not raw:
-        return "Error: file is empty or could not be read"
-    # Use BytesIO (no filesystem) — works on Streamlit Cloud read-only fs
-    bio = BytesIO(raw)
-    try:
-        if nm.endswith(".pdf"):
-            try:
-                from pypdf import PdfReader
-            except ImportError:
-                try:
-                    from PyPDF2 import PdfReader
-                except ImportError:
-                    return "Error: PDF library not available — contact admin"
-            reader = PdfReader(bio)
-            pages  = [p.extract_text() or "" for p in reader.pages]
-            text   = " ".join(pages).strip()
-            if not text:
-                # Fallback: write to temp file and retry
-                with tf.NamedTemporaryFile(delete=False, suffix=".pdf") as t:
-                    t.write(raw); tp = t.name
-                try:
-                    reader2 = PdfReader(tp)
-                    text = " ".join(p.extract_text() or "" for p in reader2.pages).strip()
-                finally:
-                    try: _os.unlink(tp)
-                    except: pass
-            return text
-        elif nm.endswith(".docx"):
-            from docx import Document
-            doc  = Document(bio)
-            return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-        elif nm.endswith(".txt"):
-            return raw.decode("utf-8", "replace").strip()
-        else:
-            return f"Error: unsupported file type ({nm.split('.')[-1]})"
-    except Exception as e:
-        return f"Error: {e}"
-=======
     with tf.NamedTemporaryFile(delete=False, suffix=_os.path.splitext(nm)[1]) as t:
         t.write(raw); tp = t.name
     try:
@@ -1962,7 +349,6 @@ def _extract_text(f):
         try: _os.unlink(tp)
         except: pass
     return ""
->>>>>>> d7bc058e5ed6e6f607be409fb89d64143e965d38
 
 def _extract_details(text):
     d={"name":"","email":"","phone":""}
@@ -1981,7 +367,7 @@ def _extract_details(text):
         if c.replace(' ','').isalpha(): d["name"]=c.title()
     return d
 
-def _generate_questions(cv, jd, name, n_total=15, level="senior", difficulty="medium", industry="IT & Software"):
+def _generate_questions(cv, jd, name, n_total=15, level="senior"):
     client   = apikey.get_client()
     model    = apikey.get_model()
     n_code   = max(1, round(n_total * 0.2))
@@ -1989,31 +375,15 @@ def _generate_questions(cv, jd, name, n_total=15, level="senior", difficulty="me
     level_desc = {"senior": "senior/lead (7-10 yrs) — deep architecture, trade-offs",
                   "mid":    "mid-level (4-7 yrs) — solid implementation",
                   "junior": "junior (0-3 yrs) — fundamentals, basics"}.get(level, "senior")
-    difficulty_desc = {
-        "easy":   "Easy — straightforward conceptual questions, definitions, basic implementations. "
-                  "Candidate should answer confidently with standard knowledge.",
-        "medium": "Medium — applied scenario questions requiring hands-on experience. "
-                  "Mix of conceptual depth and practical problem-solving.",
-        "hard":   "Hard — advanced architecture, edge cases, trade-off analysis, system design at scale. "
-                  "Probe deeply. Expect only experienced candidates to answer fully.",
-        "mixed":  "Mixed — 30% Easy (warm-up), 50% Medium (core assessment), 20% Hard (stretch). "
-                  "Progressive difficulty across the interview."
-    }.get(difficulty, "Medium — applied scenario questions requiring hands-on experience.")
 
     # Call 1: question skeletons
     r1 = client.messages.create(model=model, max_tokens=3500, messages=[{"role": "user", "content":
-        f"You are a senior technical interviewer specialising in {industry}.\n"
-        f"{get_industry_context(industry)}\n"
-        f"---\n"
-        f"You are a senior technical interviewer.\n"
-        f"Candidate: {name} | Level: {level_desc}\n"
-        f"Question Difficulty: {difficulty_desc}\n"
-        f"CV: {cv[:1200]}\nJD: {jd[:1200]}\n\n"
-        f"Return ONLY JSON with keys: skills_required, candidate_strong, candidate_gaps, "
-        f"cv_summary, jd_summary, questions. "
-        f"Each question has: num, skill, type, difficulty, gap_question, question.\n"
+        f"Interviewer. {name}. Level:{level_desc}. CV:{cv[:1200]} JD:{jd[:1200]}\n"
+        f"Return ONLY JSON: {{\"skills_required\":[],\"candidate_strong\":[],\"candidate_gaps\":[],"
+        f"\"cv_summary\":\"\",\"jd_summary\":\"\",\"questions\":["
+        f"{{\"num\":1,\"skill\":\"\",\"type\":\"scenario\",\"gap_question\":true,\"question\":\"\"}}]}}\n"
         f"Rules: {n_total} total, nums 1-{n_scen} scenario, {n_scen+1}-{n_total} coding. "
-        f"Difficulty MUST be {difficulty.upper()}. Gap questions first. Specific to JD."
+        f"Gap questions first. Specific to JD."
     }])
     t1 = _clean_json(r1.content[0].text)
     s1 = None
@@ -2190,7 +560,7 @@ const children=[
     ]))
   ]}}),
   p([r(" ")]),
-  p([r("Report generated by IAS v9.0 — GVS Technologies",{{color:"888888",size:18,italic:true}})]),
+  p([r("Report generated by IAS v6.0 — GVS Technologies",{{color:"888888",size:18,italic:true}})]),
 ];
 
 const doc=new Document({{sections:[{{
@@ -2521,22 +891,13 @@ def _ai_score(notes, questions, jd, name):
     ss=", ".join([f'"{q.get("skill","")}":{{\"competency\":3,\"experience\":3}}'
                   for q in questions[:6]])
 
-    # ── Industry-aware scoring ───────────────────────────────────
-    _ind_for_score = st.session_state.get("selected_industry","IT & Software") if "st" in dir() else "IT & Software"
-    _rubric_prompt = format_rubric_for_prompt(_ind_for_score)
-    _dim_keys = [d["id"] for d in get_industry_rubric(_ind_for_score).get("dimensions",[])]
-    _dim_json  = ",".join([f'"{k}":3.5' for k in _dim_keys])
-
     # Score
     r=client.messages.create(model=apikey.get_model(),max_tokens=3000,
         messages=[{"role":"user","content":
-            f"You are scoring an interview for industry: {_ind_for_score}.\n"
-            f"{_rubric_prompt}\n\n"
             f"Score interview for {name}. JD:{jd[:300]}\n{qa}\n"
             f'Return ONLY JSON: {{"candidate":"{name}","role":"{jd[:60].replace(chr(10)," ")}","date":"{today}",'
             f'"scores":[{{"q_num":1,"question":"","score":4,"summary":"","skill":""}}],'
-            f'"skill_scores":{{{ss}}},"dimension_scores":{{{_dim_json}}},"overall_score":3.8,'
-            f'"verdict":"SELECTED","industry":"{_ind_for_score}"}}'
+            f'"skill_scores":{{{ss}}},"overall_score":3.8,"verdict":"SELECTED"}}'
         }])
     txt=_clean_json(r.content[0].text)
     result=None
@@ -2548,18 +909,6 @@ def _ai_score(notes, questions, jd, name):
             except: pass
     if not result: return {"error":"Scoring failed","raw":txt[:200]}
     result["date"]=today
-
-    # ── Industry-weighted score calculation ──────────────────────
-    _dim_scores = result.get("dimension_scores",{})
-    if _dim_scores:
-        _w_score = calculate_weighted_score(_dim_scores, _ind_for_score)
-        result["weighted_score"]   = _w_score
-        result["weighted_verdict"] = get_verdict_from_score(_w_score, _ind_for_score)
-        result["industry"]         = _ind_for_score
-        # Override overall score with weighted score if available
-        if "overall_score" in result:
-            result["overall_score_raw"]     = result["overall_score"]
-            result["overall_score"]         = _w_score
 
     # Project Discussion (Req 4.1)
     all_notes=" ".join(v for k,v in notes.items() if not k.startswith("score_") and isinstance(v,str) and v.strip())
@@ -2683,19 +1032,11 @@ def _send_email_custom(sender, pwd, to, subject, body, docx_path=None):
     msg["From"]=sender.strip(); msg["To"]=to.strip(); msg["Subject"]=subject
     msg.attach(MIMEText(body,"plain"))
     if docx_path and Path(docx_path).exists():
-        _fname = Path(docx_path).name
-        _ext   = Path(docx_path).suffix.lower()
-        if _ext == ".ics":
-            _mime_type = ("text", "calendar")
-        elif _ext == ".pdf":
-            _mime_type = ("application", "pdf")
-        else:
-            _mime_type = ("application", "vnd.openxmlformats-officedocument.wordprocessingml.document")
         with open(docx_path,"rb") as f:
-            part=MIMEBase(*_mime_type)
+            part=MIMEBase("application","vnd.openxmlformats-officedocument.wordprocessingml.document")
             part.set_payload(f.read())
         encoders.encode_base64(part)
-        part.add_header("Content-Disposition",f'attachment; filename="{_fname}"')
+        part.add_header("Content-Disposition",f'attachment; filename="{Path(docx_path).name}"')
         msg.attach(part)
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com",465) as s:
@@ -2716,13 +1057,13 @@ def _notify_whatsapp(event: str, name: str, role: str, score: str = ""):
         tpl_map = {
             "selected": settings_n.get("tpl_selected",
                 "Hi {name}, great news! You have been SELECTED for {role}. "
-                "Score: {score}/5. Next steps follow shortly. — IAS v9.0"),
+                "Score: {score}/5. Next steps follow shortly. — IAS v6.0"),
             "rejected": settings_n.get("tpl_rejected",
                 "Hi {name}, thank you for interviewing for {role}. "
-                "We will keep your profile for future opportunities. — IAS v9.0"),
+                "We will keep your profile for future opportunities. — IAS v6.0"),
             "tcon": settings_n.get("tpl_tcon",
                 "Hi {name}, your telephonic interview for {role} is scheduled. "
-                "Please be available. — IAS v9.0"),
+                "Please be available. — IAS v6.0"),
         }
         msg_body = tpl_map.get(event.lower(), f"IAS update for {name}: {event}") \
             .replace("{name}", name).replace("{role}", role).replace("{score}", str(score))
@@ -2847,6 +1188,13 @@ def _install_ffmpeg():
 # ════════════════════════════════════════════════════════════════
 with st.sidebar:
     brand=cfg.get_active_client()
+    st.markdown(f"""<div style="text-align:center;padding:14px 0 8px">
+    <div style="font-size:32px">🎯</div>
+    <div style="font-size:18px;font-weight:700">IAS v9.0</div>
+    <div style="font-size:10px;opacity:.7;letter-spacing:1px">ZERO TOUCH · RUN ANYWHERE</div>
+    <div style="font-size:11px;opacity:.6">{brand.get('company_name','GVS Technologies')}</div>
+    </div>""",unsafe_allow_html=True)
+    st.divider()
 
     # ── QUICK ACTION BUTTONS IN SIDEBAR ─────────────────────────
     if st.session_state.get("page") == "workflow":
@@ -2864,26 +1212,6 @@ with st.sidebar:
             disabled=not _can_gen):
             st.session_state["_trigger_generate"] = True
             st.rerun()
-
-        # ── Pre-built bank button ─────────────────────────
-        _sel_ind = st.session_state.get("selected_industry","IT & Software")
-        _qb_stats = get_question_bank_stats()
-        _qb_count = _qb_stats["by_industry"].get(_sel_ind, 0)
-        if _qb_count > 0:
-            _diff = st.session_state.get("_q_difficulty","medium")
-            if st.button(f"📚 Use Pre-built Bank ({_sel_ind[:15]}... · {_diff.title()})",
-                use_container_width=True,
-                help=f"Load {_qb_count} pre-built questions for {_sel_ind} — no API call needed"):
-                _bank_qs = get_industry_questions(_sel_ind, _diff, 15)
-                if _bank_qs:
-                    st.session_state.questions = _bank_qs
-                    st.session_state.notes    = {}
-                    st.session_state.curr_q   = 0
-                    if not st.session_state.candidate_name:
-                        st.session_state.candidate_name = "Candidate"
-                    st.success(f"✅ {len(_bank_qs)} pre-built {_diff} questions loaded for {_sel_ind}")
-                    st.rerun()
-
         st.divider()
 
     has_session=bool(st.session_state.candidate_name and st.session_state.questions)
@@ -2896,13 +1224,8 @@ with st.sidebar:
     _wl = cfg.get_settings()
     _wl_name  = _wl.get("brand_name",  "IAS v9.0") or "IAS v9.0"
     _wl_icon_raw = _wl.get("brand_icon", "🎯") or "🎯"
-    # Sanitize: reject material icon names (all ASCII, no spaces, >4 chars)
-    _wl_icon = "🎯"
-    if _wl_icon_raw:
-        _is_ascii_only = all(ord(c) < 128 for c in _wl_icon_raw)
-        _is_short      = len(_wl_icon_raw) <= 4
-        if not _is_ascii_only or _is_short:
-            _wl_icon = _wl_icon_raw
+    # Sanitize: only allow emoji/short strings, not material icon names
+    _wl_icon  = _wl_icon_raw if len(_wl_icon_raw) <= 4 else "🎯"
     _wl_color = _wl.get("brand_color", "#0D1B3E") or "#0D1B3E"
 
     # ── Dark mode injection ───────────────────────────────────────
@@ -2917,17 +1240,11 @@ with st.sidebar:
         </style>""", unsafe_allow_html=True)
 
     st.sidebar.markdown(
-        f'<div style="background:linear-gradient(135deg,#0D1B3E,#0A2540);'
-        f'padding:10px 12px;border-radius:8px;margin-bottom:8px;'
-        f'border:1px solid rgba(0,201,167,0.2);text-align:center">'
-        f'<div style="display:flex;align-items:center;justify-content:center;gap:8px">'
-        f'<span style="font-size:20px">{_wl_icon}</span>'
-        f'<div>'
-        f'<div style="color:#fff;font-size:13px;font-weight:700;letter-spacing:0.5px">{_wl_name}</div>'
-        f'<div style="color:#00C9A7;font-size:9px;letter-spacing:1px;opacity:.8">ZERO TOUCH · RUN ANYWHERE</div>'
-        f'</div></div>'
-        f'<div style="color:rgba(255,255,255,.35);font-size:9px;margin-top:3px">'
-        f'{brand.get("company_name","GVS Technologies")}</div>'
+        f'<div style="background:{_wl_color};padding:12px 14px;border-radius:8px;'
+        f'margin-bottom:12px;text-align:center">' 
+        f'<div style="font-size:22px">{_wl_icon}</div>'
+        f'<div style="color:#fff;font-size:13px;font-weight:700;margin-top:4px">{_wl_name}</div>'
+        f'<div style="color:rgba(255,255,255,.5);font-size:9px">GVS Technologies</div>'
         f'</div>', unsafe_allow_html=True)
 
     # ── CxO-grade categorised navigation ─────────────────────────
@@ -2963,7 +1280,6 @@ with st.sidebar:
             "pages": [
                 ("🎙", "Interview Intelligence", "intelligence"),
                 ("📡", "Telecom Packs",          "telecom"),
-                ("🌐", "Industry Framework",     "industry"),
                 ("📚", "Competency Library",     "competency"),
                 ("🧪", "Skills Testing",         "skillstest"),
                 ("💡", "GenAI Insights",         "genai_insights"),
@@ -3029,83 +1345,23 @@ with st.sidebar:
         },
     ]
 
-    # ── COLLAPSIBLE NAV — parent groups with expandable sub-items ──
-    # Track which group is expanded
-    if "_nav_expanded" not in st.session_state:
-        # Auto-expand the group containing the current page
-        st.session_state._nav_expanded = None
-        for _g in NAV_GROUPS:
-            for _icon, _lbl, _key in _g["pages"]:
-                if _key == st.session_state.page:
-                    st.session_state._nav_expanded = _g["label"]
-                    break
-
-    # Group icons map
-    GROUP_ICONS = {
-        "COMMAND CENTRE":       "🏠",
-        "TALENT ACQUISITION":   "🎯",
-        "ASSESSMENT INTELLIGENCE": "🎙",
-        "HIRING OPERATIONS":    "💼",
-        "INTELLIGENCE & AI":    "🧠",
-        "INTEGRATIONS":         "🔗",
-        "ENTERPRISE SCALE":     "🏢",
-        "SYSTEM":               "⚙️",
-    }
-
     for group in NAV_GROUPS:
-        grp_label   = group["label"]
-        grp_color   = group["color"]
-        grp_icon    = GROUP_ICONS.get(grp_label, "📁")
-        is_expanded = st.session_state._nav_expanded == grp_label
-
-        # Check if any page in this group is active
-        grp_has_active = any(
-            st.session_state.page == key
-            for _, _, key in group["pages"]
-        )
-
-        # Parent group button
-        _grp_style = (
-            f'background:rgba({",".join(str(int(grp_color.lstrip("#")[i:i+2],16)) for i in (0,2,4))},0.15);' 
-            if is_expanded or grp_has_active else "background:transparent;"
-        )
+        # Section header
         st.sidebar.markdown(
-            f'<div style="margin:4px 0 0">',
+            f'<div style="margin:10px 0 4px;padding:4px 8px;'
+            f'border-left:3px solid {group["color"]};'
+            f'font-size:9px;font-weight:700;letter-spacing:1.2px;'
+            f'color:{group["color"]};opacity:.9">'
+            f'{group["label"]}</div>',
             unsafe_allow_html=True)
-
-        if st.sidebar.button(
-            f"{grp_icon}  {grp_label}  {"▼" if is_expanded else "▶"}",
-            key=f"grp_{grp_label}",
-            use_container_width=True,
-            type="primary" if (is_expanded or grp_has_active) else "secondary",
-            help=f"{'Collapse' if is_expanded else 'Expand'} {grp_label}"
-        ):
-            if is_expanded:
-                st.session_state._nav_expanded = None
-            else:
-                st.session_state._nav_expanded = grp_label
-            st.rerun()
-
-        # Sub-items — only shown when group is expanded
-        if is_expanded:
-            # Inject CSS to tighten button gaps for sub-items
-            st.sidebar.markdown(
-                '<style>[data-testid="stSidebar"] .stButton{margin:0!important;padding:0!important;}</style>',
-                unsafe_allow_html=True)
-            for icon, label, key in group["pages"]:
-                active = st.session_state.page == key
-                st.sidebar.markdown(
-                    '<div style="margin:1px 0 1px 10px;">',
-                    unsafe_allow_html=True)
-                if st.sidebar.button(
-                    f"{icon} {label}",
-                    key=f"nav_{key}",
-                    use_container_width=True,
-                    type="primary" if active else "secondary",
-                ):
-                    st.session_state.page = key
-                    st.rerun()
-                st.sidebar.markdown("</div>", unsafe_allow_html=True)
+        for icon, label, key in group["pages"]:
+            active = st.session_state.page == key
+            if st.sidebar.button(
+                f"{icon}  {label}",
+                key=f"nav_{key}",
+                use_container_width=True,
+                type="primary" if active else "secondary"):
+                st.session_state.page = key; st.rerun()
 
 
     st.divider()
@@ -3119,642 +1375,654 @@ with st.sidebar:
 # ════════════════════════════════════════════════════════════════
 # HOME
 # ════════════════════════════════════════════════════════════════
-if st.session_state.page == "home":
+if st.session_state.page=="home":
     import pandas as _pd_home, json as _json_home
     from datetime import datetime as _dth, timedelta as _tdhome
-    import random as _rnd_home
 
-    # ── Load real data ─────────────────────────────────────────
-    results_h  = cfg.load_results("", True)
-    stats_h    = cfg.get_stats(results_h)
-    settings_h = cfg.get_settings()
-    kpi_path_h = ROOT / "data" / "kpi_data.json"
-    KPI_H      = _json_home.loads(kpi_path_h.read_text(encoding="utf-8")) if kpi_path_h.exists() else {}
-    _now_h     = _dth.now()
-    _today_str = _now_h.strftime("%A, %d %B %Y  ·  %H:%M")
-    _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
-<<<<<<< HEAD
-=======
-    _curr_ind    = st.session_state.get("selected_industry", "IT & Software")
->>>>>>> d7bc058e5ed6e6f607be409fb89d64143e965d38
+    # ── load data ─────────────────────────────────────────────
+    results_h = cfg.load_results("", True)
+    stats_h   = cfg.get_stats(results_h)
+    kpi_path_h= ROOT / "data" / "kpi_data.json"
+    KPI_H     = _json_home.loads(kpi_path_h.read_text(encoding="utf-8")) if kpi_path_h.exists() else {}
+    src_h     = KPI_H.get("source_performance", {})
+    settings_h= cfg.get_settings()
 
-    # ── Derived metrics ─────────────────────────────────────────
-    _total_interviews = stats_h.get("total", len(results_h))
-    _selected   = stats_h.get("selected", sum(1 for r in results_h if "GO" in str(r.get("verdict","")).upper() and "NO" not in str(r.get("verdict","")).upper()))
-    _rejected   = stats_h.get("rejected", sum(1 for r in results_h if "REJECT" in str(r.get("verdict","")).upper() or "NO-GO" in str(r.get("verdict","")).upper()))
-    _pending    = max(0, _total_interviews - _selected - _rejected)
-    _avg_score  = stats_h.get("avg_score", 0)
-    _accept_rate= round(_selected / _total_interviews * 100, 1) if _total_interviews else 0
+    nav=brand.get("primary_color","0D1B3E")
+    acc=brand.get("accent_color","00B0F0")
 
-    # Simulate pipeline data (replace with real data when available)
-    _pipeline   = KPI_H.get("pipeline", {"applied":1250,"screened":640,"interviewed":_total_interviews or 192,"shortlisted":_selected or 58,"offered":19,"joined":12})
-    _open_roles = KPI_H.get("open_roles", 48)
-    _tth        = KPI_H.get("time_to_hire", 18)
-    _offers_pending = KPI_H.get("offers_pending", 11)
-
-    # ── CSS injection for world-class dashboard ─────────────────
-    st.markdown("""
-<style>
-/* ── Base ─────────────────────────────────────────────── */
-.exec-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 16px;border-bottom:1px solid rgba(0,201,167,0.15);margin-bottom:16px}
-.exec-greeting h2{font-size:20px;font-weight:700;color:#E8F2FF;margin:0}
-.exec-greeting p{font-size:12px;color:#4A6A80;margin:3px 0 0}
-
-/* ── Role tabs ────────────────────────────────────────── */
-.role-tabs{display:flex;gap:6px;margin-bottom:16px}
-.rtab{font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid rgba(0,201,167,0.2);background:rgba(255,255,255,0.03);color:#4A6A80;cursor:pointer;letter-spacing:0.04em;transition:all 0.15s}
-.rtab:hover{background:rgba(0,201,167,0.06);color:#C8D8E4}
-.rtab.active{background:rgba(0,201,167,0.12);color:#00C9A7;border-color:rgba(0,201,167,0.4)}
-
-/* ── Layout with sidebar ─────────────────────────────── */
-.dash-layout{display:grid;grid-template-columns:1fr 220px;gap:14px}
-.dash-main{}
-.dash-cop{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px;position:sticky;top:0}
-
-/* ── Health pill ──────────────────────────────────────── */
-.health-index{background:rgba(0,0,0,0.2);border:1px solid rgba(245,166,35,0.35);border-radius:10px;padding:8px 14px;min-width:160px}
-.health-index .lbl{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px}
-.health-index .score{display:flex;align-items:baseline;gap:6px}
-.health-index .score .num{font-size:22px;font-weight:700;color:#F5A623}
-.health-index .score .sub{font-size:11px;color:#4A6A80}
-.health-index .drivers{font-size:10px;color:#4A6A80;margin-top:2px}
-.exec-btns{display:flex;gap:8px;flex-wrap:wrap}
-.exec-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.25);background:rgba(0,201,167,0.06);color:#00C9A7;cursor:pointer;font-weight:600;letter-spacing:0.04em}
-.exec-btn-primary{background:rgba(0,201,167,0.15);border-color:rgba(0,201,167,0.45)}
-
-/* ── KPI ──────────────────────────────────────────────── */
-.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px}
-.kpi-box{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 13px}
-.kpi-box .lbl{font-size:10px;color:#4A6A80;margin-bottom:6px}
-.kpi-box .val{font-size:22px;font-weight:700;color:#E8F2FF;line-height:1}
-.kpi-box .delta{font-size:11px;margin-top:5px}
-.delta-g{color:#00B050}.delta-r{color:#CC0000}.delta-w{color:#F5A623}
-
-/* ── Forecast ─────────────────────────────────────────── */
-.forecast-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.forecast-card{background:#0A1628;border-radius:10px;padding:12px 14px}
-.forecast-card .dept{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
-.forecast-card .status{font-size:13px;font-weight:600;margin-bottom:3px}
-.forecast-card .rec{font-size:11px;color:#4A6A80}
-
-/* ── Cards ────────────────────────────────────────────── */
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
-.dash-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px 16px}
-.dash-card-title{font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
-.dash-card-title a{font-size:10px;color:#00C9A7;text-decoration:none;font-weight:600}
-.priority-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0 7px 10px;border-bottom:1px solid rgba(255,255,255,0.05);margin-left:-10px}
-.priority-row:last-child{border-bottom:none}
-.priority-name{font-size:12px;color:#C8D8E4}
-.priority-meta{display:flex;align-items:center;gap:5px}
-.priority-level{font-size:9px;font-weight:700;letter-spacing:0.04em}
-.badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px}
-.bw{background:rgba(245,166,35,0.12);color:#F5A623}
-.bi{background:rgba(55,138,221,0.12);color:#378ADD}
-.br{background:rgba(204,0,0,0.12);color:#CC0000}
-.bg{background:rgba(0,176,80,0.12);color:#00B050}
-.funnel-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.funnel-lbl{font-size:11px;color:#4A6A80;width:72px;flex-shrink:0}
-.funnel-wrap{flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:14px;overflow:hidden}
-.funnel-fill{height:100%;border-radius:3px}
-.funnel-cnt{font-size:11px;font-weight:600;color:#C8D8E4;width:36px;text-align:right;flex-shrink:0}
-.activity-row{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.activity-row:last-child{border-bottom:none}
-.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.act-text{font-size:12px;color:#C8D8E4;line-height:1.4}
-.act-time{font-size:10px;color:#4A6A80;margin-top:2px}
-
-/* ── Candidate cards ─────────────────────────────────── */
-.cand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.cand-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px}
-.cand-card:hover{border-color:rgba(0,201,167,0.3)}
-.cand-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.cand-avatar{width:38px;height:38px;border-radius:50%;background:rgba(0,201,167,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#00C9A7;flex-shrink:0}
-.cand-name{font-size:13px;font-weight:700;color:#E8F2FF}
-.cand-role{font-size:11px;color:#4A6A80;margin-top:2px}
-.cand-scores{display:flex;gap:16px;margin-bottom:10px}
-.cscore .sv{font-size:16px;font-weight:700;color:#E8F2FF}
-.cscore .sl{font-size:10px;color:#4A6A80;margin-top:1px}
-.cand-verdict{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-bottom:10px}
-.cv-go{background:rgba(0,176,80,0.12);color:#00B050}
-.cv-no{background:rgba(204,0,0,0.12);color:#CC0000}
-.cv-pend{background:rgba(245,166,35,0.12);color:#F5A623}
-.cand-btns{display:flex;gap:6px;flex-wrap:wrap}
-.cbtn{font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(0,201,167,0.2);background:transparent;color:#4A6A80;cursor:pointer}
-.cbtn:hover{background:rgba(0,201,167,0.08);color:#00C9A7}
-.cbtn-p{background:rgba(0,201,167,0.1);color:#00C9A7;border-color:rgba(0,201,167,0.3)}
-
-/* ── Insights ─────────────────────────────────────────── */
-.insight-box{background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;margin-bottom:8px}
-.insight-box:last-child{margin-bottom:0}
-.insight-dept{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
-.insight-txt{font-size:12px;color:#C8D8E4;line-height:1.5}
-.insight-why{font-size:11px;color:#4A6A80;margin-top:4px;line-height:1.4;padding-left:10px;border-left:2px solid rgba(0,201,167,0.2)}
-.insight-ai{font-size:11px;color:#00C9A7;margin-top:5px}
-.row2-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.metric-mini{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.metric-mini:last-child{border-bottom:none}
-.mm-label{font-size:12px;color:#4A6A80}
-.mm-val{font-size:13px;font-weight:700;color:#E8F2FF}
-
-/* ── Copilot sidebar ─────────────────────────────────── */
-.cop-sidebar-title{font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:4px;display:flex;align-items:center;gap:6px}
-.cop-sidebar-sub{font-size:10px;color:#4A6A80;margin-bottom:12px}
-.cop-chip{font-size:11px;color:#C8D8E4;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid rgba(0,201,167,0.1);line-height:1.3;display:block;width:100%;text-align:left}
-.cop-chip:hover{background:rgba(0,201,167,0.08);color:#00C9A7;border-color:rgba(0,201,167,0.25)}
-.cop-section-lbl{font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px}
-.status-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.status-row:last-child{border-bottom:none}
-.slbl{font-size:11px;color:#4A6A80}
-.sval{font-size:11px;font-weight:600}
-
-/* ── Quick actions ───────────────────────────────────── */
-.qa-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-.qa-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.2);background:rgba(0,201,167,0.05);color:#4A6A80;cursor:pointer}
-.qa-btn:hover{background:rgba(0,201,167,0.1);color:#00C9A7}
-
-/* ── Support ─────────────────────────────────────────── */
-.support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.sup-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:10px;padding:12px;text-align:center;cursor:pointer}
-.sup-card:hover{border-color:rgba(0,201,167,0.35);background:#0D1F35}
-.sup-icon{font-size:22px;margin-bottom:5px}
-.sup-label{font-size:11px;color:#4A6A80}
-.cop-fab{position:fixed;bottom:24px;right:24px;z-index:999}
-.cop-fab-btn{width:48px;height:48px;border-radius:50%;background:#00C9A7;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,201,167,0.3);display:flex;align-items:center;justify-content:center}
-.cop-popup{display:none;position:absolute;bottom:58px;right:0;width:250px;background:#0A1628;border:1px solid rgba(0,201,167,0.3);border-radius:12px;padding:14px}
-.cop-popup.open{display:block}
-.section-lbl{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;margin-top:6px}
-.kpi-box .lbl{font-size:11px;color:#4A6A80;margin-bottom:6px}
-.act-text{font-size:12px;color:#C8D8E4;line-height:1.5}
-.priority-name{font-size:12px;color:#C8D8E4;line-height:1.4}
-</style>
-""", unsafe_allow_html=True)
-
-    # ── EXECUTIVE HEADER ────────────────────────────────────────
-    # Health score with drivers
-    _health_drivers = []
-    _health_deductions = 0
-    if _offers_pending >= 5:
-        _health_drivers.append(f"· {_offers_pending} offers pending")
-        _health_deductions += 15
-    if _pending >= 3:
-        _health_drivers.append(f"· {_pending} evaluations pending")
-        _health_deductions += 10
-    if _avg_score > 0 and _avg_score < 5:
-        _health_drivers.append("· Low avg interview score")
-        _health_deductions += 15
-    if _accept_rate > 0 and _accept_rate < 15:
-        _health_drivers.append("· Low acceptance rate")
-        _health_deductions += 10
-    _health_pct = min(100, max(0, round(100 - _health_deductions + (_accept_rate * 0.3))))
-    _health_score = max(10, min(100, _health_pct))
-    _health_label = "Healthy" if _health_score >= 80 else "Attention needed" if _health_score >= 60 else "At Risk"
-    _health_color = "#00B050" if _health_score >= 80 else "#F5A623" if _health_score >= 60 else "#CC0000"
-    _health_icon  = "🟢" if _health_score >= 80 else "🟡" if _health_score >= 60 else "🔴"
-    _drivers_html = "".join([f'<div style="font-size:10px;color:#4A6A80;margin-top:2px">{d}</div>' for d in _health_drivers]) if _health_drivers else ""
-
-    _tenant_hdr    = get_tenant_config()
-    _org_name_hdr  = _tenant_hdr.get("org_name","GVS Technologies")
-    _platform_hdr  = _tenant_hdr.get("platform_name","IAS")
-    _ind_icon_hdr  = get_industry_config(_curr_ind).get("icon","🎯")
-
-    st.markdown(f"""
-<div class="exec-header">
-  <div class="exec-greeting">
-    <h2>Good {"morning" if _now_h.hour < 12 else "afternoon" if _now_h.hour < 17 else "evening"}, {_interviewer}</h2>
-    <p>{_today_str} &nbsp;·&nbsp; {_ind_icon_hdr} {_curr_ind} &nbsp;·&nbsp; {_org_name_hdr}</p>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <div style="background:rgba(0,0,0,0.2);border:1px solid {_health_color}40;border-radius:10px;padding:8px 14px;min-width:200px;position:relative" title="Health drivers: {chr(10).join(_health_drivers) if _health_drivers else 'All systems healthy'}">
-      <div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">
-        Hiring Health Index
-        <span style="font-size:9px;color:#4A6A80;margin-left:4px" title="Click to see drivers">&#9432;</span>
-      </div>
-      <div style="display:flex;align-items:baseline;gap:6px">
-        <span style="font-size:22px;font-weight:700;color:{_health_color}">{_health_score}</span>
-        <span style="font-size:11px;color:#4A6A80">/100 &nbsp;{_health_icon} {_health_label}</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:4px;margin-top:6px;overflow:hidden">
-        <div style="width:{_health_score}%;height:4px;background:{_health_color};border-radius:4px"></div>
-      </div>
-      {_drivers_html}
-    </div>
-    <div class="exec-btns">
-      <span class="exec-btn exec-btn-primary">+ New Interview</span>
-      <span class="exec-btn">📅 Schedule</span>
-      <span class="exec-btn">📊 Report</span>
-    </div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── ROLE-BASED TABS ─────────────────────────────────────────
-    _role_tab      = st.session_state.get("_dash_role", "Executive")
-    _ind_dash_cfg  = get_industry_dashboard_config(_curr_ind)
-    _tenant_cfg    = get_tenant_config()
-    _accent_color  = _ind_dash_cfg.get("accent_color","#00C9A7")
-    _tabs_html = "".join([
-        f'<button class="rtab {"active" if t == _role_tab else ""}" '        f'onclick="window.parent.document.querySelectorAll(\'.rtab\').forEach(b=>b.classList.remove(\'active\'));this.classList.add(\'active\')">{t}</button>'
-        for t in ["Executive", "Recruiter", "Hiring Manager", "Interview Panel"]
-    ])
-    st.markdown(f'<div class="role-tabs">{_tabs_html}</div>', unsafe_allow_html=True)
-
-    # ── ROLE-BASED VIEW SWITCHER ────────────────────────────────
-    if _role_tab == "Recruiter":
-        st.markdown(
-            '<div style="background:rgba(55,138,221,0.08);border:1px solid rgba(55,138,221,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'  
-            '<span style="font-size:11px;font-weight:700;color:#378ADD">RECRUITER VIEW</span>'
-            ' &mdash; Today''s interviews, pending CVs, and scheduling tasks</div>',
-            unsafe_allow_html=True)
-    elif _role_tab == "Hiring Manager":
-        st.markdown(
-            '<div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'
-            '<span style="font-size:11px;font-weight:700;color:#F5A623">HIRING MANAGER VIEW</span>'
-            ' &mdash; Pending approvals, team feedback, and candidate pipeline</div>',
-            unsafe_allow_html=True)
-    elif _role_tab == "Interview Panel":
-        st.markdown(
-            '<div style="background:rgba(127,119,221,0.08);border:1px solid rgba(127,119,221,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'
-            '<span style="font-size:11px;font-weight:700;color:#7F77DD">INTERVIEW PANEL VIEW</span>'
-            ' &mdash; Upcoming interviews and evaluation tasks for today</div>',
-            unsafe_allow_html=True)
-
-    # ── START LAYOUT WITH COPILOT SIDEBAR ─────────────────────
-    _main_col, _cop_col = st.columns([3, 1])
-    with _main_col:
-
-        # ── KPI ROW — clickable drill-down ─────────────────────────
-        _offer_accept_rate = round(_selected / max(_offers_pending + _selected, 1) * 100)
-        _nps_score = min(10, round((_avg_score * 0.6) + (_accept_rate * 0.04) + 2, 1)) if _avg_score else 8.2
-        _kpi_cols = st.columns(7)
-        _kpi_items = [
-            ("Interviews",    str(_total_interviews),          f"&#8593; {max(1,_total_interviews//10)} this week", "#00B050", "workflow"),
-            ("Selected",      str(_selected),                  f"Rate: {_accept_rate}%",                           "#00B050" if _accept_rate>=20 else "#F5A623", "workflow"),
-            ("Offers",        str(_offers_pending),            "&#9888; 2 expiring today",                         "#F5A623", "offerletter"),
-            ("Acceptance",    f"{_offer_accept_rate}%",        "&#8593; 6% vs last mo",                            "#00B050", "calendar"),
-            ("Time-to-hire",  f"{_tth}d",                     "&#8595; 5d vs last mo",                             "#00B050", "kpi"),
-            ("Avg score",     f"{round(_avg_score,1) if _avg_score else chr(8212)}/10", "Out of 10", "#00C9A7", "intelligence"),
-            ("Candidate NPS", f"{_nps_score}",                "&#8593; 0.6 vs last mo",                            "#00B050", "kpi"),
-        ]
-        for _ki, (_klbl, _kval, _kdelta, _kcol, _kpage) in enumerate(_kpi_items):
-            with _kpi_cols[_ki]:
-                st.markdown(
-                    f'<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 13px;cursor:pointer;transition:border 0.15s" '
-                    f'title="Click to drill down into {_klbl}">'
-                    f'<div style="font-size:10px;color:#4A6A80;margin-bottom:6px">{_klbl}</div>'
-                    f'<div style="font-size:22px;font-weight:700;color:#E8F2FF;line-height:1">{_kval}</div>'
-                    f'<div style="font-size:11px;margin-top:5px;color:{_kcol}">{_kdelta}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True)
-                if st.button(f"View {_klbl}", key=f"kpi_{_ki}", use_container_width=True,
-                             help=f"Drill down into {_klbl} details"):
-                    st.session_state.page = _kpage
-                    st.rerun()
-
-        # ── ROW 1: Priorities + Funnel + Activity ───────────────────
-        # ── ROW 1: Three columns ──────────────────────────────────
-        _col1, _col2, _col3 = st.columns(3)
-
-        # Priorities
-        with _col1:
-            st.markdown('''<div class="dash-card">''', unsafe_allow_html=True)
-            st.markdown('''<div class="dash-card-title">Today's priorities <span style="font-size:10px;color:#00C9A7">View all</span></div>''', unsafe_allow_html=True)
-            priorities = [
-                ("⚠ Offers expiring today",      "CRITICAL", "br", "#CC0000", 2),
-                ("📝 Evaluations pending",         "WARNING",  "bw", "#F5A623", max(1,_pending)),
-                ("📅 Interviews unconfirmed",       "WARNING",  "bw", "#F5A623", 4),
-                ("👔 Manager feedback awaited",     "INFO",     "bi", "#378ADD", 3),
-                ("📄 Reports not submitted",        "INFO",     "bi", "#378ADD", 6),
-            ]
-            for pname, plabel, pbadge, pcolor, pcount in priorities:
-                st.markdown(
-                    f'<div class="priority-row" style="border-left:3px solid {pcolor};padding-left:8px;margin-left:-8px">'                f'<span class="priority-name">{pname}</span>'                f'<span style="display:flex;align-items:center;gap:5px">'                f'<span style="font-size:9px;color:{pcolor};font-weight:700">{plabel}</span>'                f'<span class="badge {pbadge}">{pcount}</span></span></div>',
-                    unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        # Funnel with conversion %
-        with _col2:
-            _f_ap = _pipeline.get("applied", 1250)
-            _f_sc = _pipeline.get("screened", 640)
-            _f_in = _pipeline.get("interviewed", _total_interviews or 192)
-            _f_sl = _pipeline.get("shortlisted", _selected or 58)
-            _f_of = _pipeline.get("offered", 19)
-            _f_jo = _pipeline.get("joined", 12)
-            def _fconv2(a, b): return f"{round(a/b*100)}%" if b > 0 else "—"
-            def _fw2(n, t): return f"{min(100, n/t*100):.0f}" if t > 0 else "0"
-
-            _funnel_stages = [
-                ("Applied",     _f_ap, _f_ap, "#378ADD", None,  "#4A6A80"),
-                ("Screened",    _f_sc, _f_ap, "#378ADD", _f_ap, "#378ADD"),
-                ("Interviewed", _f_in, _f_ap, "#1D9E75", _f_sc, "#1D9E75"),
-                ("Shortlisted", _f_sl, _f_ap, "#1D9E75", _f_in, "#1D9E75"),
-                ("Offered",     _f_of, _f_ap, "#F5A623", _f_sl, "#F5A623"),
-                ("Joined",      _f_jo, _f_ap, "#00B050", _f_of, "#00B050"),
-            ]
-            _funnel_rows_html = "".join([
-                f'<div class="funnel-row">'            f'<span class="funnel-lbl">{lbl}</span>'            f'<div class="funnel-wrap"><div class="funnel-fill" style="width:{_fw2(cnt,_f_ap)}%;background:{col}"></div></div>'            f'<span class="funnel-cnt">{cnt}</span>'            f'<span style="font-size:10px;color:{cconv};width:36px;text-align:right">{_fconv2(cnt,cdenom) if cdenom else "&mdash;"}</span></div>'
-                for lbl, cnt, _, col, cdenom, cconv in _funnel_stages
-            ])
-            st.markdown(
-                f'<div class="dash-card"><div class="dash-card-title" style="margin-bottom:6px">Candidate funnel '            f'<span style="font-size:10px;color:#00C9A7">Analytics</span></div>'            f'<div style="display:flex;gap:6px;margin-bottom:6px"><span style="font-size:9px;color:#4A6A80;width:70px">Stage</span>'            f'<div style="flex:1"></div>'            f'<span style="font-size:9px;color:#4A6A80;width:36px;text-align:right">Count</span>'            f'<span style="font-size:9px;color:#00C9A7;width:36px;text-align:right">Conv.</span></div>'            f'{_funnel_rows_html}</div>',
-                unsafe_allow_html=True)
-
-        # Live activity
-        with _col3:
-            _recent5 = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:5] if results_h else []
-            _act_colors = ["#1D9E75","#378ADD","#7F77DD","#F5A623","#00B050"]
-            if _recent5:
-                _act_html = "".join([
-                    f'<div class="activity-row">'                f'<div class="act-dot" style="background:{_act_colors[i%5]}"></div>'                f'<div><div class="act-text">{r.get("candidate_name","Candidate")[:22]} — {str(r.get("verdict","Done"))[:18]}</div>'                f'<div class="act-time">{str(r.get("date",r.get("timestamp","Today")))[:10]}</div></div></div>'
-                    for i, r in enumerate(_recent5)
-                ])
-            else:
-                _act_html = (
-                    '<div style="text-align:center;padding:18px 10px">'
-                    '<div style="font-size:22px;margin-bottom:8px">&#127919;</div>'
-                    '<div style="font-size:13px;font-weight:600;color:#C8D8E4;margin-bottom:5px">No interviews yet</div>'
-                    '<div style="font-size:11px;color:#4A6A80;line-height:1.6">Start your first interview or<br>load sample data to explore IAS.</div>'
-                    '</div>'
-                )
-            st.markdown(
-                f'<div class="dash-card"><div class="dash-card-title">Live activity <span style="font-size:10px;color:#00C9A7">View all</span></div>'            f'{_act_html}</div>',
-                unsafe_allow_html=True)
-
-        # ── PREDICTIVE FORECAST ROW — Industry-aware ──────────────
-        _ind_dash_cfg  = get_industry_dashboard_config(_curr_ind)
-        _fc_items = _ind_dash_cfg.get("forecast_items", [
-            ("Engineering",  "Pipeline at risk in 12 days",      "#F5A623"),
-            ("Sales",        "Hiring target 95% achievable",     "#00B050"),
-            ("Support",      "Pipeline healthy",                 "#00C9A7"),
-        ])
-        _pred_parts = ["<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px\">"]
-        _col_border_map = {"#F5A623":"rgba(245,166,35,0.25)","#00B050":"rgba(0,176,80,0.25)",
-                           "#00C9A7":"rgba(0,201,167,0.25)","#CC0000":"rgba(204,0,0,0.25)",
-                           "#378ADD":"rgba(55,138,221,0.25)"}
-        for _fc_label, _fc_status, _fc_color in (_fc_items + [("","","")]* 3)[:3]:
-            _fc_border = _col_border_map.get(_fc_color, "rgba(0,201,167,0.25)")
-            _pred_parts.append(
-                f'<div style="background:#0A1628;border:1px solid {_fc_border};border-radius:10px;padding:12px 14px">'                f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">{_fc_label}</div>'                f'<div style="font-size:13px;font-weight:600;color:{_fc_color}">{_fc_status}</div>'                f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 {_curr_ind} forecast</div></div>'
-            )
-        _pred_parts.append("</div>")
-        _pred_html = "".join(_pred_parts)
-        st.markdown(_pred_html, unsafe_allow_html=True)
-
-        # ── ROW 2: AI Insights + Velocity + Metrics ─────────────────
-        st.markdown(f"""
-    <div class="row2-grid">
-      </div>
-    """, unsafe_allow_html=True)
-
-        # AI Insights — intelligent narrative
-        _ins1_title = "Interview pipeline"
-        if _accept_rate >= 25:
-            _ins1_txt = f"{_total_interviews} interviews completed. Selection rate of {_accept_rate}% is above benchmark."
-            _ins1_ai  = "🤖 Pipeline performing well. Maintain current screening criteria."
-        elif _accept_rate >= 10:
-            _ins1_txt = f"{_total_interviews} interviews completed. Selection rate at {_accept_rate}% — slightly below target of 20%."
-            _ins1_ai  = "🤖 Review knockout questions. Consider expanding sourcing channels."
-        else:
-            _ins1_txt = f"{_total_interviews} interviews done. Selection rate of {_accept_rate}% indicates screening may be overly restrictive."
-            _ins1_ai  = "🤖 Recommended action: Re-calibrate scoring rubric and review JD requirements."
-
-        _ins2_title = "Assessment quality"
-        if _avg_score >= 7.5:
-            _ins2_txt = f"Average interview score {round(_avg_score,1)}/10 — strong candidate quality."
-            _ins2_ai  = "🤖 High quality pipeline. Accelerate decision-making to avoid drop-off."
-        elif _avg_score >= 5:
-            _ins2_txt = f"Average score {round(_avg_score,1)}/10. Quality is acceptable but below 7.5 benchmark."
-            _ins2_ai  = "🤖 Consider harder questions in technical rounds to better differentiate candidates."
-        elif _avg_score > 0:
-            _ins2_txt = f"Average score {round(_avg_score,1)}/10 is below acceptable threshold."
-            _ins2_ai  = "🤖 Urgent: Review interviewer calibration and scoring rubric consistency."
-        else:
-            _ins2_txt = "No interview scores recorded yet. Complete interviews to see quality metrics."
-            _ins2_ai  = "🤖 Run your first interview to start generating insights."
-
-        _ins3_title = "Offer pipeline"
-        _ins3_txt = f"{_offers_pending} offers pending. 2 expiring within 24 hours."
-        _ins3_ai  = "🤖 Action required: Contact expiring offer candidates today to prevent drop-off."
-
-        st.markdown(f"""
-      <div class="dash-card">
-        <div class="dash-card-title">AI hiring insights <a href="#">Refresh</a></div>
-        <div class="insight-box">
-          <div class="insight-dept">{_ins1_title}</div>
-          <div class="insight-txt">{_ins1_txt}</div>
-          <div class="insight-why">Why: Strong sourcing from referrals. Screening criteria aligned to JD. Hiring manager turnaround improved 3 days.</div>
-          <div class="insight-ai">&#129302; {_ins1_ai[2:]}</div>
-        </div>
-        <div class="insight-box">
-          <div class="insight-dept">{_ins2_title}</div>
-          <div class="insight-txt">{_ins2_txt}</div>
-          <div class="insight-ai">{_ins2_ai}</div>
-        </div>
-        <div class="insight-box">
-          <div class="insight-dept">{_ins3_title}</div>
-          <div class="insight-txt">{_ins3_txt}</div>
-          <div class="insight-ai">{_ins3_ai}</div>
-        </div>
-      </div>
-      <div class="dash-card">
-        <div class="dash-card-title">Performance metrics</div>
-        <div class="metric-mini"><span class="mm-label">Total interviews</span><span class="mm-val">{_total_interviews}</span></div>
-        <div class="metric-mini"><span class="mm-label">Selected candidates</span><span class="mm-val" style="color:#00B050">{_selected}</span></div>
-        <div class="metric-mini"><span class="mm-label">Rejected candidates</span><span class="mm-val" style="color:#CC0000">{_rejected}</span></div>
-        <div class="metric-mini"><span class="mm-label">Pending review</span><span class="mm-val" style="color:#F5A623">{_pending}</span></div>
-        <div class="metric-mini"><span class="mm-label">Accept rate</span><span class="mm-val">{_accept_rate}%</span></div>
-        <div class="metric-mini"><span class="mm-label">Avg interview score</span><span class="mm-val">{round(_avg_score,1) if _avg_score else "—"}/10</span></div>
-        <div class="metric-mini"><span class="mm-label">Open roles</span><span class="mm-val">{_open_roles}</span></div>
-        <div class="metric-mini"><span class="mm-label">Avg time-to-hire</span><span class="mm-val">{_tth} days</span></div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-        # ── CANDIDATE CARDS (replaces static table) ─────────────────
-        _recent_cards = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8] if results_h else []
-        if _recent_cards:
-            st.markdown('<div class="section-lbl">Recent candidates</div>', unsafe_allow_html=True)
-            _card_html = '<div class="cand-grid">'
-            for _rc in _recent_cards[:4]:
-                _v   = str(_rc.get("verdict","—"))
-                _n   = _rc.get("candidate_name","Candidate")
-                _ini = "".join([w[0].upper() for w in _n.split()[:2]])
-                _scr = _rc.get("overall_score", _rc.get("score", 0))
-                _rol = str(_rc.get("job_role","—"))[:28]
-                _dt  = str(_rc.get("date", _rc.get("timestamp","")))[: 10]
-                _vgo  = "GO" in _v.upper() and "NO" not in _v.upper()
-                _vno  = "REJECT" in _v.upper() or "NO-GO" in _v.upper()
-                _vcls = "cv-go" if _vgo else "cv-no" if _vno else "cv-pend"
-                _vtxt = "Selected" if _vgo else "Not selected" if _vno else "Pending review"
-                _avc  = ("#00C9A7" if _vgo else "#CC0000" if _vno else "#F5A623")
-                _match = min(99, max(40, round(float(_scr or 5) * 10 + 10)))
-                _card_html += (
-                    f'<div class="cand-card">'                f'<div class="cand-top">'                f'<div class="cand-avatar" style="color:{_avc};background:rgba({("0,201,167" if _vgo else "204,0,0" if _vno else "245,166,35")},0.12)">{_ini}</div>'                f'<div><div class="cand-name">{_n}</div><div class="cand-role">{_rol}</div></div></div>'                f'<div class="cand-scores">'                f'<div class="cscore"><div class="sv">{round(float(_scr or 0),1)}</div><div class="sl">Score</div></div>'                f'<div class="cscore"><div class="sv" style="color:#378ADD">{_match}%</div><div class="sl">AI match</div></div>'                f'<div class="cscore"><div class="sv">{_dt}</div><div class="sl">Date</div></div></div>'                f'<div class="cand-verdict {_vcls}">{_vtxt}</div>'                f'<div class="cand-btns">'                f'<button class="cbtn cbtn-p">View report</button>'                f'<button class="cbtn">Schedule</button>'                f'<button class="cbtn">{"Send offer" if _vgo else "Feedback"}</button>'                f'</div></div>'
-                )
-            _card_html += '</div>'
-            st.markdown(_card_html, unsafe_allow_html=True)
-        elif not results_h:
-            pass  # No interviews yet — skip
-
-        # ── QUICK ACTIONS ROW ─────────────────────────────────────
-        st.markdown('<div class="qa-row">'        '<span style="font-size:11px;font-weight:600;color:#4A6A80;margin-right:4px;align-self:center">Quick actions:</span>'        '</div>', unsafe_allow_html=True)
-        st.markdown('<div style="font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">1-click actions</div>', unsafe_allow_html=True)
-        _qa1, _qa2, _qa3, _qa4, _qa5, _qa6 = st.columns(6)
-        with _qa1:
-            if st.button("+ New Interview", use_container_width=True, key="qa_new", type="primary"):
-                st.session_state.page = "workflow"; st.rerun()
-        with _qa2:
-            if st.button("Upload CV", use_container_width=True, key="qa_cv"):
-                st.session_state.page = "workflow"; st.rerun()
-        with _qa3:
-            if st.button("Bulk Screen", use_container_width=True, key="qa_bulk"):
-                st.session_state.page = "bulkcv"; st.rerun()
-        with _qa4:
-            if st.button("Schedule", use_container_width=True, key="qa_sched"):
-                st.session_state.page = "calendar"; st.rerun()
-        with _qa5:
-            if st.button("Offer Letter", use_container_width=True, key="qa_offer"):
-                st.session_state.page = "offerletter"; st.rerun()
-        with _qa6:
-            if st.button("Hiring Report", use_container_width=True, key="qa_report"):
-                st.session_state.page = "execanalytics"; st.rerun()
-
-        # ── RECENT INTERVIEWS TABLE ─────────────────────────────────
-        if results_h:
-            st.markdown('<div class="dash-card" style="margin-bottom:14px">', unsafe_allow_html=True)
-            st.markdown('<div class="dash-card-title">Recent interviews</div>', unsafe_allow_html=True)
-            _recent = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8]
-            _rows = []
-            for r in _recent:
-                _v = r.get("verdict","—")
-                _col = "🟢" if "GO" in str(_v).upper() and "NO" not in str(_v).upper() else "🔴" if "REJECT" in str(_v).upper() or "NO-GO" in str(_v).upper() else "🟡"
-                _rows.append({
-                    "Candidate": r.get("candidate_name","—"),
-                    "Role": str(r.get("job_role","—"))[:30],
-                    "Score": f"{round(r.get('overall_score', r.get('score',0)),1)}/10",
-                    "Verdict": f"{_col} {_v}",
-                    "Date": str(r.get("date", r.get("timestamp","—")))[:10],
-                })
-            if _rows:
-                import pandas as _pdrec
-                st.dataframe(_pdrec.DataFrame(_rows), use_container_width=True, hide_index=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── COPILOT SIDEBAR (persistent right panel) ─────────────
-    with _cop_col:
-        st.markdown(
-            '<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.15);border-radius:12px;padding:14px">'            '<div style="font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:3px">&#129302; Ask IAS</div>'            '<div style="font-size:10px;color:#4A6A80;margin-bottom:12px">Persistent AI assistant</div>',
-            unsafe_allow_html=True)
-
-        _cop_prompts = [
-            "Show delayed interviews",
-            "Offers expiring this week",
-            "Summarise hiring risks",
-            "Why is health at risk?",
-            "Board hiring report",
-        ]
-        for _cp in _cop_prompts:
-            st.markdown(
-                f'<div style="font-size:11px;color:#C8D8E4;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid rgba(0,201,167,0.1)">{_cp}</div>',
-                unsafe_allow_html=True)
-
-        st.text_input("Ask anything...", key="cop_input_main", label_visibility="collapsed",
-                      placeholder="Ask IAS anything about hiring...")
-
-        st.markdown(
-            '<div style="font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px">System status</div>',
-            unsafe_allow_html=True)
-
-        _status_rows = [
-            ("Platform",     "Operational", "#00B050"),
-            ("Uptime",       "99.98%",       "#00C9A7"),
-            ("AI API",       "Online",       "#00B050"),
-            ("Calendar",     "Active",       "#00B050"),
-        ]
-        for _sl, _sv, _sc in _status_rows:
-            st.markdown(
-                f'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)">'                f'<span style="font-size:11px;color:#4A6A80">{_sl}</span>'                f'<span style="font-size:11px;font-weight:600;color:{_sc}">{_sv}</span></div>',
-                unsafe_allow_html=True)
-
-        st.markdown(
-            '<div style="font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px">Quick actions</div>',
-            unsafe_allow_html=True)
-        if st.button("+ New interview", key="cop_new", use_container_width=True):
-            st.session_state.page = "workflow"; st.rerun()
-        if st.button("Upload CV", key="cop_cv", use_container_width=True):
-            st.session_state.page = "workflow"; st.rerun()
-        if st.button("Schedule interview", key="cop_sched", use_container_width=True):
-            st.session_state.page = "calendar"; st.rerun()
-        if st.button("Generate offer letter", key="cop_offer", use_container_width=True):
-            st.session_state.page = "offerletter"; st.rerun()
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── SUPPORT CENTRE ──────────────────────────────────────────
-    st.markdown("""
-<div style="font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Support & resources</div>
-<div class="support-grid">
-  <div class="sup-card"><div class="sup-icon">💬</div><div class="sup-label">Live chat</div></div>
-  <div class="sup-card"><div class="sup-icon">📚</div><div class="sup-label">Knowledge base</div></div>
-  <div class="sup-card"><div class="sup-icon">🎬</div><div class="sup-label">Training videos</div></div>
-  <div class="sup-card"><div class="sup-icon">🎫</div><div class="sup-label">Raise a ticket</div></div>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── ENTERPRISE TRUST FOOTER ────────────────────────────────
-    _last_updated = _now_h.strftime("%d %b %Y · %H:%M")
+    # ── Generic industry-aware hero header ──────────────────────────
+    _dash_industry = settings_h.get("industry","General Recruitment")
+    _dash_company  = settings_h.get("company_name","GVS Technologies")
+    _dash_user     = settings_h.get("interviewer_name","Recruiter")
+    _dash_tagline  = settings_h.get("dashboard_tagline","AI-Powered · Zero Touch · Multi-Industry")
+    _industry_icons = {
+        "General Recruitment":"🎯","Telecom / 5G":"📡","Manufacturing / Automotive":"🏭",
+        "Insurance / Finance":"🏦","Medical / Healthcare":"🏥","Technology / IT":"💻",
+        "Consulting / Advisory":"💼","Government / Public Sector":"🏛️","Education":"🎓","Retail / FMCG":"🛒"
+    }
+    _dash_icon = _industry_icons.get(_dash_industry,"🎯")
     st.markdown(
-        f'<div style="border-top:1px solid rgba(0,201,167,0.1);margin-top:14px;padding-top:10px;'
-        f'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'        f'<div style="display:flex;align-items:center;gap:16px">'        f'<span style="font-size:10px;color:#4A6A80">IAS v9.0 Enterprise &nbsp;&middot;&nbsp; Build 2026.06</span>'        f'<span style="font-size:10px;color:#4A6A80">Last updated: {_last_updated}</span>'        f'</div>'        f'<div style="display:flex;align-items:center;gap:6px">'        f'<span style="width:7px;height:7px;border-radius:50%;background:#00B050;display:inline-block"></span>'        f'<span style="font-size:10px;color:#00B050;font-weight:600">All systems operational &nbsp; 99.98% uptime</span>'        f'</div></div>',
+        f'<div style="background:linear-gradient(135deg,#0D1B3E 0%,#1A2F5E 55%,#0E6655 100%);'
+        f'padding:20px 28px 16px;border-radius:14px;color:#fff;margin-bottom:14px">'
+        f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+        f'<div>'
+        f'<h2 style="margin:0;font-size:26px">{_dash_icon} IAS — Executive Recruitment Dashboard</h2>'
+        f'<p style="margin:5px 0 0;opacity:.75;font-size:12px">'
+        f'{_dash_tagline} · {_dth.now().strftime("%d %b %Y %H:%M")}</p>'
+        f'<p style="margin:4px 0 0;opacity:.55;font-size:11px">Industry: {_dash_industry} · Platform: IAS</p>'
+        f'</div>'
+        f'<div style="text-align:right;font-size:11px;opacity:.6">'
+        f'{_dash_company}<br>{_dash_user}</div>'
+        f'</div></div>',
         unsafe_allow_html=True)
 
-    # ── AI COPILOT FAB ──────────────────────────────────────────
-    st.markdown("""
-<div class="cop-fab">
-  <div class="cop-popup" id="ias_cop">
-    <div class="cop-hdr">🤖 Ask IAS</div>
-    <div class="cop-chip">Show delayed interviews</div>
-    <div class="cop-chip">Generate interview questions</div>
-    <div class="cop-chip">Summarise this week's pipeline</div>
-    <div class="cop-chip">Create hiring report</div>
-  </div>
-  <button class="cop-fab-btn" onclick="var p=document.getElementById('ias_cop');p.classList.toggle('open')">🤖</button>
-</div>
-""", unsafe_allow_html=True)
+    # API key warning
+    if not apikey.is_valid():
+        st.error("⚠️ API key not set. Go to **⚙️ Settings → API Key** to configure.")
 
-    # ── QUICK ACTIONS (for new users only) ─────────────────────
-    if _total_interviews == 0:
+    # Active session banner
+    if st.session_state.candidate_name and st.session_state.questions:
+        noted = sum(1 for k,v in st.session_state.notes.items()
+                    if not k.startswith("score_") and isinstance(v,str) and v.strip())
+        bc1,bc2 = st.columns([5,2])
+        bc1.info(f"📌 **Session active:** {st.session_state.candidate_name} · "
+                 f"{len(st.session_state.questions)} Qs · {noted} notes saved")
+        with bc2:
+            if st.button("▶ Resume Interview",type="primary",use_container_width=True):
+                st.session_state.page="workflow"; st.rerun()
+
+
+    # ── FIX 2: QUICK START WIZARD ────────────────────────────────────────
+    if not st.session_state.candidate_name and not st.session_state.questions:
+        st.markdown("---")
+        _qs_col1, _qs_col2 = st.columns([3, 2])
+        with _qs_col1:
+            st.markdown("#### 🚀 Quick Start — 5 Steps to Your First Interview")
+            _steps_done = [
+                bool(apikey.is_valid()),
+                bool(st.session_state.get("jd_text","")),
+                bool(st.session_state.get("cv_text","")),
+                bool(st.session_state.get("questions",[])),
+                bool(st.session_state.get("scores")),
+            ]
+            _step_labels = [
+                ("🔑", "Set API Key", "Settings → API Key → Enter your Anthropic key"),
+                ("📋", "Paste Job Description", "Interview Workflow → Paste JD"),
+                ("📄", "Upload Candidate CV", "Interview Workflow → Paste CV"),
+                ("❓", "Generate Questions", "Interview Workflow → Generate AI Questions"),
+                ("📊", "Score & Report", "Interview Workflow → Complete → Generate Report"),
+            ]
+            for _si, ((_icon, _title, _hint), _done) in enumerate(zip(_step_labels, _steps_done)):
+                _c = "#00C9A7" if _done else "#4A6A80"
+                _mark = "✅" if _done else f"{_si+1}"
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,201,167,0.06)">'
+                    f'<div style="width:28px;height:28px;border-radius:50%;background:{_c}22;border:1.5px solid {_c};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:{_c};flex-shrink:0">{_mark}</div>'
+                    f'<div><div style="font-size:13px;color:#E8F2FF;font-weight:500">{_icon} {_title}</div>'
+                    f'<div style="font-size:11px;color:#4A6A80">{_hint}</div></div></div>',
+                    unsafe_allow_html=True)
+            st.markdown("")
+            if st.button("▶ Go to Interview Workflow", type="primary", use_container_width=True):
+                st.session_state.page = "workflow"; st.rerun()
+        with _qs_col2:
+            # ── FIX 4: DEMO DATA ─────────────────────────────────────────────
+            st.markdown("#### 🎬 Try a Demo Interview")
+            st.caption("Load sample data to see IAS in action — no setup needed")
+            st.markdown(
+                '<div style="background:#112236;border:1px solid rgba(0,201,167,0.15);border-radius:8px;padding:14px;margin-bottom:12px">'
+                '<div style="font-size:12px;font-weight:700;color:#00C9A7;margin-bottom:6px">Demo: 5G Network Architect</div>'
+                '<div style="font-size:11px;color:#8AABBF;line-height:1.7">Candidate: Rajesh Kumar<br>Role: Senior 5G OSS Architect<br>10 pre-generated technical questions<br>Full scoring & report demo</div>'
+                '</div>', unsafe_allow_html=True)
+            if st.button("🎬 Load Demo Interview", type="primary", use_container_width=True):
+                st.session_state.candidate_name = "Rajesh Kumar (Demo)"
+                st.session_state.candidate_email = "demo@example.com"
+                st.session_state.jd_text = "Senior 5G OSS Architect with Nokia NetAct experience, 5G SA/NSA architecture, OSS/BSS integration, TM Forum ODA, FCAPS, ZTP. 10+ years telecom domain."
+                st.session_state.cv_text = "Rajesh Kumar, 14 years Nokia Solutions & Networks. Led NetAct NMS deployments for T-Mobile US, Vodafone Germany. Expert in 5G SA/NSA, OSS/BSS, FCAPS, YANG/NETCONF. PMP certified."
+                st.session_state.questions = [
+                    {"num":1,"skill":"5G Architecture","type":"scenario","question":"Design a 5G SA core deployment with ZTP for 500 sites. Walk me through your approach.","expected":"Should cover AMF/SMF/UPF placement, ZTP workflow, rollback strategy"},
+                    {"num":2,"skill":"Nokia NetAct","type":"technical","question":"How do you configure FCAPS in NetAct for a multi-vendor environment?","expected":"FCAPS layers, NBI/SBI interfaces, multi-vendor adapters"},
+                    {"num":3,"skill":"OSS/BSS Integration","type":"architecture","question":"Design the OSS-to-BSS northbound interface for Order-to-Activate. What are the key failure points?","expected":"TM Forum APIs, async processing, idempotency, error handling"},
+                    {"num":4,"skill":"Cloud Native","type":"scenario","question":"How would you migrate a legacy NetAct deployment to cloud-native microservices?","expected":"Strangler fig pattern, containerisation, Kubernetes, CI/CD pipeline"},
+                    {"num":5,"skill":"Problem Solving","type":"behavioural","question":"Tell me about a time you resolved a P1 network outage that impacted a Tier-1 customer.","expected":"STAR format, clear problem ownership, systematic diagnosis, measurable outcome"},
+                ]
+                st.session_state.notes = {}
+                st.session_state.curr_q = 0
+                st.success("Demo loaded! Click 'Go to Interview Workflow' to start.")
+                st.rerun()
+            st.markdown("---")
+            st.markdown(
+                '<div style="background:#112236;border:1px solid rgba(255,140,42,0.15);border-radius:8px;padding:12px 14px">'
+                '<div style="font-size:11px;font-weight:700;color:#FF8C2A;margin-bottom:6px">Other demo scenarios</div>'
+                '<div style="font-size:11px;color:#8AABBF;line-height:1.9">'
+                '📡 Telecom — 5G OSS Architect<br>'
+                '🏭 Manufacturing — Plant Manager<br>'
+                '🏥 Healthcare — Clinical Lead<br>'
+                '💼 Consulting — PMO Director<br>'
+                '💻 Technology — AI Platform Eng'
+                '</div></div>', unsafe_allow_html=True)
+        st.markdown("---")
+
+    # ── 4 DASHBOARD TABS ─────────────────────────────────────
+    db1,db2,db3,db4 = st.tabs([
+        "🌐 Overall Recruitment View",
+        "📊 Recruitment KPI Metrics",
+        "💰 Recruitment Revenue",
+        "📁 Recruitment Portfolio",
+    ])
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 1 — OVERALL RECRUITMENT VIEW
+    # ══════════════════════════════════════════════════════════
+    with db1:
+        # Top KPI strip
+        total_i  = max(stats_h["total"], 1)
+        sel_i    = stats_h["selected"]
+        rej_i    = stats_h["rejected"]
+        avg_sc   = stats_h["avg_score"]
+        sel_pct  = round(sel_i/total_i*100)
+        rej_pct  = round(rej_i/total_i*100)
+        open_rrs = sum(s.get("open",0) for s in KPI_H.get("streams",[]) if isinstance(s,dict))
+        tgt      = KPI_H.get("monthly_targets",{})
+
+        k1,k2,k3,k4,k5,k6 = st.columns(6)
+        k1.metric("🎯 Interviews",  stats_h["total"],
+                  delta=f"Target {tgt.get('interviews_target',50)}")
+        k2.metric("✅ Selected",    sel_i,
+                  delta=f"{sel_pct}% rate")
+        k3.metric("❌ Rejected",    rej_i,
+                  delta=f"{rej_pct}% rate")
+        k4.metric("⭐ Avg Score",   f"{avg_sc}/5")
+        k5.metric("📂 Open RRs",    open_rrs if open_rrs else 61)
+        k6.metric("⏱ Avg TTH",     "42 days")
         st.divider()
-        st.markdown("#### 🚀 Quick start — 5 steps to your first interview")
-        _q1, _q2 = st.columns(2)
-        with _q1:
-            _steps_todo = [
-                ("🔑", "Set API key", "Settings → API Key"),
-                ("📋", "Paste job description", "Interview Workflow → Paste JD"),
-                ("📄", "Upload candidate CV", "Interview Workflow → Upload CV"),
-                ("❓", "Generate questions", "Interview Workflow → Generate"),
-                ("📊", "Score & report", "Interview Workflow → Complete"),
+
+        col_funnel, col_pipeline = st.columns([2,3])
+
+        with col_funnel:
+            st.markdown("#### 🔽 Hiring Funnel")
+            funnel_stages = [
+                ("Open Positions",   61,               "#0D1B3E", 100),
+                ("CVs Sourced",      768,              "#1F3864",  90),
+                ("Shortlisted",      207,              "#00B0F0",  60),
+                ("TCON Completed",   42,               "#F5A623",  30),
+                ("F2F Interviews",   stats_h["total"], "#6B4EAA",  20),
+                ("Selected",         sel_i,            "#00B050",  15),
+                ("Offers Extended",  KPI_H.get("offered_total",89), "#00B050", 12),
+                ("Joined",           KPI_H.get("joined_total",55),  "#004D20",  9),
             ]
-            for icon, title, sub in _steps_todo:
-                st.markdown(f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,201,167,0.1)"><span style="font-size:18px">{icon}</span><div><div style="font-size:13px;font-weight:600;color:#C8D8E4">{title}</div><div style="font-size:11px;color:#4A6A80">{sub}</div></div></div>', unsafe_allow_html=True)
-        with _q2:
-            st.markdown("**Try a demo interview:**")
-            _demo_scenarios = [
-                ("🌐", "Telecom — 5G OSS Architect", "Senior", "telecom"),
-                ("🏭", "Manufacturing — Plant Manager", "Mid", "manufacturing"),
-                ("🏥", "Healthcare — Clinical Lead", "Senior", "healthcare"),
-                ("📊", "Consulting — PMO Director", "Lead", "consulting"),
+            for label, count, color, pct in funnel_stages:
+                bar = max(4, pct)
+                st.markdown(
+                    f'<div style="margin:4px 0">'
+                    f'<div style="display:flex;justify-content:space-between;'
+                    f'font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">'
+                    f'<span>{label}</span>'
+                    f'<span style="font-weight:700;color:{color}">{count:,}</span></div>'
+                    f'<div style="background:var(--color-background-secondary);'
+                    f'border-radius:6px;height:18px">'
+                    f'<div style="background:{color};width:{bar}%;height:18px;'
+                    f'border-radius:6px;display:flex;align-items:center;padding-left:6px">'
+                    f'<span style="color:white;font-size:10px;font-weight:700">{pct}%</span>'
+                    f'</div></div></div>',
+                    unsafe_allow_html=True)
+
+        with col_pipeline:
+            st.markdown("#### ⚡ 9-Stage Recruitment Pipeline — IAS Status")
+            stages_status = [
+                ("01","Workforce Planning", "#1565C0","✅ Active"),
+                ("02","Sourcing",           "#00838F","✅ Active"),
+                ("03","CV Screening",       "#558B2F","✅ Active"),
+                ("04","TCON Interview",     "#E65100","🔵 In Progress"),
+                ("05","F2F Interview",      "#AD1457","🔵 In Progress"),
+                ("06","Assessment",         "#6A1B9A","⬜ Pending"),
+                ("07","Reference Check",    "#00695C","⬜ Pending"),
+                ("08","Job Offer",          "#BF360C","⬜ Pending"),
+                ("09","Onboarding",         "#1A237E","⬜ Pending"),
             ]
-            for icon, label, level, key in _demo_scenarios:
-                if st.button(f"{icon} {label}", key=f"demo_{key}", use_container_width=True):
-                    _demo_cv = f"Experienced professional applying for {label} role with 10+ years relevant experience."
-                    _demo_jd = f"We are looking for a {label} with strong domain expertise, leadership skills, and proven delivery record."
-                    st.session_state.candidate_name  = f"Demo Candidate ({label.split('—')[1].strip()})"
-                    st.session_state.candidate_email = "demo@gvstechnologies.com"
-                    st.session_state.cv_text  = _demo_cv
-                    st.session_state.jd_text  = _demo_jd
-                    st.session_state.questions = []
-                    st.session_state.page = "workflow"
-                    st.rerun()
+            scols = st.columns(9)
+            for i,(num,name,color,status) in enumerate(stages_status):
+                with scols[i]:
+                    done = "✅" in status
+                    ip   = "🔵" in status
+                    bg   = "#E6F9EE" if done else ("#E3F2FD" if ip else "var(--color-background-secondary)")
+                    st.markdown(
+                        f'<div style="border:1.5px solid {color};border-radius:8px;'
+                        f'background:{bg};padding:6px 3px;text-align:center;min-height:90px">'
+                        f'<div style="font-size:14px;font-weight:700;color:{color}">{num}</div>'
+                        f'<div style="font-size:8px;font-weight:700;color:{color};'
+                        f'line-height:1.2;margin:2px 0">{name}</div>'
+                        f'<div style="font-size:10px;margin-top:4px">{status.split()[0]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True)
+
+            st.divider()
+            st.markdown("#### 📅 Hiring Velocity — Joined by Month")
+            vel_months = ["May'17","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
+                          "Jan'18","Mar","Apr","May","Jun","Jul","Aug","Sep"]
+            vel_joined = [1,2,3,18,3,8,3,1,4,4,3,3,2,24,1,4]
+            vel_offered= [1,2,3,18,3,8,3,1,4,4,3,3,7,24,1,4]
+            vel_df = _pd_home.DataFrame({
+                "Month":vel_months,"Joined":vel_joined,"Offered":vel_offered})
+            st.bar_chart(vel_df.set_index("Month"), use_container_width=True, height=200)
+
+        st.divider()
+        # Gender diversity + source mix
+        gd1, gd2 = st.columns(2)
+        with gd1:
+            st.markdown("#### 👥 Gender Diversity")
+            g = KPI_H.get("gender", {"F_joined":3,"M_joined":11,"F_offered":9,"M_offered":21})
+            tf = g.get("F_joined",3)+g.get("F_offered",9)
+            tm = g.get("M_joined",11)+g.get("M_offered",21)
+            tt = tf+tm
+            fp = round(tf/tt*100)
+            st.markdown(
+                f'<div style="background:var(--color-background-secondary);'
+                f'border-radius:8px;height:28px;margin:6px 0">'
+                f'<div style="display:flex;height:28px;border-radius:8px;overflow:hidden">'
+                f'<div style="background:#6B4EAA;width:{fp}%;display:flex;align-items:center;'
+                f'justify-content:center;color:white;font-size:12px;font-weight:700">F {fp}%</div>'
+                f'<div style="background:#00B0F0;width:{100-fp}%;display:flex;align-items:center;'
+                f'justify-content:center;color:white;font-size:12px;font-weight:700">M {100-fp}%</div>'
+                f'</div></div>',unsafe_allow_html=True)
+            gc1,gc2,gc3,gc4 = st.columns(4)
+            gc1.metric("F Joined",  g.get("F_joined",3))
+            gc2.metric("M Joined",  g.get("M_joined",11))
+            gc3.metric("F Offered", g.get("F_offered",9))
+            gc4.metric("M Offered", g.get("M_offered",21))
+            target_f = 35
+            gap = target_f - fp
+            if gap > 0:
+                st.warning(f"⚠️ {gap}% below {target_f}% diversity target")
+            else:
+                st.success(f"✅ Diversity target met ({fp}% F)")
+
+        with gd2:
+            st.markdown("#### 🔍 Source Mix")
+            sources_h = KPI_H.get("sources", [
+                {"name":"LinkedIn","submissions":210,"hired":38},
+                {"name":"Naukri","submissions":310,"hired":28},
+                {"name":"Referral","submissions":80,"hired":45},
+                {"name":"Indeed","submissions":120,"hired":22},
+                {"name":"IJM","submissions":42,"hired":8},
+            ])
+            src_df_h = _pd_home.DataFrame([
+                {"Source":s["name"],"Submissions":s["submissions"],"Hired":s["hired"],
+                 "Conv%":f'{round(s["hired"]/max(s["submissions"],1)*100)}%'}
+                for s in sources_h])
+            st.dataframe(src_df_h, use_container_width=True, hide_index=True, height=200)
+
+        st.divider()
+        q1,q2,q3,q4 = st.columns(4)
+        with q1:
+            if st.button("🎯 New Interview",type="primary",use_container_width=True):
+                for k in DEFAULTS: st.session_state[k]=DEFAULTS[k]
+                clear_session(); st.session_state["_loaded"]=True
+                st.session_state.page="workflow"; st.rerun()
+        with q2:
+            if st.button("📂 Bulk CV Review",use_container_width=True):
+                st.session_state.page="bulkcv"; st.rerun()
+        with q3:
+            if st.button("📜 Compliance Hub",use_container_width=True):
+                st.session_state.page="compliance"; st.rerun()
+        with q4:
+            if st.button("🚀 Hiring Intel 2026",use_container_width=True):
+                st.session_state.page="hiring2026"; st.rerun()
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 2 — RECRUITMENT KPI METRICS
+    # ══════════════════════════════════════════════════════════
+    with db2:
+        st.markdown("#### 📊 Recruitment KPI Metrics — Real-Time")
+
+        # KPI configuration
+        kc1,kc2 = st.columns([3,1])
+        with kc2:
+            kpi_period = st.selectbox("Period",
+                ["This Month","Last 3 Months","Last 6 Months","Year to Date","All Time"],
+                key="kpi_period_home")
+
+        tgt = KPI_H.get("monthly_targets",{})
+        # Core KPIs in 2×3 grid
+        row1 = st.columns(3)
+        row2 = st.columns(3)
+
+        kpi_cards = [
+            ("Time-to-Fill",          "42 days",     "38 days",    "Target 45 days",  "#00B050", "#E6F9EE"),
+            ("CV-to-Shortlist Rate",  f"{round(207/768*100)}%","25%","Industry avg 20%","#00B0F0","#E6F0FB"),
+            ("Offer Acceptance Rate", f"{round(55/89*100)}%",  "+5%","Target 75%",     "#6B4EAA","#EDE7F6"),
+            ("Cost per Hire",         "$1,240",      "-$180",      "Budget $1,500",   "#00B050", "#E6F9EE"),
+            ("Interview-to-Offer",    f"{round(sel_i/max(stats_h['total'],1)*100)}%",
+                                      f"{sel_pct}%", "Target 30%",                    "#F5A623","#FFF3D6"),
+            ("Quality of Hire",       f"{avg_sc}/5", "+0.3",       "Target 3.5/5",    "#00B050", "#E6F9EE"),
+        ]
+        for idx, (label,val,delta,note,color,bg) in enumerate(kpi_cards):
+            col = row1[idx] if idx < 3 else row2[idx-3]
+            col.markdown(
+                f'<div style="background:{bg};border:1px solid {color}33;'
+                f'border-radius:10px;padding:14px 16px;margin:4px 0">'
+                f'<div style="font-size:11px;color:var(--color-text-secondary);'
+                f'font-weight:500;margin-bottom:4px">{label}</div>'
+                f'<div style="font-size:26px;font-weight:700;color:{color};line-height:1">{val}</div>'
+                f'<div style="font-size:11px;color:#00B050;margin-top:4px">▲ {delta}</div>'
+                f'<div style="font-size:10px;color:var(--color-text-secondary)">{note}</div>'
+                f'</div>',
+                unsafe_allow_html=True)
+
+        st.divider()
+        # Target progress bars
+        st.markdown("#### 🎯 Target vs Actual")
+        targets_kpi = [
+            ("Interviews Completed",   stats_h["total"], tgt.get("interviews_target",50), "#00B0F0"),
+            ("Candidates Selected",    sel_i,            tgt.get("selected_target",30),   "#00B050"),
+            ("Shortlist Generated",    207,              500,                              "#6B4EAA"),
+            ("TCON Completed",         42,               150,                             "#F5A623"),
+            ("Positions Filled",       sel_i,            61,                              "#00B050"),
+        ]
+        for label, actual, target, color in targets_kpi:
+            pct   = min(100, round(actual/max(target,1)*100))
+            tcolor= "#00B050" if pct>=80 else "#F5A623" if pct>=50 else "#CC0000"
+            st.markdown(
+                f'<div style="margin:6px 0">'
+                f'<div style="display:flex;justify-content:space-between;'
+                f'font-size:12px;margin-bottom:3px">'
+                f'<span style="font-weight:500">{label}</span>'
+                f'<span style="color:{tcolor};font-weight:700">{actual} / {target} ({pct}%)</span>'
+                f'</div>'
+                f'<div style="background:var(--color-background-secondary);'
+                f'border-radius:8px;height:20px">'
+                f'<div style="background:{tcolor};width:{pct}%;height:20px;'
+                f'border-radius:8px;display:flex;align-items:center;padding-left:8px">'
+                f'<span style="color:white;font-size:10px;font-weight:700">{pct}%</span>'
+                f'</div></div></div>',
+                unsafe_allow_html=True)
+
+        st.divider()
+        # Source ROI table
+        st.markdown("#### 🔍 Source ROI Analysis")
+        if src_h:
+            src_rows_h = []
+            for sname, sd in src_h.items():
+                conv  = round(sd["hired"]/max(sd["submissions"],1)*100,1)
+                cph   = round(sd.get("cost",0)/max(sd["hired"],1))
+                roi_s = "✅ High" if conv>20 else ("⚠️ OK" if conv>10 else "❌ Low")
+                src_rows_h.append({
+                    "Source":sname,"Submissions":sd["submissions"],
+                    "Hired":sd["hired"],"Conv%":f"{conv}%",
+                    "Cost/Hire":f"${cph:,}","ROI Grade":roi_s})
+            st.dataframe(_pd_home.DataFrame(src_rows_h),
+                use_container_width=True, hide_index=True)
+        else:
+            st.dataframe(_pd_home.DataFrame([
+                {"Source":"LinkedIn", "Submissions":210,"Hired":38,"Conv%":"18%","Cost/Hire":"$2,200","ROI Grade":"✅ High"},
+                {"Source":"Naukri",   "Submissions":310,"Hired":28,"Conv%":"9%", "Cost/Hire":"$800",  "ROI Grade":"⚠️ OK"},
+                {"Source":"Referral", "Submissions":80, "Hired":45,"Conv%":"56%","Cost/Hire":"$200",  "ROI Grade":"✅ High"},
+                {"Source":"Indeed",   "Submissions":120,"Hired":22,"Conv%":"18%","Cost/Hire":"$1,200","ROI Grade":"✅ High"},
+                {"Source":"IJM",      "Submissions":42, "Hired":8, "Conv%":"19%","Cost/Hire":"$1,500","ROI Grade":"✅ High"},
+            ]), use_container_width=True, hide_index=True)
+
+        if st.button("📊 Full KPI Dashboard →",use_container_width=False):
+            st.session_state.page="kpi"; st.rerun()
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 3 — RECRUITMENT REVENUE
+    # ══════════════════════════════════════════════════════════
+    with db3:
+        st.markdown("#### 💰 Recruitment Revenue — Business Impact View")
+
+        # Revenue config
+        rc1,rc2,rc3 = st.columns(3)
+        rev_fee   = rc1.number_input("Fee per placement ($)",
+            value=int(KPI_H.get("revenue_per_placement",1250)),
+            step=50, key="rev_fee")
+        rev_margin= rc2.slider("Gross margin (%)", 20, 80, 65, key="rev_margin")
+        rev_target= rc3.number_input("Monthly revenue target ($)",
+            value=int(KPI_H.get("monthly_revenue_target",50000)),
+            step=1000, key="rev_target")
+
+        # Computed revenue metrics
+        gross_rev  = sel_i * rev_fee
+        net_rev    = round(gross_rev * rev_margin / 100)
+        pipeline_v = (207 * rev_fee * 0.25)            # shortlisted at 25% close
+        tgt_gap    = max(0, rev_target - gross_rev)
+        roi_ias    = round(gross_rev / max(stats_h["total"]*0.18, 0.01))
+
+        st.divider()
+        rv1,rv2,rv3,rv4,rv5 = st.columns(5)
+        rv1.metric("Gross Revenue",   f"${gross_rev:,}",     delta=f"${sel_i} × ${rev_fee:,}")
+        rv2.metric("Net Revenue",     f"${net_rev:,}",       delta=f"{rev_margin}% margin")
+        rv3.metric("Pipeline Value",  f"${pipeline_v:,.0f}", delta="207 shortlisted × 25%")
+        rv4.metric("Target Gap",      f"${tgt_gap:,}",       delta="to monthly goal" if tgt_gap else "Target met ✅")
+        rv5.metric("IAS ROI",         f"{roi_ias:,}×",       delta="revenue per $1 AI spend")
+
+        st.divider()
+
+        # Revenue by tier
+        st.markdown("#### 💼 Revenue by Job Grade Tier")
+        tier_data = [
+            ("JG5-6  Graduate/Intern",  12, 500,   "#B0BEC5"),
+            ("JG7     Engineer",        15, 900,   "#00B0F0"),
+            ("JG8     Senior Engineer", 18, 1400,  "#6B4EAA"),
+            ("JG9     Lead / Manager",   8, 2200,  "#F5A623"),
+            ("JG10+  Principal/Director",3, 4500,  "#CC0000"),
+        ]
+        tot_tier_rev = sum(c*f for _,c,f,_ in tier_data)
+        for tier_name, count, fee, color in tier_data:
+            t_rev = count * fee
+            t_pct = round(t_rev/max(tot_tier_rev,1)*100)
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:10px;margin:5px 0">'
+                f'<span style="font-size:12px;min-width:200px;color:var(--color-text-primary)">'
+                f'{tier_name}</span>'
+                f'<div style="flex:1;background:var(--color-background-secondary);'
+                f'border-radius:6px;height:22px">'
+                f'<div style="background:{color};width:{t_pct}%;height:22px;border-radius:6px;'
+                f'display:flex;align-items:center;padding:0 8px">'
+                f'<span style="color:white;font-size:10px;font-weight:700">'
+                f'{count} placed · ${t_rev:,}</span></div></div>'
+                f'<span style="font-size:11px;color:var(--color-text-secondary);min-width:40px">'
+                f'{t_pct}%</span></div>',
+                unsafe_allow_html=True)
+
+        st.divider()
+
+        # Monthly revenue forecast
+        st.markdown("#### 📈 12-Month Revenue Forecast")
+        months_f = ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"]
+        placed_f = [4,6,8,10,12,15,18,20,22,25,28,30]
+        rev_f    = [p*rev_fee for p in placed_f]
+        cum_rev  = []
+        running  = gross_rev
+        for r in rev_f:
+            running += r
+            cum_rev.append(running)
+        fdf = _pd_home.DataFrame({
+            "Month":months_f,
+            "Monthly Revenue":rev_f,
+            "Cumulative":cum_rev
+        })
+        st.line_chart(fdf.set_index("Month"), use_container_width=True, height=220)
+
+        st.divider()
+
+        # Client revenue breakdown
+        st.markdown("#### 🏢 Revenue by Client / Stream")
+        client_rev = [
+            {"Client":"Empower Professionals","Placements":sel_i,
+             "Fee":rev_fee,"Revenue":f"${sel_i*rev_fee:,}","Status":"✅ Active"},
+            {"Client":"eTeki",                "Placements":8,
+             "Fee":1100,"Revenue":"$8,800","Status":"✅ Active"},
+            {"Client":"GVS Internal",          "Placements":5,
+             "Fee":0,   "Revenue":"$0","Status":"🔵 Internal"},
+            {"Client":"Pipeline",              "Placements":0,
+             "Fee":rev_fee,"Revenue":f"${int(pipeline_v):,} est","Status":"⚠️ Forecast"},
+        ]
+        st.dataframe(_pd_home.DataFrame(client_rev),
+            use_container_width=True, hide_index=True)
+
+        # IAS cost efficiency
+        st.divider()
+        st.markdown("#### 🤖 IAS Cost Efficiency vs Manual")
+        ce1,ce2,ce3 = st.columns(3)
+        ias_total_cost = stats_h["total"] * 0.18
+        manual_cost    = stats_h["total"] * 300 * 4
+        saving         = manual_cost - ias_total_cost
+        ce1.metric("IAS API Cost",    f"${ias_total_cost:.2f}",   delta=f"${0.18}/interview")
+        ce2.metric("Manual Equiv.",   f"${manual_cost:,.0f}",     delta=f"4 hrs × $300/hr each")
+        ce3.metric("Net Saving",      f"${saving:,.0f}",          delta=f"{round(saving/max(manual_cost,1)*100)}% reduction")
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 4 — RECRUITMENT PORTFOLIO
+    # ══════════════════════════════════════════════════════════
+    with db4:
+        st.markdown("#### 📁 Recruitment Portfolio — Live Pipeline Overview")
+
+        # Portfolio streams from KPI data or defaults
+        streams_p = KPI_H.get("streams", [
+            {"vs":"Stream A/Cloud","hm":"Alex Morgan",        "open":2, "cvs":46, "shortlisted":6,  "tcon":0,"status":"In Progress","priority":"High"},
+            {"vs":"Stream B/Java",     "hm":"James Lee",   "open":3, "cvs":62, "shortlisted":42, "tcon":0,"status":"In Progress","priority":"High"},
+            {"vs":"Stream C/QA",  "hm":"Priya Shah",      "open":5, "cvs":0,  "shortlisted":0,  "tcon":0,"status":"Not Started","priority":"High"},
+            {"vs":"Continuous Integration",           "hm":"Chris Taylor",   "open":11,"cvs":97, "shortlisted":0,  "tcon":0,"status":"In Progress","priority":"Critical"},
+            {"vs":"Service Mgmt",           "hm":"Carl / Yas", "open":9, "cvs":240,"shortlisted":34, "tcon":29,"status":"In Progress","priority":"Critical"},
+            {"vs":"Field Management",           "hm":"Maria Costa",     "open":8, "cvs":165,"shortlisted":91, "tcon":0,"status":"In Progress","priority":"High"},
+            {"vs":"Core Config Mgmt",      "hm":"David Osei",  "open":8, "cvs":139,"shortlisted":28, "tcon":0,"status":"In Progress","priority":"High"},
+            {"vs":"Operations Mgmt",          "hm":"Sam Rivera",   "open":3, "cvs":19, "shortlisted":6,  "tcon":13,"status":"In Progress","priority":"Medium"},
+            {"vs":"DSS/Architect","hm":"Ben Ross",           "open":3, "cvs":0,  "shortlisted":0,  "tcon":0,"status":"Not Started","priority":"High"},
+            {"vs":"Graduate Intake", "hm":"Alan Ford",          "open":12,"cvs":0,  "shortlisted":0,  "tcon":0,"status":"Not Started","priority":"High"},
+        ])
+
+        # Summary metrics
+        tot_open = sum(s.get("open",0) for s in streams_p if isinstance(s,dict))
+        tot_cvs  = sum(s.get("cvs",0) for s in streams_p if isinstance(s,dict))
+        tot_sl   = sum(s.get("shortlisted",0) for s in streams_p if isinstance(s,dict))
+        tot_tcon = sum(s.get("tcon",0) for s in streams_p if isinstance(s,dict))
+        active_n = sum(1 for s in streams_p if isinstance(s,dict) and s.get("status")=="In Progress")
+        crit_n   = sum(1 for s in streams_p if isinstance(s,dict) and s.get("priority")=="Critical")
+
+        pm1,pm2,pm3,pm4,pm5,pm6 = st.columns(6)
+        pm1.metric("Open Positions",tot_open)
+        pm2.metric("CVs Sourced",   tot_cvs)
+        pm3.metric("Shortlisted",   tot_sl)
+        pm4.metric("TCON Done",     tot_tcon)
+        pm5.metric("Active Streams",active_n)
+        pm6.metric("🔴 Critical",   crit_n, delta="immediate action")
+
+        st.divider()
+
+        # Priority heat map
+        ph1, ph2 = st.columns([3,2])
+        with ph1:
+            st.markdown("#### 📋 Portfolio Stream Table")
+            prio_map   = {"Critical":"🔴","High":"🟠","Medium":"🟡","Low":"🟢"}
+            status_map = {"In Progress":"🔵","Complete":"✅","Not Started":"⬜","Blocked":"🔴"}
+
+            table_rows = []
+            for s in sorted(streams_p, key=lambda x: ["Critical","High","Medium","Low"].index(
+                x.get("priority","Low") if x.get("priority","Low") in ["Critical","High","Medium","Low"] else "Low")):
+                if not isinstance(s,dict): continue
+                conv = round(s.get("shortlisted",0)/max(s.get("cvs",1),1)*100)
+                table_rows.append({
+                    "VS / Stream":  s.get("vs",""),
+                    "Hiring Mgr":   s.get("hm",""),
+                    "Open":         s.get("open",0),
+                    "CVs":          s.get("cvs",0),
+                    "Shortlisted":  s.get("shortlisted",0),
+                    "TCON":         s.get("tcon",0),
+                    "Conv%":        f"{conv}%",
+                    "Priority":     f'{prio_map.get(s.get("priority","Low"),"⬜")} {s.get("priority","")}',
+                    "Status":       f'{status_map.get(s.get("status","Not Started"),"⬜")} {s.get("status","")}',
+                })
+            if table_rows:
+                st.dataframe(_pd_home.DataFrame(table_rows),
+                    use_container_width=True, hide_index=True, height=340)
+
+        with ph2:
+            st.markdown("#### 🚦 Priority Heat Map")
+            for s in sorted(streams_p,
+                key=lambda x: ["Critical","High","Medium","Low"].index(
+                    x.get("priority","Low") if x.get("priority","Low") in
+                    ["Critical","High","Medium","Low"] else "Low")):
+                if not isinstance(s,dict): continue
+                pc = {"Critical":"#CC0000","High":"#F5A623",
+                      "Medium":"#00B0F0","Low":"#888"}.get(s.get("priority","Low"),"#888")
+                conv2 = round(s.get("shortlisted",0)/max(s.get("cvs",1),1)*100)
+                st.markdown(
+                    f'<div style="background:var(--color-background-secondary);'
+                    f'border-left:4px solid {pc};border-radius:0 8px 8px 0;'
+                    f'padding:6px 12px;margin:3px 0;display:flex;'
+                    f'justify-content:space-between;align-items:center">'
+                    f'<span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">'
+                    f'{s.get("vs","")}</span>'
+                    f'<span style="font-size:11px;color:var(--color-text-secondary)">'
+                    f'{s.get("open",0)} open · {conv2}% SL</span>'
+                    f'<span style="background:{pc};color:white;padding:1px 8px;'
+                    f'border-radius:8px;font-size:10px;font-weight:700">'
+                    f'{s.get("priority","")}</span></div>',
+                    unsafe_allow_html=True)
+
+        st.divider()
+
+        # Portfolio stage tracker
+        st.markdown("#### 📊 Portfolio by Recruitment Stage")
+        stage_dist = {
+            "Workforce Planning": sum(1 for s in streams_p if isinstance(s,dict) and s.get("status")=="Not Started"),
+            "Sourcing Active":    sum(1 for s in streams_p if isinstance(s,dict) and s.get("cvs",0)>0 and s.get("shortlisted",0)==0),
+            "Screening":          sum(1 for s in streams_p if isinstance(s,dict) and s.get("shortlisted",0)>0 and s.get("tcon",0)==0),
+            "TCON/Interviews":    sum(1 for s in streams_p if isinstance(s,dict) and s.get("tcon",0)>0),
+            "Complete":           sum(1 for s in streams_p if isinstance(s,dict) and s.get("status")=="Complete"),
+        }
+        stage_colors = ["#1565C0","#558B2F","#E65100","#6A1B9A","#00B050"]
+        for (stage_name, stage_count), sc in zip(stage_dist.items(), stage_colors):
+            bar_p = round(stage_count/max(len(streams_p),1)*100)
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:10px;margin:5px 0">'
+                f'<span style="font-size:12px;min-width:160px;color:var(--color-text-primary)">'
+                f'{stage_name}</span>'
+                f'<div style="flex:1;background:var(--color-background-secondary);'
+                f'border-radius:6px;height:22px">'
+                f'<div style="background:{sc};width:{max(bar_p,3)}%;height:22px;'
+                f'border-radius:6px;display:flex;align-items:center;padding:0 8px">'
+                f'<span style="color:white;font-size:11px;font-weight:700">'
+                f'{stage_count} streams</span></div></div>'
+                f'<span style="font-size:11px;min-width:30px;text-align:right;'
+                f'color:var(--color-text-secondary)">{bar_p}%</span></div>',
+                unsafe_allow_html=True)
+
+        st.divider()
+        pa1,pa2,pa3 = st.columns(3)
+        with pa1:
+            if st.button("💼 Full Portfolio →",use_container_width=True):
+                st.session_state.page="portfolio"; st.rerun()
+        with pa2:
+            if st.button("📋 Recruitment Process →",use_container_width=True):
+                st.session_state.page="hiringplan"; st.rerun()
+        with pa3:
+            if st.button("📜 Compliance Hub →",use_container_width=True):
+                st.session_state.page="compliance"; st.rerun()
+
+    # Recent results
+    if results_h:
+        st.divider()
+        st.markdown("#### 🕐 Recent Interviews")
+        for r in sorted(results_h, key=lambda x:x.get("date",""), reverse=True)[:5]:
+            sc = r.get("overall_score",0); stars = "★"*round(float(sc)) + "☆"*(5-round(float(sc)))
+            vc = "#00B050" if "SELECT" in str(r.get("verdict","")).upper() else "#CC0000"
+            st.markdown(
+                f'<div style="background:var(--color-background-secondary);'
+                f'border-radius:8px;padding:8px 14px;margin:4px 0;'
+                f'display:flex;justify-content:space-between;align-items:center">'
+                f'<span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">'
+                f'{r.get("candidate","—")}</span>'
+                f'<span style="font-size:12px;color:var(--color-text-secondary)">'
+                f'{r.get("date","")}</span>'
+                f'<span style="color:#F5A623">{stars}</span>'
+                f'<span style="font-size:12px;font-weight:700;color:{vc}">'
+                f'{r.get("verdict","—")}</span></div>',
+                unsafe_allow_html=True)
+            v=r.get("verdict",""); icon="✅" if "SELECT" in v.upper() else "❌"
+            sn=float(r.get("overall_score",0)); stars="★"*round(sn)+"☆"*(5-round(sn))
+            st.markdown(f"{icon} **{r.get('candidate','')}** · {r.get('role','')[:35]} · "
+                        f"{stars} · {r.get('date','')}")
+
 # ════════════════════════════════════════════════════════════════
 # WORKFLOW — MAIN INTERVIEW FLOW
 
@@ -3803,8 +2071,7 @@ elif st.session_state.page=="workflow":
         with st.spinner("Generating questions..."):
             _t_res = _generate_questions(st.session_state.cv_text,
                 st.session_state.jd_text, st.session_state.candidate_name,
-                st.session_state.get("_q_difficulty", "medium"),
-                    st.session_state.get("selected_industry","IT & Software"))
+                _t_cfg.get("default_questions",10), _t_lk)
         if "error" not in _t_res:
             st.session_state.questions = _t_res.get("questions",[])
             st.session_state.notes = {}
@@ -3868,8 +2135,7 @@ elif st.session_state.page=="workflow":
             with st.spinner("Generating questions..."):
                 _ab_res = _generate_questions(st.session_state.cv_text,
                     st.session_state.jd_text, st.session_state.candidate_name,
-                    _ab_cfg.get("default_questions",10), _ab_lk,
-                    st.session_state.get("_q_difficulty", "medium"))
+                    _ab_cfg.get("default_questions",10), _ab_lk)
             if "error" not in _ab_res:
                 st.session_state.questions = _ab_res.get("questions",[])
                 st.session_state.notes = {}
@@ -3964,8 +2230,7 @@ elif st.session_state.page=="workflow":
                     _ag_res = _generate_questions(
                         st.session_state.cv_text,
                         st.session_state.jd_text,
-                        cname, _ag_num_q, _ag_level_key,
-                        st.session_state.get("_q_difficulty", "medium"))
+                        cname, _ag_num_q, _ag_level_key)
                 if "error" not in _ag_res:
                     st.session_state.questions = _ag_res.get("questions", [])
                     st.session_state.notes = {}
@@ -4153,28 +2418,6 @@ elif st.session_state.page=="workflow":
             st.session_state.candidate_phone=st.text_input("Phone",
                 value=st.session_state.candidate_phone,placeholder="Auto-filled from CV")
 
-        # ── CANDIDATE HISTORY LOOKUP ──────────────────────────────
-        _cname_lookup = st.session_state.candidate_name
-        if _cname_lookup and len(_cname_lookup) > 2:
-            _hist_results = [r for r in cfg.load_results("", True)
-                     if _cname_lookup.lower() in r.get("candidate_name","").lower()]
-            _hist = _hist_results
-            if _hist:
-                with st.expander(f"📋 {len(_hist)} previous interview(s) found for {_cname_lookup}", expanded=False):
-                    for _hr in sorted(_hist, key=lambda x: x.get("timestamp",""), reverse=True)[:5]:
-                        _hr_date  = str(_hr.get("timestamp",""))[:10]
-                        _hr_role  = _hr.get("job_role","Unknown role")
-                        _hr_score = _hr.get("overall_score", _hr.get("score","—"))
-                        _hr_verd  = _hr.get("verdict","—")
-                        _hr_col   = "#00C9A7" if "GO" in str(_hr_verd).upper() and "NO" not in str(_hr_verd).upper() else "#FF4444"
-                        st.markdown(
-                            f'<div style="background:rgba(255,255,255,0.03);border:1px solid '
-                            f'rgba(0,201,167,0.12);border-radius:6px;padding:8px 14px;margin:3px 0;font-size:12px">'
-                            f'📅 <b>{_hr_date}</b> &nbsp;·&nbsp; {_hr_role} &nbsp;·&nbsp; '
-                            f'Score: <b>{_hr_score}</b> &nbsp;·&nbsp; '
-                            f'<span style="color:{_hr_col};font-weight:700">{_hr_verd}</span></div>',
-                            unsafe_allow_html=True)
-
         st.divider()
 
         # CV upload
@@ -4282,46 +2525,10 @@ elif st.session_state.page=="workflow":
             st.markdown("**Level**")
             level_label=st.selectbox("Level",
                 ["Senior / Lead (7-10 yrs)","Mid-level (4-7 yrs)","Junior (0-3 yrs)"],
-                label_visibility="collapsed",
-                key="q_level_select")
+                label_visibility="collapsed")
             level_key=("senior" if "Senior" in level_label
                        else "mid" if "Mid" in level_label else "junior")
             st.caption("Adjusts question depth")
-
-        # ── DIFFICULTY SELECTOR ───────────────────────────────────
-        st.markdown("**🎯 Question Difficulty**")
-        _diff_cols = st.columns(4)
-        _diff_opts = {
-            "🟢 Easy":   "easy",
-            "🟡 Medium": "medium",
-            "🔴 Hard":   "hard",
-            "🌈 Mixed":  "mixed",
-        }
-        _curr_diff = st.session_state.get("_q_difficulty", "medium")
-        for _di, (_dlabel, _dval) in enumerate(_diff_opts.items()):
-            with _diff_cols[_di]:
-                _is_sel = _curr_diff == _dval
-                if st.button(
-                    _dlabel,
-                    key=f"diff_btn_{_dval}",
-                    use_container_width=True,
-                    type="primary" if _is_sel else "secondary",
-                    help={
-                        "easy":   "Conceptual questions — definitions, basics, fundamentals",
-                        "medium": "Applied scenarios — hands-on experience required",
-                        "hard":   "Architecture, edge cases, system design at scale",
-                        "mixed":  "30% Easy + 50% Medium + 20% Hard — progressive difficulty"
-                    }[_dval]
-                ):
-                    st.session_state["_q_difficulty"] = _dval
-                    st.rerun()
-        _diff_captions = {
-            "easy":   "✅ Good for junior screening or warm-up rounds",
-            "medium": "✅ Standard for most technical interviews",
-            "hard":   "✅ Use for senior/lead/architect roles",
-            "mixed":  "✅ Recommended for full assessments"
-        }
-        st.caption(_diff_captions.get(_curr_diff, ""))
 
         st.divider()
 
@@ -4348,9 +2555,7 @@ elif st.session_state.page=="workflow":
             with st.spinner(f"Generating {num_q} questions ({n_scen} scenario + {n_code} coding)..."):
                 res=_generate_questions(
                     st.session_state.cv_text,st.session_state.jd_text,
-                    st.session_state.candidate_name,num_q,level_key,
-                    st.session_state.get("_q_difficulty", "medium"),
-                    st.session_state.get("selected_industry", "IT & Software"))
+                    st.session_state.candidate_name,num_q,level_key)
             if "error" in res:
                 st.error(res["error"])
                 if res.get("raw"):
@@ -4493,17 +2698,6 @@ elif st.session_state.page=="workflow":
 
     # ── TAB 2: LIVE INTERVIEW (Empower SOP Compliant) ────────────
     with tab2:
-        # ── TIME LIMIT SETTING ────────────────────────────────────
-        if st.session_state.questions:
-            _tl_col1, _tl_col2, _tl_col3 = st.columns([1,1,4])
-            st.session_state["_q_time_limit"] = _tl_col1.number_input(
-                "⏱ Mins/question", min_value=1, max_value=15,
-                value=st.session_state.get("_q_time_limit", 5),
-                key="_tl_input", help="Timer resets on each question")
-            _total_flagged = sum(1 for i,q in enumerate(st.session_state.questions)
-                if st.session_state.get(f"_flagged_{q.get('num',i+1)}", False))
-            if _total_flagged:
-                _tl_col2.metric("🚩 Flagged", _total_flagged)
         if not st.session_state.questions:
             st.info("Complete Step 1 — upload CV + JD and generate questions first.")
         else:
@@ -4675,16 +2869,6 @@ elif st.session_state.page=="workflow":
             )
 
             # Backup visible question text (in case HTML not rendering)
-            # Difficulty badge
-            _q_diff = q.get("difficulty", st.session_state.get("_q_difficulty","medium"))
-            _dbadge = {"easy":"🟢 Easy","medium":"🟡 Medium","hard":"🔴 Hard"}.get(_q_diff,"🟡 Medium")
-            _dbg    = {"easy":"rgba(0,180,80,0.12)","medium":"rgba(245,166,35,0.12)","hard":"rgba(204,0,0,0.12)"}.get(_q_diff,"rgba(245,166,35,0.12)")
-            _dbc    = {"easy":"#00B050","medium":"#F5A623","hard":"#CC0000"}.get(_q_diff,"#F5A623")
-            st.markdown(
-                f'<div style="display:inline-block;background:{_dbg};border:1px solid {_dbc};'
-                f'border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;'
-                f'letter-spacing:0.06em;color:{_dbc};margin-bottom:6px">{_dbadge}</div>',
-                unsafe_allow_html=True)
             st.markdown(f"**Question {num}:** {q.get('question', q.get('q', ''))}")
             st.markdown("")
 
@@ -4784,88 +2968,19 @@ elif st.session_state.page=="workflow":
 
             st.divider()
 
-            # ── PER-QUESTION TIMER ────────────────────────────────
-            import time as _time
-            _tkey = f"_q_start_{nk}"
-            if _tkey not in st.session_state:
-                st.session_state[_tkey] = _time.time()
-            _elapsed = int(_time.time() - st.session_state[_tkey])
-            _mins, _secs = divmod(_elapsed, 60)
-            _tlimit = st.session_state.get("_q_time_limit", 5)  # mins per question
-            _tover  = _elapsed > (_tlimit * 60)
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:12px;'
-                f'background:{"rgba(255,68,68,0.08)" if _tover else "rgba(0,201,167,0.06)"};'
-                f'border:1px solid {"rgba(255,68,68,0.3)" if _tover else "rgba(0,201,167,0.15)"};'
-                f'border-radius:6px;padding:8px 16px;margin:8px 0">'
-                f'<span style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
-                f'color:{"#FF4444" if _tover else "#00C9A7"};font-family:Barlow Condensed,sans-serif">'
-                f'⏱ {_mins:02d}:{_secs:02d} {"— TIME OVER" if _tover else f"/ {_tlimit}:00"}</span>'
-                f'<span style="font-size:10px;color:#4A6A80;margin-left:auto">'
-                f'Q{num}/{total} · {noted} noted</span></div>',
-                unsafe_allow_html=True)
-
-            # ── NAVIGATION + ACTIONS ──────────────────────────────
-            n1,n2,n3,n4,n5=st.columns([1,1,1,1,1])
+            # Navigation
+            n1,n2,n3,n4=st.columns([1,1,3,1])
             with n1:
-                if st.button("⬅️ Prev", disabled=idx==0, use_container_width=True):
-                    st.session_state.curr_q = idx-1; save_session(); st.rerun()
+                if st.button("⬅️ Prev",disabled=idx==0,use_container_width=True):
+                    st.session_state.curr_q=idx-1; save_session(); st.rerun()
             with n2:
-                if idx < total-1:
-                    if st.button("Next ➡️", type="primary", use_container_width=True):
-                        st.session_state.curr_q = idx+1
-                        st.session_state[f"_q_start_{idx+1+1}"] = _time.time()
-                        save_session(); st.rerun()
+                if idx<total-1:
+                    if st.button("Next ➡️",type="primary",use_container_width=True):
+                        st.session_state.curr_q=idx+1; save_session(); st.rerun()
                 else:
-                    if st.button("✅ End Interview", type="primary", use_container_width=True):
+                    if st.button("✅ End Interview",type="primary",use_container_width=True):
                         save_session()
                         st.success("Interview complete! Proceed to Step 3 — Assessment.")
-            with n3:
-                if st.button("🔄 Regenerate", use_container_width=True,
-                             help="Regenerate this question with a different angle"):
-                    with st.spinner("Regenerating..."):
-                        try:
-                            _regen_prompt = (
-                                f"Generate 1 new {qt}-type interview question for role: "
-                                f"{st.session_state.get('job_role','the position')}. "
-                                f"Difficulty: {st.session_state.get('_q_difficulty','medium').upper()}. Return JSON: "
-                                f'{{"num":{num},"type":"{qt}","question":"...","key_points":["..."],"ideal_answer":"..."}}'
-                            )
-                            _regen_client = apikey.get_client()
-                            _regen_resp   = _regen_client.messages.create(
-                                model=apikey.get_model(), max_tokens=500,
-                                messages=[{"role":"user","content":_regen_prompt}])
-                            import json as _rjson
-                            _regen_text = _regen_resp.content[0].text.strip()
-                            _regen_text = _regen_text.replace("```json","").replace("```","").strip()
-                            _regen_q    = _rjson.loads(_regen_text)
-                            _regen_q["num"] = num
-                            st.session_state.questions[idx] = _regen_q
-                            st.session_state[_tkey] = _time.time()
-                            save_session()
-                            st.rerun()
-                        except Exception as _re:
-                            st.warning(f"Regeneration failed: {_re}")
-            with n4:
-                _fkey = f"_flagged_{nk}"
-                _is_flagged = st.session_state.get(_fkey, False)
-                if st.button(
-                    "🚩 Flagged" if _is_flagged else "🏳 Flag",
-                    use_container_width=True,
-                    help="Flag this question for review"):
-                    st.session_state[_fkey] = not _is_flagged
-                    save_session(); st.rerun()
-            with n5:
-                if st.button("⏭ Skip", use_container_width=True,
-                             help="Skip to next unanswered question"):
-                    _skip_to = idx + 1
-                    while _skip_to < total-1:
-                        _snk = str(questions[_skip_to].get("num", _skip_to+1))
-                        if not st.session_state.notes.get(_snk,"").strip():
-                            break
-                        _skip_to += 1
-                    st.session_state.curr_q = _skip_to
-                    save_session(); st.rerun()
             with n3:
                 jump=st.selectbox("Jump to Q",range(1,total+1),index=idx,
                     format_func=lambda i:(
@@ -5030,28 +3145,6 @@ elif st.session_state.page=="workflow":
                     st.markdown(f"**Project Discussion:** {sc['project_discussion']}")
                 if sc.get("overall_summary"):
                     st.markdown(f"**Overall Feedback:** {sc['overall_summary']}")
-                # ── Industry Rubric Scorecard ─────────────────────
-                _sc_industry = sc.get("industry", st.session_state.get("selected_industry","IT & Software"))
-                _dim_scores  = sc.get("dimension_scores",{})
-                _rubric_sc   = get_industry_rubric(_sc_industry)
-                _dims_sc     = _rubric_sc.get("dimensions",[])
-                if _dim_scores and _dims_sc:
-                    with st.expander(f"📊 {_sc_industry} — Rubric Scorecard", expanded=True):
-                        _w_sc = sc.get("weighted_score", calculate_weighted_score(_dim_scores, _sc_industry))
-                        _w_col = "#00B050" if _w_sc>=3.5 else "#F5A623" if _w_sc>=2.8 else "#CC0000"
-                        st.markdown(
-                            f'<div style="margin-bottom:10px"><span style="font-size:12px;color:#4A6A80">Weighted Score: </span>'                            f'<span style="font-size:20px;font-weight:700;color:{_w_col}">{_w_sc:.1f}/5.0</span></div>',
-                            unsafe_allow_html=True)
-                        for _dim_sc in _dims_sc:
-                            _ds = float(_dim_scores.get(_dim_sc["id"], 0) or 0)
-                            _bp = int(_ds/5*100)
-                            _dc = "#00B050" if _ds>=3.5 else "#F5A623" if _ds>=2.5 else "#CC0000"
-                            st.markdown(
-                                f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'                                f'<div style="width:155px;font-size:11px;color:#C8D8E4">{_dim_sc["label"]}</div>'                                f'<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:13px">'                                f'<div style="width:{_bp}%;background:{_dc};height:13px;border-radius:3px"></div></div>'                                f'<div style="width:36px;font-size:11px;font-weight:700;color:{_dc};text-align:right">{_ds:.1f}</div>'                                f'<div style="width:30px;font-size:10px;color:#4A6A80">{int(_dim_sc["weight"]*100)}%</div>'                                f'</div>', unsafe_allow_html=True)
-                        _gf = _rubric_sc.get("green_flags",[])
-                        _rf = _rubric_sc.get("red_flags",[])
-                        if _gf: st.markdown(f'<div style="font-size:11px;color:#00B050;margin-top:6px">✅ {" · ".join(_gf[:3])}</div>', unsafe_allow_html=True)
-                        if _rf: st.markdown(f'<div style="font-size:11px;color:#CC0000;margin-top:3px">⚠ {" · ".join(_rf[:3])}</div>', unsafe_allow_html=True)
                 with st.expander("Per-question scores"):
                     for s in sc.get("scores",[]):
                         sn=s.get("score",3)
@@ -5134,25 +3227,6 @@ elif st.session_state.page=="workflow":
 
             with r_col:
                 st.markdown("#### 📄 Generate DOCX Report")
-                # ── REPORT PREVIEW ────────────────────────────────
-                with st.expander("👁 Report Preview", expanded=False):
-                    st.markdown(
-                        f'<div style="background:#fff;border:2px solid #1F3864;border-radius:8px;'
-                        f'padding:16px;font-family:Calibri,sans-serif;color:#222;font-size:13px">'
-                        f'<p style="font-size:15px;font-weight:700;color:#1F3864;margin:0 0 8px">'
-                        f'Interview Feedback Report</p>'
-                        f'<p><b>Candidate:</b> {cname}</p>'
-                        f'<p><b>Date:</b> {today_str}</p>'
-                        f'<p><b>Role:</b> {skill_str or st.session_state.jd_text[:60].replace(chr(10)," ")}</p>'
-                        f'<p><b>Overall Score:</b> {stars} ({o}/5)</p>'
-                        f'<p><b>Verdict:</b> <span style="color:{col};font-weight:700">{v}</span></p>'
-                        f'<hr style="border:1px solid #ddd;margin:10px 0">'
-                        f'<p style="font-weight:700;color:#1F3864">Feedback Summary:</p>'
-                        f'<p style="white-space:pre-line;font-size:12px">{full_feedback[:600]}{"..." if len(full_feedback)>600 else ""}</p>'
-                        f'<hr style="border:1px solid #ddd;margin:10px 0">'
-                        f'<p style="font-size:11px;color:#888">Generated by IAS v9.0 | GVS Technologies | {settings_e.get("interviewer_name","Gokul Prakash T")}</p>'
-                        f'</div>',
-                        unsafe_allow_html=True)
                 if st.button("📄 Generate Empower Report",type="primary",use_container_width=True):
                     rdata={
                         "candidate":cname,"role":st.session_state.jd_text[:80].replace("\n"," "),
@@ -5226,7 +3300,7 @@ elif st.session_state.page=="workflow":
                     f"Date: {today_str}\nCandidate: {cname}\nPosition: {skill_str}\n\n"
                     f"Overall Rating : {stars}\n\nVerdict : {v}\n\nFeedback :\n\n"
                     f"{full_feedback}\n\n"
-                    f"---\nIAS v9.0 | GVS Technologies | "
+                    f"---\nIAS v6.0 — GVS Technologies / "
                     f"{settings_e.get('interviewer_name','Gokul Prakash T')}"
                 )
                 with st.expander("Preview / edit email body"):
@@ -5266,57 +3340,6 @@ elif st.session_state.page=="workflow":
                             st.session_state.report_path)
                     if ok: st.success(f"✅ {msg}")
                     else:  st.error(f"❌ {msg}")
-
-            # ── CANDIDATE FEEDBACK EMAIL ────────────────────────
-            st.divider()
-            with st.expander("📤 Send Feedback to Candidate", expanded=False):
-                st.caption("Send a professional feedback email directly to the candidate.")
-                _fb_to    = st.text_input("Candidate email",
-                    value=st.session_state.candidate_email, key="fb_cand_email")
-                _fb_type  = st.radio("Feedback type",
-                    ["Positive (Selected)", "Constructive (Rejected)", "Custom"],
-                    horizontal=True, key="fb_type")
-                if _fb_type == "Positive (Selected)":
-                    _fb_body = (
-                        f"Dear {cname},\n\n"
-                        f"Thank you for interviewing with us. We are pleased to inform you that "
-                        f"your interview performance was excellent.\n\n"
-                        f"Overall Rating: {stars} ({o}/5)\n\n"
-                        f"Your strengths: {sc.get('overall_summary', full_feedback[:200])}\n\n"
-                        f"We will be in touch shortly with next steps.\n\n"
-                        f"Best regards,\n{settings_e.get('interviewer_name','Gokul Prakash T')}\n"
-                        f"IAS v9.0 | GVS Technologies"
-                    )
-                elif _fb_type == "Constructive (Rejected)":
-                    _fb_body = (
-                        f"Dear {cname},\n\n"
-                        f"Thank you for your time and interest. After careful evaluation, "
-                        f"we will not be moving forward at this time.\n\n"
-                        f"Your rating: {stars} ({o}/5)\n\n"
-                        f"Areas to strengthen: {sc.get('overall_summary', full_feedback[:200])}\n\n"
-                        f"We encourage you to apply for future opportunities.\n\n"
-                        f"Best regards,\n{settings_e.get('interviewer_name','Gokul Prakash T')}\n"
-                        f"IAS v9.0 | GVS Technologies"
-                    )
-                else:
-                    _fb_body = f"Dear {cname},\n\n[Your custom feedback here]\n\nBest regards,\n{settings_e.get('interviewer_name','Gokul Prakash T')}"
-                _fb_body_edit = st.text_area("Feedback email body (editable)",
-                    value=_fb_body, height=150, key="fb_body_edit")
-                _fb_sender = settings_e.get("sender_email","")
-                _fb_pwd    = settings_e.get("gmail_app_password","")
-                if st.button("📤 Send Feedback to Candidate", type="primary",
-                             use_container_width=True,
-                             disabled=not(_fb_to and _fb_sender and _fb_pwd)):
-                    with st.spinner(f"Sending feedback to {_fb_to}..."):
-                        _fb_subj = f"Interview Feedback — {cname} — {skill_str or 'Position'}"
-                        _ok_fb, _msg_fb = _send_email_custom(
-                            _fb_sender, _fb_pwd, _fb_to, _fb_subj, _fb_body_edit)
-                    if _ok_fb:
-                        st.success(f"✅ Feedback sent to {_fb_to}")
-                    else:
-                        st.error(f"❌ {_msg_fb}")
-                if not (_fb_sender and _fb_pwd):
-                    st.caption("⚙️ Configure Gmail in Settings → Notifications to enable sending.")
 
             # Recording upload instructions
             st.divider()
@@ -5459,145 +3482,6 @@ elif st.session_state.page=="analytics":
 
 # ════════════════════════════════════════════════════════════════
 # SETTINGS
-elif st.session_state.page == "industry":
-    # ════════════════════════════════════════════════════════════════════════
-    # INDUSTRY FRAMEWORK — Multi-Industry Configuration Centre
-    # ════════════════════════════════════════════════════════════════════════
-    st.markdown("## 🌐 Industry Framework")
-    st.markdown("Configure IAS for your industry vertical — questions, competencies, and salary benchmarks.")
-    st.divider()
-
-    _curr_ind = st.session_state.get("selected_industry", "IT & Software")
-    _ind_names = get_industry_names()
-
-    # ── Industry selector grid ─────────────────────────────────
-    st.markdown("### Select Industry Vertical")
-    _ind_cols = st.columns(4)
-    for _ii, _iname in enumerate(_ind_names):
-        with _ind_cols[_ii % 4]:
-            _idata = get_industry_config(_iname)
-            _active = _iname == _curr_ind
-            _border = "2px solid #00C9A7" if _active else "1px solid rgba(0,201,167,0.2)"
-            _bg     = "rgba(0,201,167,0.1)" if _active else "rgba(255,255,255,0.03)"
-            if st.button(
-                f"{_idata['icon']} {_iname}",
-                key=f"ind_tile_{_ii}",
-                use_container_width=True,
-                type="primary" if _active else "secondary",
-                help=_idata["description"]
-            ):
-                st.session_state["selected_industry"] = _iname
-                st.rerun()
-
-    st.divider()
-
-    # ── Selected industry detail ───────────────────────────────
-    _sel_data = get_industry_config(_curr_ind)
-    st.markdown(f"### {_sel_data['icon']} {_curr_ind}")
-    st.caption(_sel_data["description"])
-
-    _id1, _id2, _id3 = st.columns(3)
-    with _id1:
-        st.markdown("**Market Demand**")
-        st.markdown(f'<div style="color:#00C9A7;font-size:13px;font-weight:600">{_sel_data["demand_signal"]}</div>', unsafe_allow_html=True)
-    with _id2:
-        st.markdown("**Salary Benchmarks**")
-        _sal = _sel_data.get("salary_range", {})
-        for _region, _range in _sal.items():
-            st.markdown(f'<span style="font-size:12px"><b>{_region}:</b> {_range}</span>', unsafe_allow_html=True)
-    with _id3:
-        st.markdown("**Interview Context**")
-        st.caption(_sel_data.get("interview_context",""))
-
-    st.divider()
-
-    # ── Role templates ────────────────────────────────────────
-    st.markdown("#### 👤 Role Templates")
-    _roles = _sel_data.get("roles", [])
-    _role_cols = st.columns(3)
-    for _ri, _role in enumerate(_roles):
-        with _role_cols[_ri % 3]:
-            if st.button(f"📋 {_role}", key=f"role_tmpl_{_ri}", use_container_width=True,
-                         help=f"Load {_role} JD template"):
-                _comps = ", ".join(_sel_data.get("competencies",[])[:6])
-                _jd_t = (
-                    f"We are hiring a {_role} in {_curr_ind}.\n\n"
-                    f"Key responsibilities:\n"
-                    f"• Lead {_role.lower()} activities across the organisation\n"
-                    f"• Drive {_sel_data['description']} initiatives\n"
-                    f"• Collaborate with cross-functional stakeholders\n\n"
-                    f"Required competencies: {_comps}\n\n"
-                    f"Experience: 7+ years in {_curr_ind}. Strong domain expertise required."
-                )
-                st.session_state["jd_text"]            = _jd_t
-                st.session_state["selected_industry"]  = _curr_ind
-                st.success(f"✅ {_role} template loaded — go to Interview Workflow to start")
-
-    st.divider()
-
-    # ── Competency library ────────────────────────────────────
-    st.markdown("#### 📚 Competency Library")
-    _comps = _sel_data.get("competencies", [])
-    _comp_html = " ".join([
-        f'<span style="display:inline-block;background:rgba(0,201,167,0.1);'
-        f'border:1px solid rgba(0,201,167,0.25);border-radius:12px;'
-        f'padding:4px 12px;font-size:11px;color:#00C9A7;margin:3px">{c}</span>'
-        for c in _comps
-    ])
-    st.markdown(f'<div style="margin:8px 0">{_comp_html}</div>', unsafe_allow_html=True)
-
-    st.divider()
-
-    # ── Cross-industry comparison ──────────────────────────────
-    st.markdown("### 📊 Cross-Industry Comparison")
-    _compare_data = []
-    for _iname, _idata in IND_CONFIG.items():
-        _sal = _idata.get("salary_range",{})
-        _compare_data.append({
-            "Industry":     _iname,
-            "Roles":        len(_idata.get("roles",[])),
-            "Competencies": len(_idata.get("competencies",[])),
-            "India Salary": _sal.get("IN","—"),
-            "US Salary":    _sal.get("US","—"),
-            "Market Signal":_idata.get("demand_signal","")[:40],
-        })
-    import pandas as _pd_ind
-    _df_compare = _pd_ind.DataFrame(_compare_data)
-    st.dataframe(_df_compare, use_container_width=True, hide_index=True)
-
-    # ── Question Bank Browser ─────────────────────────
-    st.divider()
-    st.markdown("### 📚 Question Bank Browser")
-    _stats = get_question_bank_stats()
-    _qbc1, _qbc2, _qbc3 = st.columns(3)
-    with _qbc1: st.metric("Total Questions", _stats["total"])
-    with _qbc2: st.metric("Industries", _stats["industries"])
-    with _qbc3: st.metric("Difficulty Levels", 3)
-
-    _qb_diff = st.select_slider("Difficulty", ["easy","medium","hard"],
-                                value="medium", key="qb_diff_browser")
-    _preview_qs = get_industry_questions(_curr_ind, _qb_diff, count=100)
-    st.caption(f"{len(_preview_qs)} **{_qb_diff.title()}** questions for **{_curr_ind}**")
-    for _pq in _preview_qs[:10]:  # show first 10
-        with st.expander(f"Q{_pq['num']}. [{_pq.get('skill','—')}] {_pq['question'][:90]}..."):
-            st.markdown(f"**Skill:** {_pq.get('skill','—')}  |  **Type:** {_pq.get('type','scenario').title()}")
-            st.markdown(f"**Question:** {_pq['question']}")
-
-    if st.button(f"▶ Load all {len(_preview_qs)} {_qb_diff.title()} questions into Interview Workflow",
-                 key="load_bank_to_workflow", type="primary"):
-        _load_qs = get_industry_questions(_curr_ind, _qb_diff, 15)
-        st.session_state.questions = _load_qs
-        st.session_state.notes = {}
-        st.session_state.curr_q = 0
-        st.session_state["selected_industry"] = _curr_ind
-        st.success(f"✅ {len(_load_qs)} pre-built questions loaded — go to Interview Workflow")
-
-    st.divider()
-    st.markdown(
-        '<div style="text-align:center;font-size:11px;color:#4A6A80">'
-        'IAS Industry Framework v1.0 · 12 Verticals · 85+ Roles · 420+ Competencies · GVS Technologies'
-        '</div>', unsafe_allow_html=True)
-
 # ════════════════════════════════════════════════════════════════
 elif st.session_state.page == "settings":
     import datetime as _dts
@@ -5617,7 +3501,6 @@ elif st.session_state.page == "settings":
         ("📊", "Reports"),
         ("📸", "Photo ID"),
         ("🎨", "Branding"),
-        ("🏢", "Organisation"),
         ("📲", "Notifications"),
         ("🔒", "Licensing"),
     ]
@@ -5752,15 +3635,11 @@ elif st.session_state.page == "settings":
             st.markdown("#### 🎨 Industry & Brand Configuration")
             with st.form("brand_form"):
                 _bi1, _bi2 = st.columns(2)
-                # Use full IND_CONFIG industry list from Sprint 1
-                _all_ind_names = get_industry_names()
-                _curr_ind_brand = settings.get("industry", st.session_state.get("selected_industry","IT & Software"))
-                if _curr_ind_brand not in _all_ind_names:
-                    _curr_ind_brand = "IT & Software"
                 industry_sel = _bi1.selectbox("Industry / Sector",
-                    options=_all_ind_names,
-                    index=_all_ind_names.index(_curr_ind_brand)
-                )
+                    ["General Recruitment","Telecom / 5G","Manufacturing / Automotive",
+                     "Insurance / Finance","Medical / Healthcare","Technology / IT",
+                     "Consulting / Advisory","Government / Public Sector","Education","Retail / FMCG"],
+                    index=0)
                 brand_company = _bi1.text_input("Organisation name",
                     value=settings.get("brand_company","GVS Technologies"),
                     placeholder="e.g. Vodafone Germany / BMW Group / NHS")
@@ -5779,7 +3658,6 @@ elif st.session_state.page == "settings":
                         "brand_tagline":brand_tagline,"brand_footer":brand_footer,
                         "company_name":brand_company,"dashboard_tagline":brand_tagline,
                     })
-                    st.session_state["selected_industry"] = industry_sel
                     st.success(f"✅ Branding saved — {industry_sel} · {brand_company}")
                     st.rerun()
             st.divider()
@@ -5796,156 +3674,6 @@ elif st.session_state.page == "settings":
                     st.rerun()
 
         # ── NOTIFICATIONS ─────────────────────────────────────────
-        elif _sel == "Organisation":
-            # ════════════════════════════════════════════════════
-            # SPRINT 4: MULTI-TENANT ORGANISATION CONFIGURATION
-            # ════════════════════════════════════════════════════
-            st.markdown("#### 🏢 Organisation Profile")
-            st.caption("Configure IAS for your organisation type, industry, and white-label branding.")
-
-            _tenant = get_tenant_config()
-
-            # ── Org type ─────────────────────────────────────────
-            _org_types = list(ORG_PRESETS.keys())
-            _curr_org_type = _tenant.get("org_type","Staffing Agency")
-            if _curr_org_type not in _org_types:
-                _curr_org_type = "Staffing Agency"
-
-            _ot1, _ot2 = st.columns(2)
-            with _ot1:
-                _sel_org_type = st.selectbox(
-                    "Organisation type",
-                    options=_org_types,
-                    index=_org_types.index(_curr_org_type),
-                    key="org_type_sel",
-                    help="Select your organisation type to get a tailored IAS configuration."
-                )
-            with _ot2:
-                _preset = get_org_preset(_sel_org_type)
-                st.markdown(
-                    f'<div style="background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2);'
-                    f'border-radius:8px;padding:10px 12px;margin-top:22px">'
-                    f'<div style="font-size:12px;font-weight:600;color:#00C9A7">{_sel_org_type}</div>'
-                    f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">{_preset["description"]}</div>'
-                    f'<div style="font-size:10px;color:#4A6A80;margin-top:4px">'
-                    f'Tier: {_preset["recommended_tier"]} · Users: {_preset["typical_users"]}</div>'
-                    f'</div>', unsafe_allow_html=True)
-
-            # ── Industry vertical ─────────────────────────────────
-            st.markdown("---")
-            st.markdown("**🌐 Active Industry Vertical**")
-            _ind_names_org = get_industry_names()
-            _curr_ind_org  = _tenant.get("active_industry","IT & Software")
-            if _curr_ind_org not in _ind_names_org:
-                _curr_ind_org = "IT & Software"
-
-            _oi1, _oi2 = st.columns([2,1])
-            with _oi1:
-                _sel_ind_org = st.selectbox(
-                    "Primary industry",
-                    options=_ind_names_org,
-                    index=_ind_names_org.index(_curr_ind_org),
-                    key="org_ind_sel",
-                    help="This sets the default question bank, scoring rubric, and market intelligence."
-                )
-            with _oi2:
-                _ind_d = get_industry_config(_sel_ind_org)
-                _mkt_d = get_market_intel(_sel_ind_org)
-                st.markdown(
-                    f'<div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;margin-top:22px">'
-                    f'<div style="font-size:22px">{_ind_d["icon"]}</div>'
-                    f'<div style="font-size:12px;font-weight:600;color:#00C9A7">{_sel_ind_org.split(" &")[0]}</div>'
-                    f'<div style="font-size:11px;color:#4A6A80">{_mkt_d.get("demand_driver","")[:50]}...</div>'
-                    f'</div>', unsafe_allow_html=True)
-
-            # ── Dashboard mode ────────────────────────────────────
-            st.markdown("---")
-            st.markdown("**👁 Default Dashboard Mode**")
-            _dash_modes = ["Executive","Recruiter","Hiring Manager","Interview Panel"]
-            _curr_mode  = _tenant.get("dashboard_mode","Executive")
-            if _curr_mode not in _dash_modes:
-                _curr_mode = "Executive"
-            _mode_descs = {
-                "Executive":       "Hiring health, KPIs, forecasts, AI insights",
-                "Recruiter":       "Today's interviews, CV screening, scheduling",
-                "Hiring Manager":  "Pending approvals, team progress, feedback",
-                "Interview Panel": "Upcoming interviews, evaluation forms, questions",
-            }
-            _dm_cols = st.columns(4)
-            for _dmi, _dm in enumerate(_dash_modes):
-                with _dm_cols[_dmi]:
-                    _active_dm = _dm == _curr_mode
-                    if st.button(
-                        _dm,
-                        key=f"dash_mode_{_dmi}",
-                        use_container_width=True,
-                        type="primary" if _active_dm else "secondary"
-                    ):
-                        st.session_state["_dash_role"] = _dm
-                        _tenant["dashboard_mode"] = _dm
-                st.caption(_mode_descs.get(_dm,""))
-
-            # ── White-label settings ──────────────────────────────
-            st.markdown("---")
-            st.markdown("**🎨 White-Label Configuration**")
-            with st.form("org_whitelabel_form"):
-                _wl1, _wl2 = st.columns(2)
-                with _wl1:
-                    _wl_org_name    = st.text_input("Organisation name",
-                        value=_tenant.get("org_name","GVS Technologies"))
-                    _wl_platform    = st.text_input("Platform display name",
-                        value=_tenant.get("platform_name","IAS"))
-                    _wl_tagline     = st.text_input("Dashboard tagline",
-                        value=_tenant.get("tagline","AI-Powered · Zero Touch · Multi-Industry"))
-                    _wl_interviewer = st.text_input("Default interviewer name",
-                        value=_tenant.get("interviewer_name","Gokul Prakash T"))
-                with _wl2:
-                    _wl_primary_col = st.color_picker("Primary accent colour",
-                        value=_tenant.get("primary_color","#00C9A7"))
-                    _wl_secondary   = st.color_picker("Secondary / Background colour",
-                        value=_tenant.get("secondary_color","#0D1B3E"))
-                    _wl_footer      = st.text_input("Footer line",
-                        value=_tenant.get("footer_line","Powered by IAS v9.0"))
-                    _wl_sub_tier    = st.selectbox("Subscription tier",
-                        ["Starter","Growth","Enterprise"],
-                        index=["Starter","Growth","Enterprise"].index(
-                            _tenant.get("subscriptiontier","Growth")))
-
-                if st.form_submit_button("💾 Save Organisation Profile", type="primary", use_container_width=True):
-                    _new_tenant = {
-                        "org_name":         _wl_org_name,
-                        "org_type":         _sel_org_type,
-                        "active_industry":  _sel_ind_org,
-                        "platform_name":    _wl_platform,
-                        "tagline":          _wl_tagline,
-                        "footer_line":      _wl_footer,
-                        "primary_color":    _wl_primary_col,
-                        "secondary_color":  _wl_secondary,
-                        "interviewer_name": _wl_interviewer,
-                        "dashboard_mode":   st.session_state.get("_dash_role","Executive"),
-                        "subscriptiontier": _wl_sub_tier,
-                    }
-                    save_tenant_config(_new_tenant)
-                    st.session_state["selected_industry"] = _sel_ind_org
-                    st.session_state["_dash_role"]        = _new_tenant["dashboard_mode"]
-                    st.success(f"✅ Organisation profile saved — {_wl_org_name} · {_sel_ind_org}")
-                    st.rerun()
-
-            # ── Current config preview ────────────────────────────
-            st.markdown("---")
-            st.markdown("**🔍 Current Configuration**")
-            _cp1, _cp2, _cp3 = st.columns(3)
-            with _cp1:
-                st.markdown(f'<div style="font-size:12px;color:#4A6A80">Organisation</div><div style="font-size:14px;font-weight:600;color:#E8F2FF">{_tenant.get("org_name","—")}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div style="font-size:12px;color:#4A6A80;margin-top:8px">Type</div><div style="font-size:13px;color:#C8D8E4">{_tenant.get("org_type","—")}</div>', unsafe_allow_html=True)
-            with _cp2:
-                st.markdown(f'<div style="font-size:12px;color:#4A6A80">Industry</div><div style="font-size:14px;font-weight:600;color:#00C9A7">{_tenant.get("active_industry","—")}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div style="font-size:12px;color:#4A6A80;margin-top:8px">Dashboard mode</div><div style="font-size:13px;color:#C8D8E4">{_tenant.get("dashboard_mode","Executive")}</div>', unsafe_allow_html=True)
-            with _cp3:
-                st.markdown(f'<div style="font-size:12px;color:#4A6A80">Subscription</div><div style="font-size:14px;font-weight:600;color:#F5A623">{_tenant.get("subscriptiontier","Growth")}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div style="font-size:12px;color:#4A6A80;margin-top:8px">Platform name</div><div style="font-size:13px;color:#C8D8E4">{_tenant.get("platform_name","IAS")}</div>', unsafe_allow_html=True)
-
-
         elif _sel == "Notifications":
             st.markdown("#### 📲 Gmail Monitor — Continuous Email Watching")
             st.caption("IAS watches your Gmail inbox every 60 seconds. When an interview email arrives, candidate details, CV, JD, and Zoom link are auto-loaded into the Interview Workflow — zero manual entry.")
@@ -7139,28 +4867,21 @@ elif st.session_state.page == "bulkcv":
     # ── Helper: score one CV against JD using Claude ─────────────
     def _score_cv(cv_text, jd_text, name, client, model):
         prompt = (
-            f"You are a senior technical recruiter. Carefully score this CV against the JD.\n\n"
+            f"You are a senior technical recruiter. Score this candidate's CV against the JD.\n\n"
             f"Candidate: {name}\n"
-            f"JD (first 1200 chars):\n{jd_text[:1200]}\n\n"
-            f"CV (first 2000 chars):\n{cv_text[:2000]}\n\n"
-            f"Evaluate across: technical skills match, experience level, domain relevance, education.\n"
-            f"Return ONLY valid JSON (no markdown, no explanation):\n"
-            f'{{"overall_score":8.5,'
-            f'"verdict":"SHORTLIST",'
-            f'"skill_match_pct":75,'
-            f'"experience_match":true,'
-            f'"years_experience":5,'
+            f"JD (first 1000 chars): {jd_text[:1000]}\n"
+            f"CV (first 1500 chars): {cv_text[:1500]}\n\n"
+            f"Return ONLY valid JSON (no markdown):\n"
+            f'{{"overall_score":8.5,"verdict":"SHORTLIST",'
+            f'"skill_match_pct":75,"experience_match":true,'
             f'"matched_skills":["Python","Azure"],'
             f'"missing_skills":["Kubernetes"],'
-            f'"strengths":"2 sentences on top strengths",'
-            f'"gaps":"1 sentence on key gaps",'
-            f'"recommendation":"1 sentence action for recruiter"}}\n\n'
-            f"Rules:\n"
-            f"- verdict: SHORTLIST (score>=7.0), MAYBE (4.0-6.9), REJECT (below 4.0)\n"
-            f"- overall_score: precise 1.0-10.0 float\n"
-            f"- skill_match_pct: 0-100 integer\n"
-            f"- matched_skills: skills from JD found in CV\n"
-            f"- missing_skills: required JD skills NOT in CV"
+            f'"strengths":"2 sentences max",'
+            f'"gaps":"1 sentence max",'
+            f'"recommendation":"1 sentence action"}}\n\n'
+            f"verdict must be: SHORTLIST, MAYBE, or REJECT\n"
+            f"overall_score: 1-10 float\n"
+            f"skill_match_pct: 0-100 integer"
         )
         try:
             r = client.messages.create(
@@ -7230,7 +4951,7 @@ const VERDICT_COLORS={_jj.dumps(verdict_colors)};
 const VERDICT_FILLS={_jj.dumps(verdict_fills)};
 const children=[
   new Paragraph({{spacing:{{before:0,after:80}},children:[
-    r("IAS v9.0 — Bulk CV Screening Report",{{bold:true,size:36,color:NAVY}})
+    r("IAS v6.0 — Bulk CV Screening Report",{{bold:true,size:36,color:NAVY}})
   ]}}),
   p([r("Job Description: {jd_preview[:80].replace(chr(10),' ')}",{{size:20,color:"666666",italic:true}})]),
   p([r("Generated: {today_str}  ·  Total candidates: {len(results)}  ·  GVS Technologies",{{size:18,color:"888888"}})]),
@@ -7415,19 +5136,13 @@ Packer.toBuffer(doc)
                             "skill_match_pct": 0, "experience_match": False,
                             "matched_skills": [], "missing_skills": [],
                             "strengths": "Could not read file.",
-                            "gaps": "", "recommendation": "Re-upload the file.",
-                            "cv_text": ""
+                            "gaps": "", "recommendation": "Re-upload the file."
                         })
                     else:
                         # Auto-detect name from CV text
                         det = _extract_details(cv_text)
                         if det.get("name"): cname = det["name"]
                         scored = _score_cv(cv_text, jd_text, cname, client, model)
-                        scored["cv_text"] = cv_text[:3000]
-                        # Auto-extract email from CV
-                        import re as _re_em
-                        _em = _re_em.search(r'[a-zA-Z0-9_.+%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', cv_text)
-                        scored["email"] = _em.group() if _em else ""
                         results.append(scored)
 
                 prog_bar.progress((i+1)/len(cv_files),
@@ -7448,7 +5163,6 @@ Packer.toBuffer(doc)
             results.sort(key=lambda x: float(x.get("overall_score",0)), reverse=True)
             st.session_state["_bulk_results"] = results
             st.session_state["_bulk_jd_preview"] = jd_text[:120]
-            st.session_state["_bulk_jd_full"]    = jd_text
 
     # ── Results ───────────────────────────────────────────────────
     if st.session_state.get("_bulk_results"):
@@ -7490,11 +5204,10 @@ Packer.toBuffer(doc)
                 f"{score:.1f}/10  ·  {stars}  ·  {v}",
                 expanded=(i < 3)
             ):
-                c1, c2, c3, c4 = st.columns(4)
+                c1, c2, c3 = st.columns(3)
                 c1.metric("Score",        f"{score:.1f} / 10")
                 c2.metric("Skill match",  f"{r.get('skill_match_pct',0)}%")
-                c3.metric("Experience",   f"{r.get('years_experience','?')} yrs")
-                c4.metric("Exp. match",   "✅ Yes" if r.get("experience_match") else "❌ No")
+                c3.metric("Exp. match",   "✅ Yes" if r.get("experience_match") else "❌ No")
 
                 st.markdown(
                     f'<div style="background:{bg};border-left:4px solid {color};'
@@ -7522,52 +5235,6 @@ Packer.toBuffer(doc)
                                  for s in ms),
                         unsafe_allow_html=True)
 
-                # ── CV PREVIEW + ACTIONS ──────────────────────────
-                _act1, _act2, _act3 = st.columns([2, 2, 2])
-
-                # CV Preview
-                with _act1:
-                    _cv_key = f"_cv_preview_{i}"
-                    if st.button("👁 Preview CV", key=f"prev_{i}_{r.get('name','')}",
-                                 use_container_width=True):
-                        st.session_state[_cv_key] = not st.session_state.get(_cv_key, False)
-                    if st.session_state.get(_cv_key):
-                        _cv_raw = r.get("cv_text", "")
-                        if _cv_raw:
-                            st.text_area("CV Text", value=_cv_raw[:2000] +
-                                ("..." if len(_cv_raw) > 2000 else ""),
-                                height=200, key=f"cvtext_{i}",
-                                label_visibility="collapsed")
-                        else:
-                            st.caption("CV text not available in this session.")
-
-                # Launch Interview
-                with _act2:
-                    if st.button("🎯 Launch Interview", key=f"launch_{i}_{r.get('name','')}",
-                                 type="primary", use_container_width=True,
-                                 help="Load this candidate into Interview Workflow"):
-                        st.session_state.candidate_name  = r.get("name", "")
-                        st.session_state.candidate_email = r.get("email", "")
-                        st.session_state.cv_text         = r.get("cv_text", "")
-                        st.session_state.jd_text         = st.session_state.get("_bulk_jd_full", "")
-                        st.session_state.questions       = []
-                        st.session_state.notes           = {}
-                        st.session_state.scores          = {}
-                        st.session_state.curr_q          = 0
-                        st.session_state.page            = "workflow"
-                        st.rerun()
-
-                # Mark reviewed
-                with _act3:
-                    _rev_key = f"_reviewed_{i}_{r.get('name','')}"
-                    _is_rev  = st.session_state.get(_rev_key, False)
-                    if st.button(
-                        "✅ Reviewed" if _is_rev else "📌 Mark Reviewed",
-                        key=f"rev_{i}_{r.get('name','')}",
-                        use_container_width=True):
-                        st.session_state[_rev_key] = not _is_rev
-                        st.rerun()
-
         # ── Export buttons ────────────────────────────────────────
         st.divider()
         st.markdown("#### 📄 Export Results")
@@ -7580,11 +5247,9 @@ Packer.toBuffer(doc)
                 csv_rows.append({
                     "Rank":             i+1,
                     "Candidate":        r.get("name",""),
-                    "Email":            r.get("email",""),
                     "Score (1-10)":     r.get("overall_score",0),
                     "Verdict":          r.get("verdict",""),
                     "Skill Match %":    r.get("skill_match_pct",0),
-                    "Years Exp":        r.get("years_experience",""),
                     "Exp Match":        "Yes" if r.get("experience_match") else "No",
                     "Matched Skills":   ", ".join(r.get("matched_skills",[])),
                     "Missing Skills":   ", ".join(r.get("missing_skills",[])),
@@ -7600,36 +5265,8 @@ Packer.toBuffer(doc)
                 mime="text/csv",
                 use_container_width=True)
 
-        # Bulk email shortlisted
-        with ex2:
-            with st.expander("📧 Email All Shortlisted", expanded=False):
-                _bl_sender  = cfg.get_settings().get("sender_email","")
-                _bl_pwd     = cfg.get_settings().get("gmail_app_password","")
-                _sl_cands   = [r for r in results if r.get("verdict")=="SHORTLIST" and r.get("email")]
-                st.caption(f"{len(_sl_cands)} shortlisted candidates with email addresses found.")
-                _bl_subj    = st.text_input("Subject", value="Interview Opportunity — Next Steps",
-                    key="bl_subj")
-                _bl_body    = st.text_area("Email body", key="bl_body", height=100,
-                    value="Dear Candidate,\n\nCongratulations! Your profile has been shortlisted. "
-                    "We will contact you shortly to schedule an interview.\n\n"
-                    f"Best regards,\n{cfg.get_settings().get('interviewer_name','IAS Team')}\nIAS v9.0 | GVS Technologies")
-                if st.button("📧 Send to All Shortlisted", type="primary",
-                             use_container_width=True,
-                             disabled=not(_bl_sender and _bl_pwd and _sl_cands)):
-                    _sent, _failed = 0, 0
-                    for _sc in _sl_cands:
-                        _ok, _ = _send_email_custom(_bl_sender, _bl_pwd,
-                            _sc["email"], _bl_subj,
-                            _bl_body.replace("Dear Candidate", f"Dear {_sc['name'].split()[0]}"))
-                        if _ok: _sent += 1
-                        else:   _failed += 1
-                    st.success(f"✅ Sent to {_sent} candidates." +
-                        (f" ⚠️ {_failed} failed." if _failed else ""))
-                if not (_bl_sender and _bl_pwd):
-                    st.caption("⚙️ Configure Gmail in Settings → Notifications to enable bulk email.")
-
         # DOCX report
-        with ex3:
+        with ex2:
             if st.button("📄 Generate DOCX Report", type="primary",
                          use_container_width=True):
                 with st.spinner("Generating report..."):
@@ -8848,7 +6485,7 @@ elif st.session_state.page == "compliance":
                     f"IAS STANDARDISED JOB DESCRIPTION\n{'='*60}\n"
                     f"Role: {c_rt} | Industry: {comp_industry} | Grade: {c_jg}\n"
                     f"Positions: {c_np} | Location: {c_wl} | Mode: {c_wm}\n"
-                    f"Generated: {date.today()} | Template: TPL-JD-001 v3.0 | IAS v9.0\n"
+                    f"Generated: {date.today()} | Template: TPL-JD-001 v3.0 | IAS v6.0\n"
                     f"{'='*60}\n\n" + st.session_state["_c_jd_std"]
                 )
                 st.download_button("⬇️ Download Standardised JD",
@@ -8998,7 +6635,7 @@ elif st.session_state.page == "compliance":
                            f"Scope: {pol['scope']}\n{'='*60}\n\n")
                 for t,c in pol["sections"]:
                     pol_txt += f"{t}\n{c}\n\n"
-                pol_txt += f"---\nIAS v9.0 | GVS Technologies | {date.today()}"
+                pol_txt += f"---\nIAS v6.0 | GVS Technologies | {date.today()}"
                 st.download_button(f"⬇️ Download {pid}",
                     data=pol_txt.encode(),
                     file_name=f"{pid}_{pol['title'].replace(' ','_')}.txt",
@@ -9072,7 +6709,7 @@ elif st.session_state.page == "compliance":
             ss_list = [s.strip() for s in tb_ss.replace("\n",",").split(",") if s.strip()]
             jd_built = (
                 f"IAS STANDARD JOB DESCRIPTION\n{'='*60}\n"
-                f"Template: TPL-JD-001 v3.0 | Generated: {date.today()} | IAS v9.0\n{'='*60}\n\n"
+                f"Template: TPL-JD-001 v3.0 | Generated: {date.today()} | IAS v6.0\n{'='*60}\n\n"
                 f"## ROLE TITLE\n{tb_role}\n\n"
                 f"## ROLE OVERVIEW\n{tb_ov}\n\n"
                 f"## KEY RESPONSIBILITIES\n{tb_rsp}\n\n"
@@ -9090,7 +6727,7 @@ elif st.session_state.page == "compliance":
                 f"{tb_jg.split('—')[0].strip()} | {tb_pos} position(s)\n\n"
                 f"## COMPENSATION\n{tb_sal or 'As per company compensation policy'}\n\n"
                 f"## DEI STATEMENT\n{DEI_STD}\n\n"
-                f"---\nGenerated by IAS v9.0 | TPL-JD-001 | POL-001 Compliant"
+                f"---\nGenerated by IAS v6.0 | TPL-JD-001 | POL-001 Compliant"
             )
             st.session_state["_c_jd_std"] = jd_built
             st.session_state["_c_jd_data"] = {
@@ -9187,7 +6824,7 @@ elif st.session_state.page == "compliance":
                         f'border-left:3px solid #00B0F0;border-radius:0 6px 6px 0;'
                         f'margin:3px 0;font-size:12px">{item}</div>', unsafe_allow_html=True)
                 tid = tpl_name.split("—")[0].strip()
-                content = f"{tpl_name}\n{'='*60}\n\n" + "\n".join(items) + f"\n\n---\nIAS v9.0 | {date.today()}"
+                content = f"{tpl_name}\n{'='*60}\n\n" + "\n".join(items) + f"\n\n---\nIAS v6.0 | {date.today()}"
                 st.download_button(f"⬇️ Download {tid}",
                     data=content.encode(),
                     file_name=f"{tid.replace('-','_').replace(' ','_')}.txt",
@@ -9285,117 +6922,6 @@ elif st.session_state.page == "compliance":
 elif st.session_state.page == "hiring2026":
     import pandas as _pd26
     from datetime import datetime as _dt26
-
-    # ══════════════════════════════════════════════════════════════
-    # SPRINT 3: INDUSTRY MARKET INTELLIGENCE DASHBOARD
-    # ══════════════════════════════════════════════════════════════
-    _sel_mkt_ind = st.session_state.get("selected_industry", "IT & Software")
-    _mkt = get_market_intel(_sel_mkt_ind)
-
-    if _mkt:
-        st.markdown(f"## 🌐 Market Intelligence — {_sel_mkt_ind}")
-        st.caption(f"{_mkt.get('demand_driver','')}")
-
-        # ── Top KPI row ──────────────────────────────────────────
-        _mk1, _mk2, _mk3, _mk4 = st.columns(4)
-        _dir = "↑" if _mkt.get("demand_direction") == "up" else "↓"
-        with _mk1:
-            st.metric("Demand YoY", f"{_dir} {_mkt.get('demand_yoy',0)}%",
-                      delta=f"{_mkt.get('demand_yoy',0)}% vs last year",
-                      delta_color="normal")
-        with _mk2:
-            st.metric("Avg. Hiring Days", _mkt.get("avg_hiring_days","—"),
-                      delta="Industry benchmark")
-        with _mk3:
-            st.metric("Interview Rounds", _mkt.get("interview_rounds","—"),
-                      delta="Typical process")
-        with _mk4:
-            st.metric("Shortage Roles", len(_mkt.get("shortage_roles",[])),
-                      delta="Critical gaps")
-
-        st.divider()
-
-        # ── Salary benchmarks ─────────────────────────────────────
-        st.markdown("### 💰 Salary Benchmarks by Level & Region")
-        _sal_bands = _mkt.get("salary_bands", {})
-        if _sal_bands:
-            import pandas as _pd_mkt
-            _sal_rows = []
-            _levels = ["junior","mid","senior","lead","head"]
-            _level_labels = {"junior":"Junior (0–3y)","mid":"Mid (4–7y)",
-                             "senior":"Senior (7–12y)","lead":"Lead/Principal","head":"Head/C-Suite"}
-            for _lvl in _levels:
-                _row = {"Level": _level_labels.get(_lvl,_lvl)}
-                for _region, _bands in _sal_bands.items():
-                    _row[_region] = _bands.get(_lvl,"—")
-                _sal_rows.append(_row)
-            _df_sal = _pd_mkt.DataFrame(_sal_rows)
-            st.dataframe(_df_sal, use_container_width=True, hide_index=True)
-
-        st.divider()
-
-        # ── Shortage roles + Emerging skills ─────────────────────
-        _sr_col, _es_col = st.columns(2)
-        with _sr_col:
-            st.markdown("### 🔥 Critical Shortage Roles")
-            for _role in _mkt.get("shortage_roles",[]):
-                st.markdown(
-                    f'<div style="background:rgba(204,0,0,0.08);border-left:3px solid #CC0000;'
-                    f'border-radius:0 6px 6px 0;padding:7px 12px;margin-bottom:6px;'
-                    f'font-size:12px;color:#C8D8E4">'
-                    f'<b>⚠</b> {_role}</div>',
-                    unsafe_allow_html=True)
-        with _es_col:
-            st.markdown("### 🚀 Emerging Skills to Screen For")
-            for _skill in _mkt.get("emerging_skills",[]):
-                st.markdown(
-                    f'<div style="background:rgba(0,201,167,0.08);border-left:3px solid #00C9A7;'
-                    f'border-radius:0 6px 6px 0;padding:7px 12px;margin-bottom:6px;'
-                    f'font-size:12px;color:#C8D8E4">'
-                    f'<b>✦</b> {_skill}</div>',
-                    unsafe_allow_html=True)
-
-        st.divider()
-
-        # ── Cross-industry demand heatmap ─────────────────────────
-        st.markdown("### 📊 Cross-Industry Demand Comparison")
-        _all_intel = []
-        for _ind_name in get_industry_names():
-            _intel = get_market_intel(_ind_name)
-            if _intel:
-                _all_intel.append({
-                    "Industry": _ind_name,
-                    "Demand ↑ YoY": f"↑ {_intel.get('demand_yoy',0)}%",
-                    "Avg Hiring Days": _intel.get("avg_hiring_days","—"),
-                    "Interview Rounds": _intel.get("interview_rounds","—"),
-                    "Shortage Roles": ", ".join(_intel.get("shortage_roles",[])[:2]),
-                    "Key Driver": _intel.get("demand_driver","")[:55] + "...",
-                })
-        import pandas as _pd_heat
-        _df_heat = _pd_heat.DataFrame(_all_intel)
-        st.dataframe(_df_heat, use_container_width=True, hide_index=True)
-
-        st.divider()
-
-    # ── Industry selector for market intel ───────────────────────
-    st.markdown("### 🌐 Switch Industry View")
-    _mkt_ind_cols = st.columns(4)
-    for _mii, _ind_n in enumerate(get_industry_names()):
-        with _mkt_ind_cols[_mii % 4]:
-            _ind_d = get_industry_config(_ind_n)
-            if st.button(
-                f"{_ind_d['icon']} {_ind_n.split(' &')[0][:14]}",
-                key=f"mkt_ind_{_mii}",
-                use_container_width=True,
-                type="primary" if _ind_n == _sel_mkt_ind else "secondary"
-            ):
-                st.session_state["selected_industry"] = _ind_n
-                st.rerun()
-
-    st.divider()
-    st.markdown("---")
-    st.markdown("#### 📈 2026 Hiring Intelligence (Global Trends)")
-
 
     # ── 12 Challenges data ────────────────────────────────────
     CHALLENGES = [
@@ -9921,7 +7447,7 @@ elif st.session_state.page == "hiring2026":
                 f"- {c['id']} {c['challenge']} ({c['severity']}): {c['stat']}"
                 for c in CHALLENGES)
             ias_capabilities = (
-                "IAS v9.0 capabilities: AI Q-gen (20s), Whisper ASR scoring, "
+                "IAS v6.0 capabilities: AI Q-gen (20s), Whisper ASR scoring, "
                 "Bulk CV Review (AI scores CVs 1-10 vs JD), Gmail monitor (ZERO touch intake), "
                 "One-click pipeline (35s report+email), Compliance Hub (JD bias scanner, 8-stage tracker), "
                 "Hiring Portfolio (effort estimation, source ROI, resource capacity), "
@@ -10123,43 +7649,38 @@ elif st.session_state.page == "offerletter":
                 file_name=f"OfferLetter_{meta.get('name','candidate').replace(' ','_')}_{date.today()}.txt",
                 mime="text/plain", use_container_width=True)
         with dc2:
-            # DOCX via python-docx (cloud compatible)
+            # DOCX via Node.js
             if st.button("📄 Generate DOCX", type="primary", use_container_width=True):
-                try:
-                    from docx import Document as _DocxDoc
-                    from docx.shared import Pt, Inches, RGBColor
-                    from docx.enum.text import WD_ALIGN_PARAGRAPH
-                    import io as _io
-                    _doc = _DocxDoc()
-                    for _sec in _doc.sections:
-                        _sec.top_margin    = Inches(1)
-                        _sec.bottom_margin = Inches(1)
-                        _sec.left_margin   = Inches(1.2)
-                        _sec.right_margin  = Inches(1.2)
-                    # Company header
-                    _hdr = _doc.add_paragraph()
-                    _hdr.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    _hr = _hdr.add_run(meta.get("company","GVS Technologies"))
-                    _hr.font.name = "Calibri"; _hr.font.size = Pt(16); _hr.font.bold = True
-                    _hr.font.color.rgb = RGBColor(0x1F,0x38,0x64)
-                    _doc.add_paragraph()
-                    # Date line
-                    _dp = _doc.add_paragraph()
-                    _dp.add_run(f"Date: {date.today().strftime('%d %B %Y')}").font.size = Pt(11)
-                    _doc.add_paragraph()
-                    # Letter body
-                    for _line in st.session_state["_offer_text"].split("\n"):
-                        _p  = _doc.add_paragraph()
-                        _r  = _p.add_run(_line)
-                        _r.font.name = "Calibri"; _r.font.size = Pt(11)
-                        _p.paragraph_format.space_after = Pt(3)
-                    _buf = _io.BytesIO()
-                    _doc.save(_buf); _buf.seek(0)
-                    st.session_state["_offer_docx"] = _buf.read()
-                    st.success("✅ DOCX ready — click Download DOCX")
-                    st.rerun()
-                except Exception as _de:
-                    st.error(f"DOCX failed: {_de}")
+                import subprocess, json as _sj
+                OUT = ROOT / "output"
+                OUT.mkdir(exist_ok=True)
+                out_file = str(OUT / "OfferLetter.docx").replace("\\","/")
+                pkg_path = str(OUT / "node_modules" / "docx").replace("\\","/")
+                offer_escaped = st.session_state["_offer_text"].replace("\n","\\n").replace('"','\\\"')                    .replace("'","\\\'")
+                js_ol = f"""
+const {{Document,Packer,Paragraph,TextRun,AlignmentType}}=require('{pkg_path}');
+const fs=require('fs');
+const lines=`{st.session_state["_offer_text"]}`.split('\\n');
+const children=lines.map(l=>new Paragraph({{
+  spacing:{{before:120,after:60}},
+  children:[new TextRun({{text:l,font:"Calibri",size:22,color:"1a1a1a"}})]
+}}));
+const doc=new Document({{sections:[{{
+  properties:{{page:{{margin:{{top:1440,right:1440,bottom:1440,left:1440}}}}}},
+  children
+}}]}});
+Packer.toBuffer(doc).then(b=>{{fs.writeFileSync('{out_file}',b);console.log('OK');}})
+.catch(e=>{{console.error(e.message);process.exit(1);}});
+"""
+                js_path = OUT / "gen_offer.js"
+                js_path.write_text(js_ol, encoding="utf-8")
+                res = subprocess.run(["node",str(js_path)],capture_output=True,timeout=60)
+                if res.returncode == 0 and (OUT/"OfferLetter.docx").exists():
+                    with open(OUT/"OfferLetter.docx","rb") as f:
+                        st.session_state["_offer_docx"] = f.read()
+                    st.success("✅ DOCX ready")
+                else:
+                    st.error("DOCX failed — Node.js required")
         with dc3:
             if st.session_state.get("_offer_docx"):
                 st.download_button("⬇️ Download DOCX",
@@ -11508,7 +9029,7 @@ elif st.session_state.page == "intHub":
                 if wh:
                     try:
                         payload = _ihj.dumps({"text":
-                            "✅ *IAS v9.0 Test* — Slack integration working! "
+                            "✅ *IAS v7.0 Test* — Slack integration working! "
                             f"Channel: {settings_ih.get('slack_channel','')}"}).encode()
                         req = _iur.Request(wh, data=payload,
                             headers={"Content-Type":"application/json"})
@@ -11542,7 +9063,7 @@ elif st.session_state.page == "intHub":
                             "@type":"MessageCard","@context":"http://schema.org/extensions",
                             "themeColor":"00B0F0",
                             "summary":"IAS Test",
-                            "sections":[{"activityTitle":"✅ IAS v9.0 Test",
+                            "sections":[{"activityTitle":"✅ IAS v7.0 Test",
                                 "activitySubtitle":"Teams integration working!",
                                 "activityText":"Hiring alerts will appear here."}]
                         }).encode()
@@ -11698,7 +9219,7 @@ elif st.session_state.page == "calendar":
             st.markdown("**📧 Invite Preview:**")
             invite_body = (
                 f"Dear {cal_cand},\n\n"
-                f"Your {cal_round} interview for {cal_role or 'the position'} has been scheduled.\n\n"
+                f"Your {cal_round} interview for **{cal_role or 'the position'}** has been scheduled.\n\n"
                 f"📅 Date: {cal_dt.strftime('%A, %d %B %Y')}\n"
                 f"⏰ Time: {cal_dt.strftime('%I:%M %p')} – {cal_end.strftime('%I:%M %p')}\n"
                 f"⏱ Duration: {cal_dur} minutes\n"
@@ -11706,8 +9227,8 @@ elif st.session_state.page == "calendar":
                 f"🔗 Link: {cal_link or 'To be shared separately'}\n\n"
                 f"Please confirm your attendance by replying to this email.\n\n"
                 f"Best regards,\n"
-                f"{settings_cal.get('interviewer_name','Gokul Prakash T')}\n"
-                f"IAS v9.0 | {settings_cal.get('brand_company','GVS Technologies')}"
+                f"{settings_cal.get('interviewer_name','IAS v7.0')}\n"
+                f"{settings_cal.get('brand_company','GVS Technologies')}"
             )
             st.text_area("Invite body (editable)",
                 value=invite_body, height=200, key="cal_invite_body")
@@ -11721,7 +9242,7 @@ elif st.session_state.page == "calendar":
             uid_str  = f"IAS-{cal_cand.replace(' ','')}-{cal_dt.strftime('%Y%m%dT%H%M%S')}"
             ics_content = (
                 "BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
-                "PRODID:-//IAS v9.0//GVS Technologies//EN\r\n"
+                "PRODID:-//IAS v7.0//GVS Technologies//EN\r\n"
                 "METHOD:REQUEST\r\n"
                 "BEGIN:VEVENT\r\n"
                 f"UID:{uid_str}\r\n"
@@ -11745,32 +9266,17 @@ elif st.session_state.page == "calendar":
                 file_name=f"IAS_Interview_{cal_cand.replace(' ','_')}_{cal_date}.ics",
                 mime="text/calendar", use_container_width=True)
 
-            # Also email the invite with .ics attachment
+            # Also email the invite
             if st.session_state.get("cal_invite_body"):
                 sender_e = settings_cal.get("sender_email","")
                 app_pw   = settings_cal.get("gmail_app_password","")
                 if sender_e and app_pw and cal_email:
-                    import tempfile, os as _os
-                    _ics_path = None
-                    try:
-                        _tf = tempfile.NamedTemporaryFile(
-                            suffix=".ics", delete=False,
-                            prefix=f"IAS_{cal_cand.replace(' ','_')}_")
-                        _tf.write(ics_content.encode())
-                        _tf.close()
-                        _ics_path = _tf.name
-                    except Exception:
-                        _ics_path = None
                     ok_cal, msg_cal = _send_email_custom(
                         sender_e, app_pw, cal_email,
                         f"Interview Scheduled: {cal_round} — {cal_role or 'Position'}",
-                        st.session_state["cal_invite_body"],
-                        docx_path=_ics_path)
-                    if _ics_path:
-                        try: _os.unlink(_ics_path)
-                        except: pass
+                        st.session_state["cal_invite_body"])
                     if ok_cal:
-                        st.success(f"✅ Invite emailed to {cal_email} with calendar attachment")
+                        st.success(f"✅ Invite emailed to {cal_email}")
                     else:
                         st.warning(f"Invite generated. Email: {msg_cal}")
 
@@ -12038,7 +9544,7 @@ elif st.session_state.page == "esign":
                     f"2. Reply to this email with 'I AGREE AND SIGN — {sign_id}' to confirm\n"
                     f"3. Deadline: {es_deadline}\n\n"
                     f"Reference: {sign_id}\n"
-                    f"Sent by IAS v9.0 | GVS Technologies"
+                    f"Sent by IAS v7.0 | GVS Technologies"
                 )
                 ok_es, msg_es = _send_email_custom(
                     sender_e, app_pw, es_email,
@@ -12470,7 +9976,7 @@ services:
       - "8501:8501"
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - IAS_BRAND_NAME=${IAS_BRAND_NAME:-IAS v9.0}
+      - IAS_BRAND_NAME=${IAS_BRAND_NAME:-IAS v7.0}
     volumes:
       - ias_data:/app/IAS6/data
       - ias_output:/app/IAS6/output
@@ -12524,7 +10030,7 @@ docker-compose down
             placeholder="sk-ant-api03-...",
             help="Used only to generate the .env file — not stored here")
         brand_n = st.text_input("Brand name override",
-            value=cfg.get_settings().get("brand_name","IAS v9.0"))
+            value=cfg.get_settings().get("brand_name","IAS v7.0"))
 
         if st.button("⬇️ Generate .env file", use_container_width=True):
             env_content = (
@@ -12591,7 +10097,7 @@ az container create \\
 
 **Step 1** — Push to GitHub:
 ```bash
-git init && git add . && git commit -m "IAS v9.0"
+git init && git add . && git commit -m "IAS v7.0"
 git remote add origin https://github.com/YOUR_USERNAME/ias-app.git
 git push -u origin main
 ```
@@ -13137,7 +10643,7 @@ elif st.session_state.page == "gdpr":
                 f"{'='*50}\n"
                 f"Generated: {date.today()}\n"
                 f"Organisation: {settings_gdx.get('brand_company','GVS Technologies')}\n"
-                f"System: IAS v9.0 — AI Interview Assessment\n\n"
+                f"System: IAS v7.0 — AI Interview Assessment\n\n"
                 f"DATA CONTROLLER DETAILS\n"
                 f"Name: {settings_gdx.get('interviewer_name','Gokul Prakash T')}\n"
                 f"Contact: {settings_gdx.get('sender_email','gokul1978@gmail.com')}\n\n"
@@ -13185,7 +10691,7 @@ elif st.session_state.page == "apilayer":
         st.caption("Deploy alongside IAS using FastAPI — enables any external system to call IAS")
 
         fastapi_code = '''"""
-IAS v9.0 — FastAPI REST Layer
+IAS v7.0 — FastAPI REST Layer
 Run: uvicorn ias_api:app --host 0.0.0.0 --port 8000
 Docs: http://localhost:8000/docs
 """
@@ -13197,7 +10703,7 @@ import json, sys, anthropic
 from pathlib import Path
 
 app = FastAPI(
-    title="IAS v9.0 API",
+    title="IAS v7.0 API",
     description="Interview Assessment System — REST API",
     version="7.0.0"
 )
@@ -14872,7 +12378,7 @@ elif st.session_state.page == "jobboards":
 
 
 # ════════════════════════════════════════════════════════════════
-# IAS v9.0 — NEW FEATURES (from global benchmark feedback)
+# IAS v8 — NEW FEATURES (from global benchmark feedback)
 # ════════════════════════════════════════════════════════════════
 
 # ── GAP 1: ATS INTEGRATION LAYER ────────────────────────────────
@@ -15818,51 +13324,6 @@ elif st.session_state.page == "copilot":
                 _sc2.metric("Remaining", len(_qs_todo))
                 _sc3.metric("Coverage", f"{round(len(_qs_done)/max(len(st.session_state.questions),1)*100)}%")
             with _cpb:
-                # ── PACING GUIDANCE ──────────────────────────────
-                _total_q = len(st.session_state.questions)
-                _done_q  = sum(1 for q in st.session_state.questions
-                               if st.session_state.notes.get(str(q.get("num",0)),"").strip())
-                _pct     = int(_done_q / _total_q * 100) if _total_q else 0
-                _pace_color = "#00C9A7" if _pct >= 60 else "#F5A623" if _pct >= 30 else "#FF4444"
-                st.markdown(
-                    f'<div style="background:rgba(0,0,0,0.2);border:1px solid rgba(0,201,167,0.2);'
-                    f'border-radius:8px;padding:10px 14px;margin-bottom:10px">'
-                    f'<div style="font-size:10px;color:#4A6A80;letter-spacing:0.1em;text-transform:uppercase">Interview Pace</div>'
-                    f'<div style="font-size:22px;font-weight:700;color:{_pace_color}">{_done_q}/{_total_q}</div>'
-                    f'<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:6px;margin-top:6px">'
-                    f'<div style="background:{_pace_color};width:{_pct}%;height:6px;border-radius:4px"></div></div>'
-                    f'<div style="font-size:10px;color:#4A6A80;margin-top:4px">'
-                    f'{"✅ On track" if _pct >= 60 else "⚡ Speed up" if _pct < 30 else "📊 Good pace"}</div>'
-                    f'</div>', unsafe_allow_html=True)
-
-                # ── QUICK FOLLOW-UP SUGGESTIONS ──────────────────
-                if st.button("💡 Follow-up Suggestions", use_container_width=True,
-                             disabled=not apikey.is_valid(),
-                             key="cop_followup_btn",
-                             help="AI suggests 3 follow-up questions for the current question"):
-                    _curr_idx = st.session_state.get("curr_q", 0)
-                    _curr_obj = st.session_state.questions[_curr_idx] if st.session_state.questions else {}
-                    with st.spinner("Generating..."):
-                        _fup = apikey.get_client().messages.create(
-                            model=apikey.get_model(), max_tokens=250,
-                            messages=[{"role":"user","content":
-                                f"Generate 3 sharp probing follow-up questions for:\n"
-                                f"Question: {_curr_obj.get('question','')}\n"
-                                f"Notes so far: {st.session_state.notes.get(str(_curr_obj.get('num',1)),'No notes')}\n"
-                                f"Role context: {st.session_state.jd_text[:100]}\n"
-                                f"Return 3 numbered follow-ups only."}])
-                    st.session_state["_cop_followups"] = _fup.content[0].text
-                    st.rerun()
-                if st.session_state.get("_cop_followups"):
-                    st.markdown(
-                        f'<div style="background:#0D1B2A;border:1px solid rgba(0,201,167,0.3);'
-                        f'border-radius:8px;padding:10px 12px;font-size:12px;color:#E8F2FF;line-height:1.7">'
-                        f'<div style="font-size:10px;color:#00C9A7;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">'
-                        f'💡 Follow-up Suggestions</div>'
-                        f'{st.session_state["_cop_followups"]}</div>',
-                        unsafe_allow_html=True)
-                st.divider()
-                # ── COMPETENCY ALERTS (existing) ──────────────────
                 st.markdown("#### Competency Alerts")
                 _noted_sk = set(q.get("skill","") for i,q in enumerate(st.session_state.questions) if st.session_state.notes.get(str(q.get("num",i+1)),"").strip())
                 _all_sk = set(q.get("skill","") for q in st.session_state.questions) - {""}
