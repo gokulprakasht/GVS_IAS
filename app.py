@@ -7880,6 +7880,9 @@ elif st.session_state.page == "portfolio":
         vdf = pd.DataFrame(velocity_data)
         st.bar_chart(vdf.set_index("Month")[["Joined","Offered"]], use_container_width=True)
 
+	show_kpi_layer()
+	show_forecast()
+	show_infographic()
     # ══════════════════════════════════════════════════════════════
     # TAB 2 — PORTFOLIO OVERVIEW
     # ══════════════════════════════════════════════════════════════
@@ -17021,15 +17024,4 @@ elif st.session_state.page == "predictive":
                 data=st.session_state["_hf_data"].encode(),
                 file_name="HiringForecast_H2_2026.txt",
                 mime="text/plain", use_container_width=True)
-def main():
-    st.title("IAS v9.0 Command Centre")
-    # existing tactical metrics code...
-
-    # --- New Executive Dashboard Panels ---
-    show_kpi_layer()
-    show_forecast()
-    show_infographic()
-
-if __name__ == "__main__":
-    main()
 
