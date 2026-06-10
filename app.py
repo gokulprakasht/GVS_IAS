@@ -8,6 +8,11 @@ import streamlit as st
 import os, sys, json, re, smtplib
 from pathlib import Path
 from datetime import datetime, date
+from kpi_layer import show_kpi_layer
+from forecast import show_forecast
+from infographic import show_infographic
+
+
 
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "core"))
@@ -17017,3 +17022,6 @@ elif st.session_state.page == "predictive":
                 file_name="HiringForecast_H2_2026.txt",
                 mime="text/plain", use_container_width=True)
 
+show_kpi_layer()
+show_forecast()
+show_infographic()
