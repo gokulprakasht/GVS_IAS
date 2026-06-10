@@ -7880,9 +7880,6 @@ elif st.session_state.page == "portfolio":
         vdf = pd.DataFrame(velocity_data)
         st.bar_chart(vdf.set_index("Month")[["Joined","Offered"]], use_container_width=True)
 
-	show_kpi_layer()
-	show_forecast()
-	show_infographic()
     # ══════════════════════════════════════════════════════════════
     # TAB 2 — PORTFOLIO OVERVIEW
     # ══════════════════════════════════════════════════════════════
