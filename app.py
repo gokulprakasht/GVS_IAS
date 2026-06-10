@@ -20,11 +20,11 @@ import apikey
 def _load_cloud_secrets():
     try:
         _sec = st.secrets
-        # API key — inject directly into memory (read-only filesystem safe)
+        # API key — inject directly into apikey module (no file write needed)
         _ak = _sec.get("ANTHROPIC_API_KEY","")
         if _ak and _ak.startswith("sk-ant-"):
-            apikey._KEY = _ak
-            try:
+            apikey._KEY = _ak  # inject directly — avoids read-only filesystem issue
+            try:  # also try writing for local mode (may fail on cloud, that's OK)
                 _kf = ROOT / "api_key.txt"
                 _kf.write_text(_ak)
             except Exception:
@@ -1897,7 +1897,7 @@ def _clean_json(text):
     return text.strip()
 
 def _extract_text(f):
-    from io import BytesIO
+    import tempfile as tf, os as _os
     nm = f.name.lower()
     # Seek to start — Streamlit may have read the buffer already
     try: f.seek(0)
@@ -1906,29 +1906,22 @@ def _extract_text(f):
     if not raw:
         try: f.seek(0); raw = f.read()
         except: pass
-    if not raw:
-        return "Error: file is empty or could not be read"
-    bio = BytesIO(raw)
+    with tf.NamedTemporaryFile(delete=False, suffix=_os.path.splitext(nm)[1]) as t:
+        t.write(raw); tp = t.name
     try:
         if nm.endswith(".pdf"):
-            try:
-                from pypdf import PdfReader
-            except ImportError:
-                try:
-                    from PyPDF2 import PdfReader
-                except ImportError:
-                    return "Error: PDF library not available"
-            text = " ".join(p.extract_text() or "" for p in PdfReader(bio).pages).strip()
-            return text
+            from pypdf import PdfReader
+            return " ".join(p.extract_text() or "" for p in PdfReader(tp).pages).strip()
         elif nm.endswith(".docx"):
             from docx import Document
-            return "\n".join(p.text for p in Document(bio).paragraphs if p.text.strip())
+            return "\n".join(p.text for p in Document(tp).paragraphs if p.text.strip())
         elif nm.endswith(".txt"):
             return raw.decode("utf-8", "replace").strip()
-        else:
-            return f"Error: unsupported file type"
-    except Exception as e:
-        return f"Error: {e}"
+    except Exception as e: return f"Error: {e}"
+    finally:
+        try: _os.unlink(tp)
+        except: pass
+    return ""
 
 def _extract_details(text):
     d={"name":"","email":"","phone":""}
@@ -3099,10 +3092,6 @@ if st.session_state.page == "home":
     _now_h     = _dth.now()
     _today_str = _now_h.strftime("%A, %d %B %Y  ·  %H:%M")
     _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
-    _curr_ind    = (st.session_state.get("selected_industry") or
-                    settings_h.get("industry") or
-                    "IT & Software")
-    st.session_state["selected_industry"] = _curr_ind
 
     # ── Derived metrics ─────────────────────────────────────────
     _total_interviews = stats_h.get("total", len(results_h))
@@ -5100,7 +5089,6 @@ elif st.session_state.page=="workflow":
 
             with r_col:
                 st.markdown("#### 📄 Generate DOCX Report")
-                settings_e = cfg.get_settings()  # ensure available for report preview
                 # ── REPORT PREVIEW ────────────────────────────────
                 with st.expander("👁 Report Preview", expanded=False):
                     st.markdown(
