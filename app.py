@@ -1906,22 +1906,24 @@ def _extract_text(f):
     if not raw:
         try: f.seek(0); raw = f.read()
         except: pass
-    with tf.NamedTemporaryFile(delete=False, suffix=_os.path.splitext(nm)[1]) as t:
-        t.write(raw); tp = t.name
+    from io import BytesIO
+    bio = BytesIO(raw)
     try:
         if nm.endswith(".pdf"):
-            from pypdf import PdfReader
-            return " ".join(p.extract_text() or "" for p in PdfReader(tp).pages).strip()
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                from PyPDF2 import PdfReader
+            return " ".join(pg.extract_text() or "" for pg in PdfReader(bio).pages).strip()
         elif nm.endswith(".docx"):
             from docx import Document
-            return "\n".join(p.text for p in Document(tp).paragraphs if p.text.strip())
+            return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
         elif nm.endswith(".txt"):
             return raw.decode("utf-8", "replace").strip()
-    except Exception as e: return f"Error: {e}"
-    finally:
-        try: _os.unlink(tp)
-        except: pass
-    return ""
+        else:
+            return "Error: unsupported type"
+    except Exception as e:
+        return f"Error: {e}"
 
 def _extract_details(text):
     d={"name":"","email":"","phone":""}
@@ -3092,6 +3094,8 @@ if st.session_state.page == "home":
     _now_h     = _dth.now()
     _today_str = _now_h.strftime("%A, %d %B %Y  ·  %H:%M")
     _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
+    _curr_ind = (st.session_state.get("selected_industry") or "IT & Software")
+    st.session_state["selected_industry"] = _curr_ind
 
     # ── Derived metrics ─────────────────────────────────────────
     _total_interviews = stats_h.get("total", len(results_h))
@@ -5089,6 +5093,7 @@ elif st.session_state.page=="workflow":
 
             with r_col:
                 st.markdown("#### 📄 Generate DOCX Report")
+                settings_e = cfg.get_settings()
                 # ── REPORT PREVIEW ────────────────────────────────
                 with st.expander("👁 Report Preview", expanded=False):
                     st.markdown(
