@@ -1920,6 +1920,20 @@ def _extract_text(f):
             return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
         elif nm.endswith(".txt"):
             return raw.decode("utf-8", "replace").strip()
+        elif nm.endswith(".doc"):
+            # Convert .doc via python-docx (works for most .doc files)
+            try:
+                from docx import Document
+                return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
+            except Exception:
+                return "Error: .doc format not fully supported. Please save as .docx and re-upload."
+        elif nm.endswith(".doc"):
+            # Convert .doc via python-docx (works for most .doc files)
+            try:
+                from docx import Document
+                return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
+            except Exception:
+                return "Error: .doc format not fully supported. Please save as .docx and re-upload."
         else:
             return "Error: unsupported type"
     except Exception as e:
@@ -4103,14 +4117,17 @@ elif st.session_state.page=="workflow":
 
         d1,d2,d3=st.columns(3)
         with d1:
-            st.session_state.candidate_name=st.text_input("Candidate Name *",
-                value=st.session_state.candidate_name,placeholder="Auto-filled from CV")
+            _cname_val=st.text_input("Candidate Name *",
+                value=st.session_state.candidate_name,placeholder="Auto-filled from CV",key="_inp_cname")
+            if _cname_val != st.session_state.candidate_name: st.session_state.candidate_name=_cname_val
         with d2:
-            st.session_state.candidate_email=st.text_input("Email",
-                value=st.session_state.candidate_email,placeholder="Auto-filled from CV")
+            _cemail_val=st.text_input("Email",
+                value=st.session_state.candidate_email,placeholder="Auto-filled from CV",key="_inp_cemail")
+            if _cemail_val != st.session_state.candidate_email: st.session_state.candidate_email=_cemail_val
         with d3:
-            st.session_state.candidate_phone=st.text_input("Phone",
-                value=st.session_state.candidate_phone,placeholder="Auto-filled from CV")
+            _cphone_val=st.text_input("Phone",
+                value=st.session_state.candidate_phone,placeholder="Auto-filled from CV",key="_inp_cphone")
+            if _cphone_val != st.session_state.candidate_phone: st.session_state.candidate_phone=_cphone_val
 
         # ── CANDIDATE HISTORY LOOKUP ──────────────────────────────
         _cname_lookup = st.session_state.candidate_name
@@ -4138,7 +4155,7 @@ elif st.session_state.page=="workflow":
 
         # CV upload
         st.markdown("#### 📄 Candidate CV")
-        cv_file=st.file_uploader("📎 Upload CV (PDF or DOCX)",type=["pdf","docx"],
+        cv_file=st.file_uploader("📎 Upload CV (PDF, DOCX or DOC)",type=["pdf","docx","doc"],
                                   key="cv_upload")
         if cv_file:
             with st.spinner("Reading CV..."):
@@ -4164,8 +4181,8 @@ elif st.session_state.page=="workflow":
         st.markdown("#### 📋 Job Description")
 
         jd_file = st.file_uploader(
-            "📎 Upload JD (PDF or DOCX)",
-            type=["pdf","docx","txt"],
+            "📎 Upload JD (PDF, DOCX, DOC or TXT)",
+            type=["pdf","docx","doc","txt"],
             key="jd_upload",
             help="Supports PDF, DOCX, and TXT files")
 
