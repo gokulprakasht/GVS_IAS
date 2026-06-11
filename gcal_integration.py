@@ -349,10 +349,8 @@ def render_gcal_schedule_button(
     )
 
     if not gcal_ready:
-        st.info(
-            "🔑 Google Calendar not configured. "
-            "Go to **Settings → Calendar Config** and paste your Service Account JSON."
-        )
+        # ICS-based scheduling still works — only direct push needs service account
+        st.caption("Direct Google Calendar push not configured. ICS download works.")
         return
 
     col1, col2 = st.columns([3, 1])

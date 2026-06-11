@@ -2893,7 +2893,11 @@ with st.sidebar:
     if has_session:
         noted=sum(1 for k,v in st.session_state.notes.items()
                   if not k.startswith("score_") and isinstance(v,str) and v.strip())
-        st.success(f"📌 {st.session_state.candidate_name[:20]}\n{len(st.session_state.questions)} Qs · {noted} notes")
+        st.sidebar.markdown(
+            f'<div style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.3);'
+            f'border-radius:4px;padding:6px 10px;font-size:11px;color:#00C9A7;margin-bottom:6px">'
+            f'Active: {st.session_state.candidate_name[:18]} · {len(st.session_state.questions)}Q · {noted} notes'
+            f'</div>', unsafe_allow_html=True)
 
     # ── White-label branding ──────────────────────────────────────
     _wl = cfg.get_settings()
@@ -4464,6 +4468,26 @@ elif st.session_state.page=="workflow":
                 else:
                     _folder_saved = False
 
+                # ── Question Record ────────────────────────────────
+                import json as _jrec
+                _qrec_file = ROOT / "data" / "question_records.json"
+                try:
+                    _qrec_list = _jrec.loads(_qrec_file.read_text(encoding="utf-8")) if _qrec_file.exists() else []
+                except: _qrec_list = []
+                _qrec_list.append({
+                    "candidate":      st.session_state.candidate_name,
+                    "role":           st.session_state.get("_email_role", st.session_state.jd_text[:40].replace("\n"," ").strip()),
+                    "questions":      n,
+                    "scenario":       sc,
+                    "coding":         co,
+                    "format":         vendor,
+                    "level":          level_key,
+                    "generated_at":   date.today().strftime("%d-%b-%Y %H:%M"),
+                    "folder":         _cand_dir.name if _folder_saved else "",
+                })
+                try: _qrec_file.write_text(_jrec.dumps(_qrec_list, indent=2), encoding="utf-8")
+                except: pass
+
                 st.success(f"✅ {n} questions ready — {sc} scenario + {co} coding · Format: {vendor}")
                 if _folder_saved:
                     st.info(f"Saved to: output/candidates/{_cand_dir.name}/")
@@ -4611,6 +4635,20 @@ Packer.toBuffer(doc).then(buf=>{{fs.writeFileSync("{_safe}_Questions.docx",buf);
                 else:
                     st.warning(f"DOCX build failed: {_docx_name}")
 
+            # ── Question Records Table ────────────────────────────
+            import json as _jrt
+            _qrec_f = ROOT / "data" / "question_records.json"
+            if _qrec_f.exists():
+                try:
+                    _recs = _jrt.loads(_qrec_f.read_text(encoding="utf-8"))
+                    if _recs:
+                        import pandas as _pdrec
+                        st.markdown("#### Question Generation Records")
+                        _rec_df = _pdrec.DataFrame(_recs)[["candidate","role","questions","scenario","coding","format","level","generated_at"]]
+                        _rec_df.columns = ["Candidate","Role","Total Q","Scenario","Coding","Format","Level","Generated"]
+                        st.dataframe(_rec_df.tail(10), use_container_width=True, hide_index=True)
+                except: pass
+
             # Preview
             with st.expander(f"Preview {len(st.session_state.questions)} questions"):
                 for q in st.session_state.questions:
@@ -4730,10 +4768,11 @@ Packer.toBuffer(doc).then(buf=>{{fs.writeFileSync("{_safe}_Questions.docx",buf);
                 bc1, bc2 = st.columns([1, 2])
                 with bc1:
                     if st.button(
-                        "☑ Deselect all items" if all_both else "☑ Select all items",
-                        use_container_width=True, key="sel_all_both"):
+                        "Deselect all items" if all_both else "Select all items",
+                        use_container_width=True, key="sel_all_both_chk"):
                         for k in ALL_KEYS:
                             st.session_state[k] = not all_both
+                        # Stay on Step 2 — do not navigate
                         st.rerun()
 
                 all_checked = all([chk1,chk2,chk3,chk4,chk5,chk6,chk7,chk8])
@@ -4941,13 +4980,16 @@ Packer.toBuffer(doc).then(buf=>{{fs.writeFileSync("{_safe}_Questions.docx",buf);
             # ── NAVIGATION + ACTIONS ──────────────────────────────
             n1,n2,n3,n4,n5=st.columns([1,1,1,1,1])
             with n1:
-                if st.button("⬅️ Prev", disabled=idx==0, use_container_width=True):
+                if st.button("Prev", disabled=idx==0, use_container_width=True,
+                             key=f"prev_btn_{idx}"):
                     st.session_state.curr_q = idx-1; save_session(); st.rerun()
             with n2:
                 if idx < total-1:
-                    if st.button("Next ➡️", type="primary", use_container_width=True):
-                        st.session_state.curr_q = idx+1
-                        st.session_state[f"_q_start_{idx+1+1}"] = _time.time()
+                    if st.button("Next", type="primary", use_container_width=True,
+                                    key=f"next_btn_{idx}"):
+                        st.session_state.curr_q = idx + 1
+                        _nk_next = str(questions[idx+1].get("num", idx+2))
+                        st.session_state[f"_q_start_{_nk_next}"] = _time.time()
                         save_session(); st.rerun()
                 else:
                     if st.button("✅ End Interview", type="primary", use_container_width=True):
@@ -11948,9 +11990,9 @@ elif st.session_state.page == "calendar":
                     notes=cal_notes or "",
                 )
             except ImportError:
-                st.caption("Place gcal_integration.py in IAS folder to enable direct Google Calendar push.")
+                pass  # gcal_integration already loaded
             except Exception as _gb_err:
-                st.warning(f"Google Calendar button error: {_gb_err}")
+                st.caption(f"Google Calendar: {_gb_err}")
 
     # ── Calendar Config ───────────────────────────────────────────
     with tab_config:
@@ -17192,11 +17234,7 @@ def main():
         ["Command Centre", "Executive Dashboard", "KPI & Analytics", "Exec Analytics", "Market Intel 2026", "Talent Intel"]
     )
 
-    if selected_tab == "Command Centre":
-        st.title("Command Centre")
-        st.write("Welcome to IAS Command Centre")
-
-    elif selected_tab == "Executive Dashboard":
+    if selected_tab == "Executive Dashboard":
         st.title("Executive Dashboard")
 
         # --- Tactical recruiter metrics (already in your script) ---
