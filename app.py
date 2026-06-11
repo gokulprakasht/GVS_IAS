@@ -3899,6 +3899,26 @@ elif st.session_state.page=="workflow":
     try:
         from auto_session import check_auto_session
         _new_session_loaded = check_auto_session(ROOT, st.session_state)
+        if _new_session_loaded and st.session_state.questions:
+            _zoom = st.session_state.get("_zoom_link","") or st.session_state.get("_meet_link","")
+            _zoom_btn = ""
+            if _zoom:
+                _zoom_btn = ('<div style="margin-top:8px"><a href="' + _zoom +
+                    '" target="_blank" style="background:#00C9A7;color:#000;padding:6px 16px;'
+                    'border-radius:4px;font-weight:700;font-size:13px;text-decoration:none">'
+                    "Open Zoom / Meet</a></div>")
+            st.markdown(
+                '<div style="background:rgba(0,201,167,0.12);border:2px solid #00C9A7;'
+                'border-radius:8px;padding:14px 20px;margin-bottom:12px">'
+                '<div style="font-size:16px;font-weight:700;color:#00C9A7">'
+                "Interview Ready — " + st.session_state.candidate_name + "</div>"
+                '<div style="font-size:13px;color:#E8F2FF;margin-top:6px">'
+                + str(len(st.session_state.questions)) +
+                " questions pre-loaded from email. Go to Step 2 to start.</div>"
+                + _zoom_btn + "</div>",
+                unsafe_allow_html=True)
+        elif _new_session_loaded:
+            st.info("Email loaded for " + st.session_state.candidate_name + " — questions generating. Refresh in 30s.")
         if _new_session_loaded:
             cname  = st.session_state.get("candidate_name","")
             etime  = st.session_state.get("_interview_time","")
