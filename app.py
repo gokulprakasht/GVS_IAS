@@ -4608,7 +4608,8 @@ elif st.session_state.page=="workflow":
             # ── INTERVIEW HEADER ──────────────────────────────────
             h1,h2,h3,h4=st.columns([3,1,1,1])
             with h1:
-                st.markdown(f"### 🎤 {st.session_state.candidate_name}")
+                _disp_name = st.session_state.candidate_name or "Candidate"
+                st.markdown(f"### 🎤 {_disp_name.upper()}")
                 st.progress(noted/total,text=f"Notes: {noted}/{total} · {st.session_state.vendor}")
             with h2:
                 started=st.session_state.get("started_at",datetime.now().isoformat())
@@ -4629,8 +4630,9 @@ elif st.session_state.page=="workflow":
                 else:
                     st.success("✅ On time")
 
-            # Video issue warning
-            with st.expander("⚠️ Video Issues? Follow SOP"):
+            st.divider()
+            # Video issue warning (after divider to prevent bleed into notes)
+            with st.expander("⚠️ Video Issues? Follow SOP", expanded=False):
                 st.markdown(
                     "**If candidate video is stuck, buffering or lagging:**\n"
                     "1. Stop the interview\n"
@@ -4638,8 +4640,6 @@ elif st.session_state.page=="workflow":
                     "3. If issue persists → **End the interview**\n\n"
                     "**SOP Rule 5** — Empower Professionals"
                 )
-
-            st.divider()
 
             # ── QUESTION DISPLAY ──────────────────────────────────
             gl="🔴 GAP" if q.get("gap_question") else "🟢 VALIDATE"
