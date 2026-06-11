@@ -4333,9 +4333,25 @@ elif st.session_state.page=="workflow":
             if not name_ok: missing.append("enter candidate name")
             st.info("Still needed: "+" · ".join(missing))
 
+        # ── CACHE CHECK: show existing questions instead of regenerating ──
+        _cache_key = f"_qcache_{st.session_state.candidate_name}_{num_q}_{level_key}"
+        _has_cached = (
+            bool(st.session_state.questions) and
+            st.session_state.get("_qcache_name") == st.session_state.candidate_name and
+            st.session_state.get("_qcache_count") == num_q
+        )
+        if _has_cached:
+            st.info(f"✅ {len(st.session_state.questions)} questions already generated for **{st.session_state.candidate_name}**. Scroll down to start interview or click Regenerate to create new questions.")
+            if st.button("🔄 Regenerate Questions (overwrite existing)", use_container_width=True):
+                st.session_state.questions = []
+                st.session_state.notes = {}
+                st.session_state.curr_q = 0
+                st.session_state.pop("_qcache_name", None)
+                st.session_state.pop("_qcache_count", None)
+                st.rerun()
         if st.button(f"🔍 Generate {num_q} Questions + Answer Keys  [{vendor}]",
                      type="primary",use_container_width=True,
-                     disabled=not(cv_ok and jd_ok and name_ok)):
+                     disabled=not(cv_ok and jd_ok and name_ok) or _has_cached):
             with st.spinner(f"Generating {num_q} questions ({n_scen} scenario + {n_code} coding)..."):
                 res=_generate_questions(
                     st.session_state.cv_text,st.session_state.jd_text,
@@ -4350,6 +4366,8 @@ elif st.session_state.page=="workflow":
                 st.session_state.questions=res.get("questions",[])
                 st.session_state.notes={}
                 st.session_state.curr_q=0
+                st.session_state["_qcache_name"]  = st.session_state.candidate_name
+                st.session_state["_qcache_count"] = num_q
                 save_session()
                 n=len(st.session_state.questions)
                 sc=sum(1 for q in st.session_state.questions if q.get("type")=="scenario")
@@ -4485,7 +4503,7 @@ elif st.session_state.page=="workflow":
                 mime="text/plain", use_container_width=True)
 
             # Preview expander
-            with st.expander(f"📋 Preview {len(st.session_state.questions)} questions"):
+            with st.expander(f"Preview {len(st.session_state.questions)} questions"):
                 for q in st.session_state.questions:
                     t="💻" if q.get("type")=="coding" else "🔵"
                     g="⚠️GAP " if q.get("gap_question") else ""
@@ -4502,8 +4520,15 @@ elif st.session_state.page=="workflow":
                 key="_tl_input", help="Timer resets on each question")
             _total_flagged = sum(1 for i,q in enumerate(st.session_state.questions)
                 if st.session_state.get(f"_flagged_{q.get('num',i+1)}", False))
+            _total_noted = sum(1 for i,q in enumerate(st.session_state.questions)
+                if st.session_state.notes.get(str(q.get("num",i+1)),"").strip())
             if _total_flagged:
-                _tl_col2.metric("🚩 Flagged", _total_flagged)
+                _tl_col2.metric("Flagged", _total_flagged)
+            _tl_col3.markdown(
+                f'<div style="font-size:13px;color:#00C9A7;padding:8px 0">'
+                f'Noted: <b>{_total_noted}</b>/{len(st.session_state.questions)} '
+                f'| Flagged: <b>{_total_flagged}</b></div>',
+                unsafe_allow_html=True)
         if not st.session_state.questions:
             st.info("Complete Step 1 — upload CV + JD and generate questions first.")
         else:
@@ -4850,7 +4875,7 @@ elif st.session_state.page=="workflow":
                 _fkey = f"_flagged_{nk}"
                 _is_flagged = st.session_state.get(_fkey, False)
                 if st.button(
-                    "🚩 Flagged" if _is_flagged else "🏳 Flag",
+                    "🚩 Flagged" if _is_flagged else "Flag",
                     use_container_width=True,
                     help="Flag this question for review"):
                     st.session_state[_fkey] = not _is_flagged
@@ -5052,7 +5077,7 @@ elif st.session_state.page=="workflow":
                         _rf = _rubric_sc.get("red_flags",[])
                         if _gf: st.markdown(f'<div style="font-size:11px;color:#00B050;margin-top:6px">✅ {" · ".join(_gf[:3])}</div>', unsafe_allow_html=True)
                         if _rf: st.markdown(f'<div style="font-size:11px;color:#CC0000;margin-top:3px">⚠ {" · ".join(_rf[:3])}</div>', unsafe_allow_html=True)
-                with st.expander("Per-question scores"):
+                with st.expander("Per-question scores", expanded=False):
                     for s in sc.get("scores",[]):
                         sn=s.get("score",3)
                         st.markdown(f"Q{s.get('q_num','')} `{s.get('skill','')}` — "
@@ -5230,7 +5255,7 @@ elif st.session_state.page=="workflow":
                     f"---\nIAS v9.0 | GVS Technologies | "
                     f"{settings_e.get('interviewer_name','Gokul Prakash T')}"
                 )
-                with st.expander("Preview / edit email body"):
+                with st.expander("Preview / edit email body", expanded=False):
                     body_e = st.text_area(
                         "Email body (editable)",
                         value=body_e, height=180,
@@ -7552,6 +7577,8 @@ Packer.toBuffer(doc)
                         st.session_state.cv_text         = r.get("cv_text", "")
                         st.session_state.jd_text         = st.session_state.get("_bulk_jd_full", "")
                         st.session_state.questions       = []
+                        st.session_state.pop("_qcache_name", None)
+                        st.session_state.pop("_qcache_count", None)
                         st.session_state.notes           = {}
                         st.session_state.scores          = {}
                         st.session_state.curr_q          = 0
