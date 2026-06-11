@@ -18,6 +18,19 @@ sys.path.insert(0, str(ROOT / "core"))
 import config as cfg
 import apikey
 
+# ── AUTO-START Gmail monitor if credentials exist ─────────────────
+try:
+    import core.gmail_monitor as _gm_startup
+    if not _gm_startup.is_running():
+        _startup_settings = cfg.get_settings()
+        _startup_email    = _startup_settings.get("sender_email", "")
+        _startup_pw       = _startup_settings.get("gmail_app_password", "")
+        _startup_interval = _startup_settings.get("monitor_interval", 60)
+        if _startup_email and _startup_pw:
+            _gm_startup.start(_startup_email, _startup_pw, interval=_startup_interval)
+except Exception:
+    pass  # Silent — monitor starts when settings are saved if not available now
+
 # ── STREAMLIT CLOUD SECRETS LOADER ───────────────────────────────
 # Loads secrets from Streamlit Cloud when deployed,
 # falls back to local api_key.txt and settings.json when running locally
@@ -2886,6 +2899,53 @@ with st.sidebar:
             disabled=not _can_gen):
             st.session_state["_trigger_generate"] = True
             st.rerun()
+
+        # ── Quick DOCX download from sidebar ─────────────────────
+        if st.session_state.get("questions") and st.session_state.get("candidate_name"):
+            if st.button("Download Q-Bank DOCX", use_container_width=True,
+                         key="sidebar_docx_dl"):
+                try:
+                    from docx import Document as _SDoc
+                    from docx.shared import Pt, RGBColor, Inches
+                    from docx.oxml.ns import qn
+                    from docx.oxml import OxmlElement
+                    import io as _sio
+                    _sd = _SDoc()
+                    _ss = _sd.sections[0]
+                    _ss.page_width  = Inches(11.69)
+                    _ss.page_height = Inches(8.27)
+                    _ss.left_margin = _ss.right_margin = Inches(0.5)
+                    _ss.top_margin  = _ss.bottom_margin = Inches(0.5)
+                    _t = _sd.add_paragraph()
+                    _r = _t.add_run("IAS v9 — Question Bank: " + st.session_state.candidate_name)
+                    _r.bold = True; _r.font.size = Pt(14)
+                    _r.font.color.rgb = RGBColor(0x0D, 0x1B, 0x2A)
+                    _sd.add_paragraph(f"Generated: {date.today().strftime('%d %b %Y')} | Questions: {len(st.session_state.questions)} | GVS Technologies").runs[0].font.size = Pt(9)
+                    _sd.add_paragraph()
+                    _tbl = _sd.add_table(rows=1, cols=4)
+                    _tbl.style = "Table Grid"
+                    for _ci, _ch in enumerate(["Q#", "Skill / Type", "Question", "Expected Answer"]):
+                        _tbl.rows[0].cells[_ci].text = _ch
+                        _tbl.rows[0].cells[_ci].paragraphs[0].runs[0].bold = True
+                        _tbl.rows[0].cells[_ci].paragraphs[0].runs[0].font.size = Pt(8)
+                    for _qi, _q in enumerate(st.session_state.questions):
+                        _ak = _q.get("answer_key", {})
+                        _ans = _ak.get("ideal_answer", _q.get("expected_answer", _q.get("expected", "")))
+                        _rc = _tbl.add_row().cells
+                        _rc[0].text = f"Q{_q.get('num', _qi+1)}"
+                        _rc[1].text = f"{_q.get('skill','')} [{(_q.get('type','') or '').upper()[:6]}]"
+                        _rc[2].text = _q.get("question","")[:250]
+                        _rc[3].text = str(_ans)[:180]
+                        for _rci in range(4):
+                            _rc[_rci].paragraphs[0].runs[0].font.size = Pt(7)
+                    _sbuf = _sio.BytesIO(); _sd.save(_sbuf); _sbuf.seek(0)
+                    _sname = st.session_state.candidate_name.replace(" ","_")
+                    st.download_button("Save DOCX", data=_sbuf.read(),
+                        file_name=f"IAS_QBank_{_sname}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True, key="sidebar_docx_save")
+                except Exception as _de:
+                    st.caption(f"DOCX: {str(_de)[:60]}")
 
         st.divider()
 
