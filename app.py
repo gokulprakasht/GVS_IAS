@@ -5701,7 +5701,7 @@ Packer.toBuffer(doc)
 
         # Bulk email shortlisted
         with ex2:
-            with st.expander("📧 Email All Shortlisted", expanded=False):
+            with st.expander("Email All Shortlisted", expanded=False):
                 _bl_sender  = cfg.get_settings().get("sender_email","")
                 _bl_pwd     = cfg.get_settings().get("gmail_app_password","")
                 _sl_cands   = [r for r in results if r.get("verdict")=="SHORTLIST" and r.get("email")]
@@ -9398,7 +9398,7 @@ elif st.session_state.page == "intHub":
         st.markdown("#### 💼 LinkedIn Candidate Sourcing")
         st.caption("Search LinkedIn profiles · Import to IAS pipeline · Track outreach")
 
-        with st.expander("🔑 LinkedIn API Configuration", expanded=False):
+        with st.expander("LinkedIn API Configuration", expanded=False):
             with st.form("li_cfg"):
                 li1,li2 = st.columns(2)
                 li_client_id  = li1.text_input("LinkedIn Client ID",
@@ -12336,7 +12336,7 @@ function endInterview() {{
 
         # Show transcript if available
         if st.session_state.get("_vi_transcript"):
-            with st.expander("📄 View transcript"):
+            with st.expander("View transcript"):
                 st.text_area("Transcript",
                     value=st.session_state["_vi_transcript"],
                     height=200, key="vi_trans_view")
