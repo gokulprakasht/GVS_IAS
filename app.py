@@ -1925,26 +1925,58 @@ def _extract_text(f):
         elif nm.endswith(".txt"):
             return raw.decode("utf-8", "replace").strip()
         elif nm.endswith(".doc"):
-            # Convert .doc via python-docx (works for most .doc files)
+            # Method 1: Try python-docx directly (works for newer .doc saved as OOXML)
             try:
                 from docx import Document
-                return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
-            except Exception:
-                return "Error: .doc format not fully supported. Please save as .docx and re-upload."
-        elif nm.endswith(".doc"):
-            # Convert .doc via python-docx (works for most .doc files)
+                text = "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
+                if text.strip(): return text
+            except Exception: pass
+            # Method 2: Try antiword (Linux/Mac)
             try:
-                from docx import Document
-                return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
-            except Exception:
-                return "Error: .doc format not fully supported. Please save as .docx and re-upload."
-        elif nm.endswith(".doc"):
-            # Convert .doc via python-docx (works for most .doc files)
+                import subprocess, tempfile as _tf
+                with _tf.NamedTemporaryFile(delete=False, suffix=".doc") as tmp:
+                    tmp.write(raw); tp = tmp.name
+                r = subprocess.run(["antiword", tp], capture_output=True, timeout=10)
+                import os; os.unlink(tp)
+                if r.returncode == 0 and r.stdout:
+                    return r.stdout.decode("utf-8", "replace").strip()
+            except Exception: pass
+            # Method 3: LibreOffice convert to docx then parse
             try:
-                from docx import Document
-                return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
-            except Exception:
-                return "Error: .doc format not fully supported. Please save as .docx and re-upload."
+                import subprocess, tempfile as _tf, os as _os
+                with _tf.NamedTemporaryFile(delete=False, suffix=".doc") as tmp:
+                    tmp.write(raw); tp = tmp.name
+                tmp_dir = _tf.mkdtemp()
+                r = subprocess.run(
+                    ["soffice", "--headless", "--convert-to", "docx", "--outdir", tmp_dir, tp],
+                    capture_output=True, timeout=30)
+                _os.unlink(tp)
+                docx_out = _os.path.join(tmp_dir, _os.path.basename(tp).replace(".doc", ".docx"))
+                if _os.path.exists(docx_out):
+                    from docx import Document
+                    text = "\n".join(pg.text for pg in Document(docx_out).paragraphs if pg.text.strip())
+                    _os.unlink(docx_out)
+                    _os.rmdir(tmp_dir)
+                    if text.strip(): return text
+            except Exception: pass
+            # Method 4: Raw text extraction from binary .doc
+            try:
+                text_parts = []
+                i = 0
+                while i < len(raw) - 1:
+                    if raw[i] >= 32 and raw[i] < 127:
+                        ch = chr(raw[i])
+                        text_parts.append(ch)
+                    elif raw[i] == 0 and i > 0 and raw[i-1] >= 32:
+                        text_parts.append(" ")
+                    i += 1
+                raw_text = "".join(text_parts)
+                # Clean up — extract readable sentences
+                words = re.findall(r"[A-Za-z][a-zA-Z0-9\s,\.\-\(\)@\+]{8,}", raw_text)
+                if words:
+                    return " ".join(words[:500])
+            except Exception: pass
+            return "Error: Could not read .doc file. Please re-save as .docx from Microsoft Word."
         else:
             return "Error: unsupported type"
     except Exception as e:
@@ -4206,7 +4238,7 @@ elif st.session_state.page=="workflow":
                     st.session_state.candidate_phone=det["phone"]
                 save_session()
                 st.success(f"✅ CV loaded — {len(txt.split())} words · Name/email/phone auto-detected")
-                with st.expander("Preview CV"): st.text(txt[:600]+"...")
+                with st.expander("Preview CV (first 600 chars)"): st.text(txt[:600]+"...")
             else:
                 st.error(f"Could not read CV: {txt}")
 
@@ -4895,7 +4927,7 @@ elif st.session_state.page=="workflow":
                 _fkey = f"_flagged_{nk}"
                 _is_flagged = st.session_state.get(_fkey, False)
                 if st.button(
-                    "🚩 Flagged" if _is_flagged else "Flag",
+                    "[Flagged]" if _is_flagged else "Flag",
                     use_container_width=True,
                     help="Flag this question for review"):
                     st.session_state[_fkey] = not _is_flagged
@@ -5181,7 +5213,7 @@ elif st.session_state.page=="workflow":
                 st.markdown("#### 📄 Generate DOCX Report")
                 settings_e = cfg.get_settings()
                 # ── REPORT PREVIEW ────────────────────────────────
-                with st.expander("👁 Report Preview", expanded=False):
+                with st.expander("Report Preview", expanded=False):
                     st.markdown(
                         f'<div style="background:#fff;border:2px solid #1F3864;border-radius:8px;'
                         f'padding:16px;font-family:Calibri,sans-serif;color:#222;font-size:13px">'
@@ -10318,7 +10350,7 @@ elif st.session_state.page == "rag":
 
         uploaded = st.file_uploader(
             "Upload documents (multiple allowed)",
-            type=["pdf", "docx", "txt"],
+            type=["pdf", "docx", "doc", "txt"],
             accept_multiple_files=True,
             key="rag_upload")
 
@@ -14432,7 +14464,7 @@ elif st.session_state.page == "jobboards":
             st.success(f"✅ Using JD from Interview Workflow "
                        f"({len(jb_jd_raw.split())} words)")
         elif jd_source == "Upload file":
-            jb_file = st.file_uploader("Upload JD", type=["pdf","docx","txt"],
+            jb_file = st.file_uploader("Upload JD", type=["pdf","docx","doc","txt"],
                                         key="jb_upload")
             jb_jd_raw = _extract_text(jb_file) if jb_file else ""
         else:
