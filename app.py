@@ -10,7 +10,6 @@ from pathlib import Path
 from datetime import datetime, date
 from kpi_layer import show_kpi_layer
 from forecast import show_forecast
-from infographic import show_infographic
 
 
 
@@ -17041,7 +17040,6 @@ from datetime import datetime, date
 # --- Executive Dashboard Modules ---
 from kpi_layer import show_kpi_layer
 from forecast import show_forecast
-from infographic import show_infographic
 
 def main():
     st.sidebar.title("IAS v9.0 Navigation")
@@ -17066,7 +17064,7 @@ def main():
         # --- Strategic modules ---
         show_kpi_layer()
         show_forecast()
-        show_infographic()
+        pass  # infographic removed
 
     elif selected_tab == "KPI & Analytics":
         st.title("KPI & Analytics")
