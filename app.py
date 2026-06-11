@@ -3616,7 +3616,7 @@ if st.session_state.page == "home":
             if st.button("Offer Letter", use_container_width=True, key="qa_offer"):
                 st.session_state.page = "offerletter"; st.rerun()
         with _qa6:
-            if st.button("Hiring Report", use_container_width=True, key="qa_report"):
+            if st.button("Hiring Report", use_container_width=True, key="dash_hiring_report"):
                 st.session_state.page = "execanalytics"; st.rerun()
 
         # ── RECENT INTERVIEWS TABLE ─────────────────────────────────
