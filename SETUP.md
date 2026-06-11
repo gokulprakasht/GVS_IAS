@@ -1,28 +1,75 @@
-# IAS v8 — Setup Guide
+# IAS v9 — Setup Guide
+### GVS Technologies / Digitaliotai | "Innovate before you automate"
 
-## Run Locally (Double-click & Go)
-1. Extract this ZIP anywhere on your PC
-2. Double-click `run_ias.bat`
-3. Browser opens at http://localhost:8502
-4. Enter your Anthropic API key once → saved forever
+---
 
-## Build EXE (Share with anyone)
-1. Double-click `build_exe.bat`
-2. `IAS_v8.exe` appears in this folder
-3. Share the entire folder — double-click EXE to launch
+## ⚡ Deploy in 3 Steps
 
-## Cloud Deployment (Render.com — Free)
-1. Push this folder to a GitHub repo
-2. Go to render.com → New Web Service → connect repo
-3. Set env var: ANTHROPIC_API_KEY = your key
-4. Get live URL — works on mobile, tablet, desktop
+### Option A — Streamlit Cloud (Recommended — Free, public URL)
 
-## Access Modes (Zero Investment for Users)
-- **Option 1**: User enters their own free Anthropic key (saved permanently, asked only once)
-- **Option 2**: You host on Render with your key — users just open the URL, no key needed
-- **Option 3**: Freemium — first 5 interviews free using host key, then user adds own key
+1. Fork this repo: https://github.com/gokulprakasht/GVS_IAS
+2. Go to https://share.streamlit.io → New app → select your fork → `app.py`
+3. Add secret in App Settings → Secrets:
+```toml
+[anthropic]
+api_key = "sk-ant-YOUR-KEY-HERE"
+```
+4. Click Deploy → your URL: **https://YOUR-APP.streamlit.app**
 
-## Get a Free Anthropic Key
-1. Go to console.anthropic.com
-2. Sign up free — get $5 credits (~500 interviews)
-3. API Keys → Create Key → Copy
+---
+
+### Option B — Local (Windows)
+
+```bash
+# 1. Clone
+git clone https://github.com/gokulprakasht/GVS_IAS.git
+cd GVS_IAS
+
+# 2. Install
+pip install -r requirements.txt
+
+# 3. Set API key
+echo sk-ant-YOUR-KEY > api_key.txt
+
+# 4. Run
+streamlit run app.py
+```
+Or double-click **IAS_Start.bat**
+
+---
+
+### Option C — Docker (Any OS)
+
+```bash
+git clone https://github.com/gokulprakasht/GVS_IAS.git
+cd GVS_IAS
+echo "ANTHROPIC_API_KEY=sk-ant-YOUR-KEY" > .env
+docker build -t ias-v9 .
+docker run -p 8501:8501 --env-file .env ias-v9
+```
+Open: **http://localhost:8501**
+
+---
+
+## 🔑 Required
+
+| Item | Where to get |
+|---|---|
+| Anthropic API key | https://console.anthropic.com |
+| Gmail App Password | Google Account → Security → App Passwords |
+| Google Calendar API | console.cloud.google.com (optional) |
+
+---
+
+## 🌐 Live Deployment
+
+| Environment | URL |
+|---|---|
+| Production | https://gvs-ias.streamlit.app |
+| Backup | https://gvs-ias.onrender.com |
+| GitHub | https://github.com/gokulprakasht/GVS_IAS |
+
+---
+
+## 📞 Support
+**Gokul Prakash T** | gokul1978@gmail.com | GVS Technologies

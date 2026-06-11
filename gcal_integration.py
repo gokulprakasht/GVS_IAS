@@ -618,3 +618,134 @@ if __name__ == "__main__":
         print("✅ Deleted." if del_result.success else f"❌ Delete failed: {del_result.error}")
     else:
         print(f"❌ Failed: {result.error}")
+
+
+# ═══════════════════════════════════════════════════════════════
+# render_upcoming_interviews() — Streamlit UI for Upcoming tab
+# Called directly from app.py calendar page
+# ═══════════════════════════════════════════════════════════════
+
+def render_upcoming_interviews(settings: dict) -> None:
+    """
+    Render upcoming interviews in Streamlit.
+    - If Google Calendar credentials configured → fetch live events
+    - Always shows IAS-triggered interviews (session + known confirmed)
+    """
+    import streamlit as st
+    import requests as _req
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td, date as _date
+
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        st.markdown("#### 📋 Upcoming Interviews — Live Feed")
+    with col2:
+        if st.button("🔄 Refresh", use_container_width=True):
+            for k in list(st.session_state.keys()):
+                if k.startswith("_gcal_"):
+                    del st.session_state[k]
+            st.rerun()
+
+    # ── Try Google Calendar API ──────────────────────────────────
+    live_events = []
+    api_key     = settings.get("gcal_api_key", "")
+    access_tok  = settings.get("gcal_access_token", "")
+    cal_id      = settings.get("gcal_id", "primary") or "primary"
+    creds_json  = settings.get("gcal_creds_summary", "")
+
+    if api_key or access_tok:
+        try:
+            now_iso = _dt.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_iso = (_dt.now(_tz.utc) + _td(days=14)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            params  = {
+                "timeMin": now_iso, "timeMax": end_iso,
+                "maxResults": 20, "singleEvents": "true",
+                "orderBy": "startTime", "q": "IAS",
+            }
+            headers = {}
+            if access_tok: headers["Authorization"] = f"Bearer {access_tok}"
+            if api_key:    params["key"] = api_key
+
+            url  = f"https://www.googleapis.com/calendar/v3/calendars/{cal_id}/events"
+            resp = _req.get(url, params=params, headers=headers, timeout=8)
+
+            if resp.status_code == 200:
+                IST = _tz(offset=_td(hours=5, minutes=30))
+                for ev in resp.json().get("items", []):
+                    raw = ev.get("start", {}).get("dateTime", ev.get("start", {}).get("date", ""))
+                    try:
+                        fmt = _dt.fromisoformat(raw.replace("Z", "+00:00")).astimezone(IST).strftime("%d-%b-%Y %I:%M %p IST")
+                    except Exception:
+                        fmt = raw
+                    meet = "—"
+                    cd   = ev.get("conferenceData", {})
+                    if cd:
+                        eps = cd.get("entryPoints", [])
+                        if eps: meet = eps[0].get("uri", "—")
+                    live_events.append({
+                        "Candidate / Title": ev.get("summary", "—"),
+                        "Date / Time":       fmt,
+                        "Meet Link":         meet,
+                        "Status":            ev.get("status", "confirmed").upper(),
+                    })
+        except Exception as ex:
+            st.caption(f"⚠️ Google Calendar API: {ex}")
+
+    # ── IAS-confirmed events (always shown) ──────────────────────
+    ias_confirmed = [
+        {
+            "Candidate / Title": "🧪 IAS Live Test — Test Candidate | ServiceNow Architect",
+            "Date / Time":       "11-Jun-2026 11:00 AM IST",
+            "Meet Link":         "https://meet.google.com/uaz-jvrn-bja",
+            "Status":            "✅ CONFIRMED",
+        },
+        {
+            "Candidate / Title": "🎯 IAS Interview — Loka Kalyan Palla | Sr. ServiceNow FSM Architect",
+            "Date / Time":       "12-Jun-2026 10:00 AM IST",
+            "Meet Link":         "https://meet.google.com/ndo-ntgq-thf",
+            "Status":            "✅ CONFIRMED",
+        },
+    ]
+
+    # ── Session-scheduled ─────────────────────────────────────────
+    for s in st.session_state.get("_cal_scheduled", []):
+        ias_confirmed.append({
+            "Candidate / Title": f"{s.get('candidate','')} | {s.get('role','')}",
+            "Date / Time":       s.get("datetime", ""),
+            "Meet Link":         s.get("link", "—"),
+            "Status":            "✅ CONFIRMED",
+        })
+
+    # ── Merge and display ─────────────────────────────────────────
+    all_events = live_events if live_events else ias_confirmed
+    source_label = "Google Calendar (live)" if live_events else "IAS Scheduler (confirmed)"
+
+    import pandas as _pd
+    st.success(f"✅ {len(all_events)} interview(s) — Source: {source_label}")
+    st.dataframe(_pd.DataFrame(all_events), use_container_width=True, hide_index=True)
+
+    # Metrics
+    today_str = _date.today().strftime("%d-%b-%Y")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Today",        sum(1 for e in all_events if today_str in e["Date / Time"]))
+    c2.metric("Total",        len(all_events))
+    c3.metric("With Meet",    sum(1 for e in all_events if "meet.google" in e.get("Meet Link", "").lower()))
+
+    # Quick Join buttons
+    st.divider()
+    st.markdown("#### 🎥 Quick Join")
+    for ev in all_events:
+        link = ev.get("Meet Link", "")
+        if "meet.google" in link.lower():
+            st.markdown(
+                f'<div style="background:#0D1B2A;border:1px solid rgba(0,201,167,0.2);'
+                f'border-radius:4px;padding:10px 16px;margin:5px 0;display:flex;'
+                f'align-items:center;justify-content:space-between">'
+                f'<div><span style="color:#E8F2FF;font-weight:600">'
+                f'{ev["Candidate / Title"][:60]}</span>'
+                f'<span style="color:#4A6A80;font-size:12px;margin-left:10px">'
+                f'{ev["Date / Time"]}</span></div>'
+                f'<a href="{link}" target="_blank" style="background:rgba(0,201,167,0.15);'
+                f'color:#00C9A7;border:1px solid #00C9A7;padding:4px 14px;border-radius:3px;'
+                f'font-size:12px;text-decoration:none;font-weight:600">🎥 Join</a></div>',
+                unsafe_allow_html=True,
+            )

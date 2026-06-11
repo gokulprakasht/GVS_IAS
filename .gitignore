@@ -1,10 +1,44 @@
-api_key.txt 
-google_credentials.json 
-.streamlit/secrets.toml 
-secrets.toml 
-data/ 
-output/ 
-__pycache__/ 
-*.pyc 
-fix_gcal.* 
-check_gcal.* 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Secrets — NEVER commit these
+.env
+api_key.txt
+google_credentials.json
+service_account.json
+*.pem
+*.key
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Data & outputs (local only)
+data/results.json
+output/*.docx
+output/*.pdf
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Temporary
+*.tmp
+*.bak
+files*.zip
