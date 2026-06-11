@@ -3125,2516 +3125,437 @@ with st.sidebar:
 if st.session_state.page == "home":
     import pandas as _pd_home, json as _json_home
     from datetime import datetime as _dth, timedelta as _tdhome
-    import random as _rnd_home
 
-    # ── Load real data ─────────────────────────────────────────
+    # ── Load data ──────────────────────────────────────────────────
     results_h  = cfg.load_results("", True)
     stats_h    = cfg.get_stats(results_h)
     settings_h = cfg.get_settings()
     kpi_path_h = ROOT / "data" / "kpi_data.json"
     KPI_H      = _json_home.loads(kpi_path_h.read_text(encoding="utf-8")) if kpi_path_h.exists() else {}
     _now_h     = _dth.now()
-    _today_str = _now_h.strftime("%A, %d %B %Y  ·  %H:%M")
-    _interviewer = settings_h.get("interviewer_name", "Gokul Prakash T").split()[0]
-    _curr_ind = (st.session_state.get("selected_industry") or "IT & Software")
-    st.session_state["selected_industry"] = _curr_ind
 
-    # ── Derived metrics ─────────────────────────────────────────
-    _total_interviews = stats_h.get("total", len(results_h))
-    _selected   = stats_h.get("selected", sum(1 for r in results_h if "GO" in str(r.get("verdict","")).upper() and "NO" not in str(r.get("verdict","")).upper()))
-    _rejected   = stats_h.get("rejected", sum(1 for r in results_h if "REJECT" in str(r.get("verdict","")).upper() or "NO-GO" in str(r.get("verdict","")).upper()))
-    _pending    = max(0, _total_interviews - _selected - _rejected)
-    _avg_score  = stats_h.get("avg_score", 0)
-    _accept_rate= round(_selected / _total_interviews * 100, 1) if _total_interviews else 0
+    _total  = max(stats_h.get("total", 3), 1)
+    _sel    = stats_h.get("selected", 3)
+    _rej    = stats_h.get("rejected", 0)
+    _avg    = stats_h.get("avg_score", 3.0)
+    _acc    = round(_sel / _total * 100, 1)
+    _tth    = KPI_H.get("time_to_hire", 18)
+    _open   = KPI_H.get("open_roles", 48)
+    _offers = KPI_H.get("offers_pending", 11)
+    _pipe   = KPI_H.get("pipeline", {"applied":1250,"screened":640,"interviewed":_total,"shortlisted":_sel,"offered":_offers,"joined":12})
 
-    # Simulate pipeline data (replace with real data when available)
-    _pipeline   = KPI_H.get("pipeline", {"applied":1250,"screened":640,"interviewed":_total_interviews or 192,"shortlisted":_selected or 58,"offered":19,"joined":12})
-    _open_roles = KPI_H.get("open_roles", 48)
-    _tth        = KPI_H.get("time_to_hire", 18)
-    _offers_pending = KPI_H.get("offers_pending", 11)
-
-    # ── CSS injection for world-class dashboard ─────────────────
-    st.markdown("""
-<style>
-/* ── Base ─────────────────────────────────────────────── */
-.exec-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 16px;border-bottom:1px solid rgba(0,201,167,0.15);margin-bottom:16px}
-.exec-greeting h2{font-size:20px;font-weight:700;color:#E8F2FF;margin:0}
-.exec-greeting p{font-size:12px;color:#4A6A80;margin:3px 0 0}
-
-/* ── Role tabs ────────────────────────────────────────── */
-.role-tabs{display:flex;gap:6px;margin-bottom:16px}
-.rtab{font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid rgba(0,201,167,0.2);background:rgba(255,255,255,0.03);color:#4A6A80;cursor:pointer;letter-spacing:0.04em;transition:all 0.15s}
-.rtab:hover{background:rgba(0,201,167,0.06);color:#C8D8E4}
-.rtab.active{background:rgba(0,201,167,0.12);color:#00C9A7;border-color:rgba(0,201,167,0.4)}
-
-/* ── Layout with sidebar ─────────────────────────────── */
-.dash-layout{display:grid;grid-template-columns:1fr 220px;gap:14px}
-.dash-main{}
-.dash-cop{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px;position:sticky;top:0}
-
-/* ── Health pill ──────────────────────────────────────── */
-.health-index{background:rgba(0,0,0,0.2);border:1px solid rgba(245,166,35,0.35);border-radius:10px;padding:8px 14px;min-width:160px}
-.health-index .lbl{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px}
-.health-index .score{display:flex;align-items:baseline;gap:6px}
-.health-index .score .num{font-size:22px;font-weight:700;color:#F5A623}
-.health-index .score .sub{font-size:11px;color:#4A6A80}
-.health-index .drivers{font-size:10px;color:#4A6A80;margin-top:2px}
-.exec-btns{display:flex;gap:8px;flex-wrap:wrap}
-.exec-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.25);background:rgba(0,201,167,0.06);color:#00C9A7;cursor:pointer;font-weight:600;letter-spacing:0.04em}
-.exec-btn-primary{background:rgba(0,201,167,0.15);border-color:rgba(0,201,167,0.45)}
-
-/* ── KPI ──────────────────────────────────────────────── */
-.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px}
-.kpi-box{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 13px}
-.kpi-box .lbl{font-size:10px;color:#4A6A80;margin-bottom:6px}
-.kpi-box .val{font-size:22px;font-weight:700;color:#E8F2FF;line-height:1}
-.kpi-box .delta{font-size:11px;margin-top:5px}
-.delta-g{color:#00B050}.delta-r{color:#CC0000}.delta-w{color:#F5A623}
-
-/* ── Forecast ─────────────────────────────────────────── */
-.forecast-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.forecast-card{background:#0A1628;border-radius:10px;padding:12px 14px}
-.forecast-card .dept{font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
-.forecast-card .status{font-size:13px;font-weight:600;margin-bottom:3px}
-.forecast-card .rec{font-size:11px;color:#4A6A80}
-
-/* ── Cards ────────────────────────────────────────────── */
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
-.dash-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px 16px}
-.dash-card-title{font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
-.dash-card-title a{font-size:10px;color:#00C9A7;text-decoration:none;font-weight:600}
-.priority-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0 7px 10px;border-bottom:1px solid rgba(255,255,255,0.05);margin-left:-10px}
-.priority-row:last-child{border-bottom:none}
-.priority-name{font-size:12px;color:#C8D8E4}
-.priority-meta{display:flex;align-items:center;gap:5px}
-.priority-level{font-size:9px;font-weight:700;letter-spacing:0.04em}
-.badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px}
-.bw{background:rgba(245,166,35,0.12);color:#F5A623}
-.bi{background:rgba(55,138,221,0.12);color:#378ADD}
-.br{background:rgba(204,0,0,0.12);color:#CC0000}
-.bg{background:rgba(0,176,80,0.12);color:#00B050}
-.funnel-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.funnel-lbl{font-size:11px;color:#4A6A80;width:72px;flex-shrink:0}
-.funnel-wrap{flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:14px;overflow:hidden}
-.funnel-fill{height:100%;border-radius:3px}
-.funnel-cnt{font-size:11px;font-weight:600;color:#C8D8E4;width:36px;text-align:right;flex-shrink:0}
-.activity-row{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.activity-row:last-child{border-bottom:none}
-.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.act-text{font-size:12px;color:#C8D8E4;line-height:1.4}
-.act-time{font-size:10px;color:#4A6A80;margin-top:2px}
-
-/* ── Candidate cards ─────────────────────────────────── */
-.cand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.cand-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:14px}
-.cand-card:hover{border-color:rgba(0,201,167,0.3)}
-.cand-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.cand-avatar{width:38px;height:38px;border-radius:50%;background:rgba(0,201,167,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#00C9A7;flex-shrink:0}
-.cand-name{font-size:13px;font-weight:700;color:#E8F2FF}
-.cand-role{font-size:11px;color:#4A6A80;margin-top:2px}
-.cand-scores{display:flex;gap:16px;margin-bottom:10px}
-.cscore .sv{font-size:16px;font-weight:700;color:#E8F2FF}
-.cscore .sl{font-size:10px;color:#4A6A80;margin-top:1px}
-.cand-verdict{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-bottom:10px}
-.cv-go{background:rgba(0,176,80,0.12);color:#00B050}
-.cv-no{background:rgba(204,0,0,0.12);color:#CC0000}
-.cv-pend{background:rgba(245,166,35,0.12);color:#F5A623}
-.cand-btns{display:flex;gap:6px;flex-wrap:wrap}
-.cbtn{font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(0,201,167,0.2);background:transparent;color:#4A6A80;cursor:pointer}
-.cbtn:hover{background:rgba(0,201,167,0.08);color:#00C9A7}
-.cbtn-p{background:rgba(0,201,167,0.1);color:#00C9A7;border-color:rgba(0,201,167,0.3)}
-
-/* ── Insights ─────────────────────────────────────────── */
-.insight-box{background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;margin-bottom:8px}
-.insight-box:last-child{margin-bottom:0}
-.insight-dept{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
-.insight-txt{font-size:12px;color:#C8D8E4;line-height:1.5}
-.insight-why{font-size:11px;color:#4A6A80;margin-top:4px;line-height:1.4;padding-left:10px;border-left:2px solid rgba(0,201,167,0.2)}
-.insight-ai{font-size:11px;color:#00C9A7;margin-top:5px}
-.row2-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.metric-mini{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.metric-mini:last-child{border-bottom:none}
-.mm-label{font-size:12px;color:#4A6A80}
-.mm-val{font-size:13px;font-weight:700;color:#E8F2FF}
-
-/* ── Copilot sidebar ─────────────────────────────────── */
-.cop-sidebar-title{font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:4px;display:flex;align-items:center;gap:6px}
-.cop-sidebar-sub{font-size:10px;color:#4A6A80;margin-bottom:12px}
-.cop-chip{font-size:11px;color:#C8D8E4;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid rgba(0,201,167,0.1);line-height:1.3;display:block;width:100%;text-align:left}
-.cop-chip:hover{background:rgba(0,201,167,0.08);color:#00C9A7;border-color:rgba(0,201,167,0.25)}
-.cop-section-lbl{font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px}
-.status-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.status-row:last-child{border-bottom:none}
-.slbl{font-size:11px;color:#4A6A80}
-.sval{font-size:11px;font-weight:600}
-
-/* ── Quick actions ───────────────────────────────────── */
-.qa-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-.qa-btn{font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(0,201,167,0.2);background:rgba(0,201,167,0.05);color:#4A6A80;cursor:pointer}
-.qa-btn:hover{background:rgba(0,201,167,0.1);color:#00C9A7}
-
-/* ── Support ─────────────────────────────────────────── */
-.support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.sup-card{background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:10px;padding:12px;text-align:center;cursor:pointer}
-.sup-card:hover{border-color:rgba(0,201,167,0.35);background:#0D1F35}
-.sup-icon{font-size:22px;margin-bottom:5px}
-.sup-label{font-size:11px;color:#4A6A80}
-.cop-fab{position:fixed;bottom:24px;right:24px;z-index:999}
-.cop-fab-btn{width:48px;height:48px;border-radius:50%;background:#00C9A7;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,201,167,0.3);display:flex;align-items:center;justify-content:center}
-.cop-popup{display:none;position:absolute;bottom:58px;right:0;width:250px;background:#0A1628;border:1px solid rgba(0,201,167,0.3);border-radius:12px;padding:14px}
-.cop-popup.open{display:block}
-.section-lbl{font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;margin-top:6px}
-.kpi-box .lbl{font-size:11px;color:#4A6A80;margin-bottom:6px}
-.act-text{font-size:12px;color:#C8D8E4;line-height:1.5}
-.priority-name{font-size:12px;color:#C8D8E4;line-height:1.4}
-</style>
-""", unsafe_allow_html=True)
-
-    # ── EXECUTIVE HEADER ────────────────────────────────────────
-    # Health score with drivers
-    _health_drivers = []
-    _health_deductions = 0
-    if _offers_pending >= 5:
-        _health_drivers.append(f"· {_offers_pending} offers pending")
-        _health_deductions += 15
-    if _pending >= 3:
-        _health_drivers.append(f"· {_pending} evaluations pending")
-        _health_deductions += 10
-    if _avg_score > 0 and _avg_score < 5:
-        _health_drivers.append("· Low avg interview score")
-        _health_deductions += 15
-    if _accept_rate > 0 and _accept_rate < 15:
-        _health_drivers.append("· Low acceptance rate")
-        _health_deductions += 10
-    _health_pct = min(100, max(0, round(100 - _health_deductions + (_accept_rate * 0.3))))
-    _health_score = max(10, min(100, _health_pct))
-    _health_label = "Healthy" if _health_score >= 80 else "Attention needed" if _health_score >= 60 else "At Risk"
-    _health_color = "#00B050" if _health_score >= 80 else "#F5A623" if _health_score >= 60 else "#CC0000"
-    _health_icon  = "🟢" if _health_score >= 80 else "🟡" if _health_score >= 60 else "🔴"
-    _drivers_html = "".join([f'<div style="font-size:10px;color:#4A6A80;margin-top:2px">{d}</div>' for d in _health_drivers]) if _health_drivers else ""
-
-    _tenant_hdr    = get_tenant_config()
-    _org_name_hdr  = _tenant_hdr.get("org_name","GVS Technologies")
-    _platform_hdr  = _tenant_hdr.get("platform_name","IAS")
-    _ind_icon_hdr  = get_industry_config(_curr_ind).get("icon","🎯")
-
-    st.markdown(f"""
-<div class="exec-header">
-  <div class="exec-greeting">
-    <h2>Good {"morning" if _now_h.hour < 12 else "afternoon" if _now_h.hour < 17 else "evening"}, {_interviewer}</h2>
-    <p>{_today_str} &nbsp;·&nbsp; {_ind_icon_hdr} {_curr_ind} &nbsp;·&nbsp; {_org_name_hdr}</p>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <div style="background:rgba(0,0,0,0.2);border:1px solid {_health_color}40;border-radius:10px;padding:8px 14px;min-width:200px;position:relative" title="Health drivers: {chr(10).join(_health_drivers) if _health_drivers else 'All systems healthy'}">
-      <div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">
-        Hiring Health Index
-        <span style="font-size:9px;color:#4A6A80;margin-left:4px" title="Click to see drivers">&#9432;</span>
-      </div>
-      <div style="display:flex;align-items:baseline;gap:6px">
-        <span style="font-size:22px;font-weight:700;color:{_health_color}">{_health_score}</span>
-        <span style="font-size:11px;color:#4A6A80">/100 &nbsp;{_health_icon} {_health_label}</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:4px;margin-top:6px;overflow:hidden">
-        <div style="width:{_health_score}%;height:4px;background:{_health_color};border-radius:4px"></div>
-      </div>
-      {_drivers_html}
-    </div>
-    <div class="exec-btns">
-      <span class="exec-btn exec-btn-primary">+ New Interview</span>
-      <span class="exec-btn">📅 Schedule</span>
-      <span class="exec-btn">📊 Report</span>
-    </div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── ROLE-BASED TABS ─────────────────────────────────────────
-    _role_tab      = st.session_state.get("_dash_role", "Executive")
-    _ind_dash_cfg  = get_industry_dashboard_config(_curr_ind)
-    _tenant_cfg    = get_tenant_config()
-    _accent_color  = _ind_dash_cfg.get("accent_color","#00C9A7")
-    _tabs_html = "".join([
-        f'<button class="rtab {"active" if t == _role_tab else ""}" '        f'onclick="window.parent.document.querySelectorAll(\'.rtab\').forEach(b=>b.classList.remove(\'active\'));this.classList.add(\'active\')">{t}</button>'
-        for t in ["Executive", "Recruiter", "Hiring Manager", "Interview Panel"]
-    ])
-    st.markdown(f'<div class="role-tabs">{_tabs_html}</div>', unsafe_allow_html=True)
-
-    # ── ROLE-BASED VIEW SWITCHER ────────────────────────────────
-    if _role_tab == "Recruiter":
-        st.markdown(
-            '<div style="background:rgba(55,138,221,0.08);border:1px solid rgba(55,138,221,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'  
-            '<span style="font-size:11px;font-weight:700;color:#378ADD">RECRUITER VIEW</span>'
-            ' &mdash; Today''s interviews, pending CVs, and scheduling tasks</div>',
-            unsafe_allow_html=True)
-    elif _role_tab == "Hiring Manager":
-        st.markdown(
-            '<div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'
-            '<span style="font-size:11px;font-weight:700;color:#F5A623">HIRING MANAGER VIEW</span>'
-            ' &mdash; Pending approvals, team feedback, and candidate pipeline</div>',
-            unsafe_allow_html=True)
-    elif _role_tab == "Interview Panel":
-        st.markdown(
-            '<div style="background:rgba(127,119,221,0.08);border:1px solid rgba(127,119,221,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px">'
-            '<span style="font-size:11px;font-weight:700;color:#7F77DD">INTERVIEW PANEL VIEW</span>'
-            ' &mdash; Upcoming interviews and evaluation tasks for today</div>',
-            unsafe_allow_html=True)
-
-    # ── START LAYOUT WITH COPILOT SIDEBAR ─────────────────────
-    _main_col, _cop_col = st.columns([3, 1])
-    with _main_col:
-
-        # ── KPI ROW — clickable drill-down ─────────────────────────
-        _offer_accept_rate = round(_selected / max(_offers_pending + _selected, 1) * 100)
-        _nps_score = min(10, round((_avg_score * 0.6) + (_accept_rate * 0.04) + 2, 1)) if _avg_score else 8.2
-        _kpi_cols = st.columns(7)
-        _kpi_items = [
-            ("Interviews",    str(_total_interviews),          f"&#8593; {max(1,_total_interviews//10)} this week", "#00B050", "workflow"),
-            ("Selected",      str(_selected),                  f"Rate: {_accept_rate}%",                           "#00B050" if _accept_rate>=20 else "#F5A623", "workflow"),
-            ("Offers",        str(_offers_pending),            "&#9888; 2 expiring today",                         "#F5A623", "offerletter"),
-            ("Acceptance",    f"{_offer_accept_rate}%",        "&#8593; 6% vs last mo",                            "#00B050", "calendar"),
-            ("Time-to-hire",  f"{_tth}d",                     "&#8595; 5d vs last mo",                             "#00B050", "kpi"),
-            ("Avg score",     f"{round(_avg_score,1) if _avg_score else chr(8212)}/10", "Out of 10", "#00C9A7", "intelligence"),
-            ("Candidate NPS", f"{_nps_score}",                "&#8593; 0.6 vs last mo",                            "#00B050", "kpi"),
-        ]
-        for _ki, (_klbl, _kval, _kdelta, _kcol, _kpage) in enumerate(_kpi_items):
-            with _kpi_cols[_ki]:
-                st.markdown(
-                    f'<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.12);border-radius:12px;padding:12px 13px;cursor:pointer;transition:border 0.15s" '
-                    f'title="Click to drill down into {_klbl}">'
-                    f'<div style="font-size:10px;color:#4A6A80;margin-bottom:6px">{_klbl}</div>'
-                    f'<div style="font-size:22px;font-weight:700;color:#E8F2FF;line-height:1">{_kval}</div>'
-                    f'<div style="font-size:11px;margin-top:5px;color:{_kcol}">{_kdelta}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True)
-                if st.button(f"View {_klbl}", key=f"kpi_{_ki}", use_container_width=True,
-                             help=f"Drill down into {_klbl} details"):
-                    st.session_state.page = _kpage
-                    st.rerun()
-
-        # ── ROW 1: Priorities + Funnel + Activity ───────────────────
-        # ── ROW 1: Three columns ──────────────────────────────────
-        _col1, _col2, _col3 = st.columns(3)
-
-        # Priorities
-        with _col1:
-            st.markdown('''<div class="dash-card">''', unsafe_allow_html=True)
-            st.markdown('''<div class="dash-card-title">Today's priorities <span style="font-size:10px;color:#00C9A7">View all</span></div>''', unsafe_allow_html=True)
-            priorities = [
-                ("⚠ Offers expiring today",      "CRITICAL", "br", "#CC0000", 2),
-                ("📝 Evaluations pending",         "WARNING",  "bw", "#F5A623", max(1,_pending)),
-                ("📅 Interviews unconfirmed",       "WARNING",  "bw", "#F5A623", 4),
-                ("👔 Manager feedback awaited",     "INFO",     "bi", "#378ADD", 3),
-                ("📄 Reports not submitted",        "INFO",     "bi", "#378ADD", 6),
-            ]
-            for pname, plabel, pbadge, pcolor, pcount in priorities:
-                st.markdown(
-                    f'<div class="priority-row" style="border-left:3px solid {pcolor};padding-left:8px;margin-left:-8px">'                f'<span class="priority-name">{pname}</span>'                f'<span style="display:flex;align-items:center;gap:5px">'                f'<span style="font-size:9px;color:{pcolor};font-weight:700">{plabel}</span>'                f'<span class="badge {pbadge}">{pcount}</span></span></div>',
-                    unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        # Funnel with conversion %
-        with _col2:
-            _f_ap = _pipeline.get("applied", 1250)
-            _f_sc = _pipeline.get("screened", 640)
-            _f_in = _pipeline.get("interviewed", _total_interviews or 192)
-            _f_sl = _pipeline.get("shortlisted", _selected or 58)
-            _f_of = _pipeline.get("offered", 19)
-            _f_jo = _pipeline.get("joined", 12)
-            def _fconv2(a, b): return f"{round(a/b*100)}%" if b > 0 else "—"
-            def _fw2(n, t): return f"{min(100, n/t*100):.0f}" if t > 0 else "0"
-
-            _funnel_stages = [
-                ("Applied",     _f_ap, _f_ap, "#378ADD", None,  "#4A6A80"),
-                ("Screened",    _f_sc, _f_ap, "#378ADD", _f_ap, "#378ADD"),
-                ("Interviewed", _f_in, _f_ap, "#1D9E75", _f_sc, "#1D9E75"),
-                ("Shortlisted", _f_sl, _f_ap, "#1D9E75", _f_in, "#1D9E75"),
-                ("Offered",     _f_of, _f_ap, "#F5A623", _f_sl, "#F5A623"),
-                ("Joined",      _f_jo, _f_ap, "#00B050", _f_of, "#00B050"),
-            ]
-            _funnel_rows_html = "".join([
-                f'<div class="funnel-row">'            f'<span class="funnel-lbl">{lbl}</span>'            f'<div class="funnel-wrap"><div class="funnel-fill" style="width:{_fw2(cnt,_f_ap)}%;background:{col}"></div></div>'            f'<span class="funnel-cnt">{cnt}</span>'            f'<span style="font-size:10px;color:{cconv};width:36px;text-align:right">{_fconv2(cnt,cdenom) if cdenom else "&mdash;"}</span></div>'
-                for lbl, cnt, _, col, cdenom, cconv in _funnel_stages
-            ])
-            st.markdown(
-                f'<div class="dash-card"><div class="dash-card-title" style="margin-bottom:6px">Candidate funnel '            f'<span style="font-size:10px;color:#00C9A7">Analytics</span></div>'            f'<div style="display:flex;gap:6px;margin-bottom:6px"><span style="font-size:9px;color:#4A6A80;width:70px">Stage</span>'            f'<div style="flex:1"></div>'            f'<span style="font-size:9px;color:#4A6A80;width:36px;text-align:right">Count</span>'            f'<span style="font-size:9px;color:#00C9A7;width:36px;text-align:right">Conv.</span></div>'            f'{_funnel_rows_html}</div>',
-                unsafe_allow_html=True)
-
-        # Live activity
-        with _col3:
-            _recent5 = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:5] if results_h else []
-            _act_colors = ["#1D9E75","#378ADD","#7F77DD","#F5A623","#00B050"]
-            if _recent5:
-                _act_html = "".join([
-                    f'<div class="activity-row">'                f'<div class="act-dot" style="background:{_act_colors[i%5]}"></div>'                f'<div><div class="act-text">{r.get("candidate_name","Candidate")[:22]} — {str(r.get("verdict","Done"))[:18]}</div>'                f'<div class="act-time">{str(r.get("date",r.get("timestamp","Today")))[:10]}</div></div></div>'
-                    for i, r in enumerate(_recent5)
-                ])
-            else:
-                _act_html = (
-                    '<div style="text-align:center;padding:18px 10px">'
-                    '<div style="font-size:22px;margin-bottom:8px">&#127919;</div>'
-                    '<div style="font-size:13px;font-weight:600;color:#C8D8E4;margin-bottom:5px">No interviews yet</div>'
-                    '<div style="font-size:11px;color:#4A6A80;line-height:1.6">Start your first interview or<br>load sample data to explore IAS.</div>'
-                    '</div>'
-                )
-            st.markdown(
-                f'<div class="dash-card"><div class="dash-card-title">Live activity <span style="font-size:10px;color:#00C9A7">View all</span></div>'            f'{_act_html}</div>',
-                unsafe_allow_html=True)
-
-        # ── PREDICTIVE FORECAST ROW — Industry-aware ──────────────
-        _ind_dash_cfg  = get_industry_dashboard_config(_curr_ind)
-        _fc_items = _ind_dash_cfg.get("forecast_items", [
-            ("Engineering",  "Pipeline at risk in 12 days",      "#F5A623"),
-            ("Sales",        "Hiring target 95% achievable",     "#00B050"),
-            ("Support",      "Pipeline healthy",                 "#00C9A7"),
-        ])
-        _pred_parts = ["<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px\">"]
-        _col_border_map = {"#F5A623":"rgba(245,166,35,0.25)","#00B050":"rgba(0,176,80,0.25)",
-                           "#00C9A7":"rgba(0,201,167,0.25)","#CC0000":"rgba(204,0,0,0.25)",
-                           "#378ADD":"rgba(55,138,221,0.25)"}
-        for _fc_label, _fc_status, _fc_color in (_fc_items + [("","","")]* 3)[:3]:
-            _fc_border = _col_border_map.get(_fc_color, "rgba(0,201,167,0.25)")
-            _pred_parts.append(
-                f'<div style="background:#0A1628;border:1px solid {_fc_border};border-radius:10px;padding:12px 14px">'                f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">{_fc_label}</div>'                f'<div style="font-size:13px;font-weight:600;color:{_fc_color}">{_fc_status}</div>'                f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">🤖 {_curr_ind} forecast</div></div>'
-            )
-        _pred_parts.append("</div>")
-        _pred_html = "".join(_pred_parts)
-        st.markdown(_pred_html, unsafe_allow_html=True)
-
-        # ── ROW 2: AI Insights + Velocity + Metrics ─────────────────
-        st.markdown(f"""
-    <div class="row2-grid">
-      </div>
-    """, unsafe_allow_html=True)
-
-        # AI Insights — intelligent narrative
-        _ins1_title = "Interview pipeline"
-        if _accept_rate >= 25:
-            _ins1_txt = f"{_total_interviews} interviews completed. Selection rate of {_accept_rate}% is above benchmark."
-            _ins1_ai  = "🤖 Pipeline performing well. Maintain current screening criteria."
-        elif _accept_rate >= 10:
-            _ins1_txt = f"{_total_interviews} interviews completed. Selection rate at {_accept_rate}% — slightly below target of 20%."
-            _ins1_ai  = "🤖 Review knockout questions. Consider expanding sourcing channels."
+    # ── RAG status calculator ──────────────────────────────────────
+    def _rag(val, green_thresh, amber_thresh, higher_is_better=True):
+        if higher_is_better:
+            if val >= green_thresh:  return "GREEN",  "#00C9A7", "✅"
+            if val >= amber_thresh:  return "AMBER",  "#FF8C2A", "⚠️"
+            return "RED", "#FF3C3C", "🔴"
         else:
-            _ins1_txt = f"{_total_interviews} interviews done. Selection rate of {_accept_rate}% indicates screening may be overly restrictive."
-            _ins1_ai  = "🤖 Recommended action: Re-calibrate scoring rubric and review JD requirements."
+            if val <= green_thresh:  return "GREEN",  "#00C9A7", "✅"
+            if val <= amber_thresh:  return "AMBER",  "#FF8C2A", "⚠️"
+            return "RED", "#FF3C3C", "🔴"
 
-        _ins2_title = "Assessment quality"
-        if _avg_score >= 7.5:
-            _ins2_txt = f"Average interview score {round(_avg_score,1)}/10 — strong candidate quality."
-            _ins2_ai  = "🤖 High quality pipeline. Accelerate decision-making to avoid drop-off."
-        elif _avg_score >= 5:
-            _ins2_txt = f"Average score {round(_avg_score,1)}/10. Quality is acceptable but below 7.5 benchmark."
-            _ins2_ai  = "🤖 Consider harder questions in technical rounds to better differentiate candidates."
-        elif _avg_score > 0:
-            _ins2_txt = f"Average score {round(_avg_score,1)}/10 is below acceptable threshold."
-            _ins2_ai  = "🤖 Urgent: Review interviewer calibration and scoring rubric consistency."
-        else:
-            _ins2_txt = "No interview scores recorded yet. Complete interviews to see quality metrics."
-            _ins2_ai  = "🤖 Run your first interview to start generating insights."
+    # Compute RAG for each metric
+    _rag_acc   = _rag(_acc,   60, 40)          # Acceptance rate
+    _rag_tth   = _rag(_tth,   30, 45, False)   # Time to hire (lower=better)
+    _rag_score = _rag(_avg,   3.5, 2.5)        # Avg score
+    _rag_open  = _rag(_open,  20, 40, False)   # Open roles (lower=better)
 
-        _ins3_title = "Offer pipeline"
-        _ins3_txt = f"{_offers_pending} offers pending. 2 expiring within 24 hours."
-        _ins3_ai  = "🤖 Action required: Contact expiring offer candidates today to prevent drop-off."
+    # Overall health
+    _reds   = sum(1 for r in [_rag_acc,_rag_tth,_rag_score,_rag_open] if r[0]=="RED")
+    _ambers = sum(1 for r in [_rag_acc,_rag_tth,_rag_score,_rag_open] if r[0]=="AMBER")
+    _health_color = "#FF3C3C" if _reds >= 2 else "#FF8C2A" if _reds >= 1 or _ambers >= 2 else "#00C9A7"
+    _health_label = "CRITICAL" if _reds >= 2 else "AT RISK" if _reds >= 1 else "HEALTHY"
 
-        st.markdown(f"""
-      <div class="dash-card">
-        <div class="dash-card-title">AI hiring insights <a href="#">Refresh</a></div>
-        <div class="insight-box">
-          <div class="insight-dept">{_ins1_title}</div>
-          <div class="insight-txt">{_ins1_txt}</div>
-          <div class="insight-why">Why: Strong sourcing from referrals. Screening criteria aligned to JD. Hiring manager turnaround improved 3 days.</div>
-          <div class="insight-ai">&#129302; {_ins1_ai[2:]}</div>
-        </div>
-        <div class="insight-box">
-          <div class="insight-dept">{_ins2_title}</div>
-          <div class="insight-txt">{_ins2_txt}</div>
-          <div class="insight-ai">{_ins2_ai}</div>
-        </div>
-        <div class="insight-box">
-          <div class="insight-dept">{_ins3_title}</div>
-          <div class="insight-txt">{_ins3_txt}</div>
-          <div class="insight-ai">{_ins3_ai}</div>
-        </div>
-      </div>
-      <div class="dash-card">
-        <div class="dash-card-title">Performance metrics</div>
-        <div class="metric-mini"><span class="mm-label">Total interviews</span><span class="mm-val">{_total_interviews}</span></div>
-        <div class="metric-mini"><span class="mm-label">Selected candidates</span><span class="mm-val" style="color:#00B050">{_selected}</span></div>
-        <div class="metric-mini"><span class="mm-label">Rejected candidates</span><span class="mm-val" style="color:#CC0000">{_rejected}</span></div>
-        <div class="metric-mini"><span class="mm-label">Pending review</span><span class="mm-val" style="color:#F5A623">{_pending}</span></div>
-        <div class="metric-mini"><span class="mm-label">Accept rate</span><span class="mm-val">{_accept_rate}%</span></div>
-        <div class="metric-mini"><span class="mm-label">Avg interview score</span><span class="mm-val">{round(_avg_score,1) if _avg_score else "—"}/10</span></div>
-        <div class="metric-mini"><span class="mm-label">Open roles</span><span class="mm-val">{_open_roles}</span></div>
-        <div class="metric-mini"><span class="mm-label">Avg time-to-hire</span><span class="mm-val">{_tth} days</span></div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── Authority level selector ──────────────────────────────────
+    _role_tab = st.session_state.get("_dash_role", "CxO / Board")
+    ROLES = ["CxO / Board", "Business Leadership", "Operational Leadership", "Manager / Director"]
 
-        # ── CANDIDATE CARDS (replaces static table) ─────────────────
-        _recent_cards = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8] if results_h else []
-        if _recent_cards:
-            st.markdown('<div class="section-lbl">Recent candidates</div>', unsafe_allow_html=True)
-            _card_html = '<div class="cand-grid">'
-            for _rc in _recent_cards[:4]:
-                _v   = str(_rc.get("verdict","—"))
-                _n   = _rc.get("candidate_name","Candidate")
-                _ini = "".join([w[0].upper() for w in _n.split()[:2]])
-                _scr = _rc.get("overall_score", _rc.get("score", 0))
-                _rol = str(_rc.get("job_role","—"))[:28]
-                _dt  = str(_rc.get("date", _rc.get("timestamp","")))[: 10]
-                _vgo  = "GO" in _v.upper() and "NO" not in _v.upper()
-                _vno  = "REJECT" in _v.upper() or "NO-GO" in _v.upper()
-                _vcls = "cv-go" if _vgo else "cv-no" if _vno else "cv-pend"
-                _vtxt = "Selected" if _vgo else "Not selected" if _vno else "Pending review"
-                _avc  = ("#00C9A7" if _vgo else "#CC0000" if _vno else "#F5A623")
-                _match = min(99, max(40, round(float(_scr or 5) * 10 + 10)))
-                _card_html += (
-                    f'<div class="cand-card">'                f'<div class="cand-top">'                f'<div class="cand-avatar" style="color:{_avc};background:rgba({("0,201,167" if _vgo else "204,0,0" if _vno else "245,166,35")},0.12)">{_ini}</div>'                f'<div><div class="cand-name">{_n}</div><div class="cand-role">{_rol}</div></div></div>'                f'<div class="cand-scores">'                f'<div class="cscore"><div class="sv">{round(float(_scr or 0),1)}</div><div class="sl">Score</div></div>'                f'<div class="cscore"><div class="sv" style="color:#378ADD">{_match}%</div><div class="sl">AI match</div></div>'                f'<div class="cscore"><div class="sv">{_dt}</div><div class="sl">Date</div></div></div>'                f'<div class="cand-verdict {_vcls}">{_vtxt}</div>'                f'<div class="cand-btns">'                f'<button class="cbtn cbtn-p">View report</button>'                f'<button class="cbtn">Schedule</button>'                f'<button class="cbtn">{"Send offer" if _vgo else "Feedback"}</button>'                f'</div></div>'
-                )
-            _card_html += '</div>'
-            st.markdown(_card_html, unsafe_allow_html=True)
-        elif not results_h:
-            pass  # No interviews yet — skip
-
-        # ── QUICK ACTIONS ROW ─────────────────────────────────────
-        st.markdown('<div class="qa-row">'        '<span style="font-size:11px;font-weight:600;color:#4A6A80;margin-right:4px;align-self:center">Quick actions:</span>'        '</div>', unsafe_allow_html=True)
-        st.markdown('<div style="font-size:10px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">1-click actions</div>', unsafe_allow_html=True)
-        _qa1, _qa2, _qa3, _qa4, _qa5, _qa6 = st.columns(6)
-        with _qa1:
-            if st.button("+ New Interview", use_container_width=True, key="qa_new", type="primary"):
-                st.session_state.page = "workflow"; st.rerun()
-        with _qa2:
-            if st.button("Upload CV", use_container_width=True, key="qa_cv"):
-                st.session_state.page = "workflow"; st.rerun()
-        with _qa3:
-            if st.button("Bulk Screen", use_container_width=True, key="qa_bulk"):
-                st.session_state.page = "bulkcv"; st.rerun()
-        with _qa4:
-            if st.button("Schedule", use_container_width=True, key="qa_sched"):
-                st.session_state.page = "calendar"; st.rerun()
-        with _qa5:
-            if st.button("Offer Letter", use_container_width=True, key="qa_offer"):
-                st.session_state.page = "offerletter"; st.rerun()
-        with _qa6:
-            if st.button("Hiring Report", use_container_width=True, key="dash_hiring_report"):
-                st.session_state.page = "execanalytics"; st.rerun()
-
-        # ── RECENT INTERVIEWS TABLE ─────────────────────────────────
-        if results_h:
-            st.markdown('<div class="dash-card" style="margin-bottom:14px">', unsafe_allow_html=True)
-            st.markdown('<div class="dash-card-title">Recent interviews</div>', unsafe_allow_html=True)
-            _recent = sorted(results_h, key=lambda x: x.get("timestamp",""), reverse=True)[:8]
-            _rows = []
-            for r in _recent:
-                _v = r.get("verdict","—")
-                _col = "🟢" if "GO" in str(_v).upper() and "NO" not in str(_v).upper() else "🔴" if "REJECT" in str(_v).upper() or "NO-GO" in str(_v).upper() else "🟡"
-                _rows.append({
-                    "Candidate": r.get("candidate_name","—"),
-                    "Role": str(r.get("job_role","—"))[:30],
-                    "Score": f"{round(r.get('overall_score', r.get('score',0)),1)}/10",
-                    "Verdict": f"{_col} {_v}",
-                    "Date": str(r.get("date", r.get("timestamp","—")))[:10],
-                })
-            if _rows:
-                import pandas as _pdrec
-                st.dataframe(_pdrec.DataFrame(_rows), use_container_width=True, hide_index=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── COPILOT SIDEBAR (persistent right panel) ─────────────
-    with _cop_col:
-        st.markdown(
-            '<div style="background:#0A1628;border:1px solid rgba(0,201,167,0.15);border-radius:12px;padding:14px">'            '<div style="font-size:13px;font-weight:700;color:#00C9A7;margin-bottom:3px">&#129302; Ask IAS</div>'            '<div style="font-size:10px;color:#4A6A80;margin-bottom:12px">Persistent AI assistant</div>',
-            unsafe_allow_html=True)
-
-        _cop_prompts = [
-            "Show delayed interviews",
-            "Offers expiring this week",
-            "Summarise hiring risks",
-            "Why is health at risk?",
-            "Board hiring report",
-        ]
-        for _cp in _cop_prompts:
-            st.markdown(
-                f'<div style="font-size:11px;color:#C8D8E4;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid rgba(0,201,167,0.1)">{_cp}</div>',
-                unsafe_allow_html=True)
-
-        st.text_input("Ask anything...", key="cop_input_main", label_visibility="collapsed",
-                      placeholder="Ask IAS anything about hiring...")
-
-        st.markdown(
-            '<div style="font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px">System status</div>',
-            unsafe_allow_html=True)
-
-        _status_rows = [
-            ("Platform",     "Operational", "#00B050"),
-            ("Uptime",       "99.98%",       "#00C9A7"),
-            ("AI API",       "Online",       "#00B050"),
-            ("Calendar",     "Active",       "#00B050"),
-        ]
-        for _sl, _sv, _sc in _status_rows:
-            st.markdown(
-                f'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)">'                f'<span style="font-size:11px;color:#4A6A80">{_sl}</span>'                f'<span style="font-size:11px;font-weight:600;color:{_sc}">{_sv}</span></div>',
-                unsafe_allow_html=True)
-
-        st.markdown(
-            '<div style="font-size:9px;font-weight:700;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 6px">Quick actions</div>',
-            unsafe_allow_html=True)
-        if st.button("+ New interview", key="cop_new", use_container_width=True):
-            st.session_state.page = "workflow"; st.rerun()
-        if st.button("Upload CV", key="cop_cv", use_container_width=True):
-            st.session_state.page = "workflow"; st.rerun()
-        if st.button("Schedule interview", key="cop_sched", use_container_width=True):
-            st.session_state.page = "calendar"; st.rerun()
-        if st.button("Generate offer letter", key="cop_offer", use_container_width=True):
-            st.session_state.page = "offerletter"; st.rerun()
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── SUPPORT CENTRE ──────────────────────────────────────────
     st.markdown("""
-<div style="font-size:11px;font-weight:600;color:#4A6A80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Support & resources</div>
-<div class="support-grid">
-  <div class="sup-card"><div class="sup-icon">💬</div><div class="sup-label">Live chat</div></div>
-  <div class="sup-card"><div class="sup-icon">📚</div><div class="sup-label">Knowledge base</div></div>
-  <div class="sup-card"><div class="sup-icon">🎬</div><div class="sup-label">Training videos</div></div>
-  <div class="sup-card"><div class="sup-icon">🎫</div><div class="sup-label">Raise a ticket</div></div>
-</div>
-""", unsafe_allow_html=True)
+    <style>
+    .rag-card{border-radius:8px;padding:14px 16px;margin-bottom:8px}
+    .rag-metric{font-size:28px;font-weight:700;font-family:monospace;line-height:1}
+    .rag-label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;opacity:.7;margin-bottom:4px}
+    .rag-sub{font-size:11px;opacity:.6;margin-top:4px}
+    .drill-item{border-left:3px solid;padding:8px 12px;margin:5px 0;border-radius:0 6px 6px 0;font-size:13px}
+    .auth-pill{display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;
+               letter-spacing:0.06em;border:1px solid;margin-right:6px;cursor:pointer}
+    </style>""", unsafe_allow_html=True)
 
-    # ── ENTERPRISE TRUST FOOTER ────────────────────────────────
-    _last_updated = _now_h.strftime("%d %b %Y · %H:%M")
-    st.markdown(
-        f'<div style="border-top:1px solid rgba(0,201,167,0.1);margin-top:14px;padding-top:10px;'
-        f'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'        f'<div style="display:flex;align-items:center;gap:16px">'        f'<span style="font-size:10px;color:#4A6A80">IAS v9.0 Enterprise &nbsp;&middot;&nbsp; Build 2026.06</span>'        f'<span style="font-size:10px;color:#4A6A80">Last updated: {_last_updated}</span>'        f'</div>'        f'<div style="display:flex;align-items:center;gap:6px">'        f'<span style="width:7px;height:7px;border-radius:50%;background:#00B050;display:inline-block"></span>'        f'<span style="font-size:10px;color:#00B050;font-weight:600">All systems operational &nbsp; 99.98% uptime</span>'        f'</div></div>',
+    # ── Header ────────────────────────────────────────────────────
+    _hc1, _hc2 = st.columns([3, 1])
+    with _hc1:
+        st.markdown(f"""
+        <div style="padding:10px 0 6px">
+        <div style="font-size:11px;color:#4A6A80;text-transform:uppercase;letter-spacing:0.1em">
+        IAS v9 · Executive Intelligence · {_now_h.strftime("%d %b %Y  %H:%M")}</div>
+        <div style="font-size:22px;font-weight:700;color:#E8F2FF;margin:4px 0">
+        Hiring Command Centre</div>
+        <div style="display:inline-block;background:{"rgba(255,60,60,0.15)" if _health_label=="CRITICAL" else "rgba(255,140,42,0.12)" if _health_label=="AT RISK" else "rgba(0,201,167,0.12)"};
+        border:1px solid {_health_color};border-radius:4px;padding:3px 12px;
+        font-size:12px;font-weight:700;color:{_health_color};letter-spacing:0.06em">
+        {_health_label} · {_reds} RED · {_ambers} AMBER metrics</div></div>""",
         unsafe_allow_html=True)
-
-    # ── AI COPILOT FAB ──────────────────────────────────────────
-    st.markdown("""
-<div class="cop-fab">
-  <div class="cop-popup" id="ias_cop">
-    <div class="cop-hdr">🤖 Ask IAS</div>
-    <div class="cop-chip">Show delayed interviews</div>
-    <div class="cop-chip">Generate interview questions</div>
-    <div class="cop-chip">Summarise this week's pipeline</div>
-    <div class="cop-chip">Create hiring report</div>
-  </div>
-  <button class="cop-fab-btn" onclick="var p=document.getElementById('ias_cop');p.classList.toggle('open')">🤖</button>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── QUICK ACTIONS (for new users only) ─────────────────────
-    if _total_interviews == 0:
-        st.divider()
-        st.markdown("#### 🚀 Quick start — 5 steps to your first interview")
-        _q1, _q2 = st.columns(2)
-        with _q1:
-            _steps_todo = [
-                ("🔑", "Set API key", "Settings → API Key"),
-                ("📋", "Paste job description", "Interview Workflow → Paste JD"),
-                ("📄", "Upload candidate CV", "Interview Workflow → Upload CV"),
-                ("❓", "Generate questions", "Interview Workflow → Generate"),
-                ("📊", "Score & report", "Interview Workflow → Complete"),
-            ]
-            for icon, title, sub in _steps_todo:
-                st.markdown(f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,201,167,0.1)"><span style="font-size:18px">{icon}</span><div><div style="font-size:13px;font-weight:600;color:#C8D8E4">{title}</div><div style="font-size:11px;color:#4A6A80">{sub}</div></div></div>', unsafe_allow_html=True)
-        with _q2:
-            st.markdown("**Try a demo interview:**")
-            _demo_scenarios = [
-                ("🌐", "Telecom — 5G OSS Architect", "Senior", "telecom"),
-                ("🏭", "Manufacturing — Plant Manager", "Mid", "manufacturing"),
-                ("🏥", "Healthcare — Clinical Lead", "Senior", "healthcare"),
-                ("📊", "Consulting — PMO Director", "Lead", "consulting"),
-            ]
-            for icon, label, level, key in _demo_scenarios:
-                if st.button(f"{icon} {label}", key=f"demo_{key}", use_container_width=True):
-                    _demo_cv = f"Experienced professional applying for {label} role with 10+ years relevant experience."
-                    _demo_jd = f"We are looking for a {label} with strong domain expertise, leadership skills, and proven delivery record."
-                    st.session_state.candidate_name  = f"Demo Candidate ({label.split('—')[1].strip()})"
-                    st.session_state.candidate_email = "demo@gvstechnologies.com"
-                    st.session_state.cv_text  = _demo_cv
-                    st.session_state.jd_text  = _demo_jd
-                    st.session_state.questions = []
-                    st.session_state.page = "workflow"
-                    st.rerun()
-# ════════════════════════════════════════════════════════════════
-# WORKFLOW — MAIN INTERVIEW FLOW
-
-# ════════════════════════════════════════════════════════════════
-elif st.session_state.page=="workflow":
-    if not apikey.is_valid():
-        st.error("⚠️ API key not set. Go to Settings first.")
-        st.stop()
-
-    # ── HANDLE SIDEBAR TRIGGERS ──────────────────────────────────────────
-    if st.session_state.pop("_trigger_gmail_check", False):
-        with st.spinner("Checking Gmail..."):
-            try:
-                import core.gmail_monitor as _gm_t
-                _t_s = cfg.get_settings()
-                _t_e = _t_s.get("sender_email","")
-                _t_p = _t_s.get("gmail_app_password","")
-                if _t_e and _t_p:
-                    import imaplib, email as _em_t
-                    from email import policy as _ep_t
-                    with imaplib.IMAP4_SSL("imap.gmail.com",993) as _im_t:
-                        _im_t.login(_t_e, _t_p)
-                        _im_t.select("INBOX")
-                        _, _ms_t = _im_t.search(None,"UNSEEN")
-                        _us_t = _ms_t[0].split() if _ms_t[0] else []
-                        _fn_t = 0
-                        for _u_t in _us_t:
-                            _, _d_t = _im_t.fetch(_u_t,"(RFC822)")
-                            _mg_t = _em_t.message_from_bytes(_d_t[0][1],policy=_ep_t.default)
-                            _sj_t = _mg_t.get("Subject","")
-                            if _gm_t._is_interview_email(_sj_t):
-                                _gm_t._process_message(_mg_t, _sj_t)
-                                _im_t.store(_u_t,"+FLAGS","\\Seen")
-                                _fn_t += 1
-                    if _fn_t: st.success(f"✅ {_fn_t} email(s) loaded!")
-                    else: st.info("📭 No new interview emails.")
-                else: st.warning("Set Gmail in Settings → Notifications first.")
-            except Exception as _te: st.error(f"Gmail check failed: {_te}")
-
-    if st.session_state.pop("_trigger_generate", False):
-        _t_cfg = cfg.get_settings()
-        _t_lk = {"Junior (0-2 yrs)":"junior","Mid-Level (3-5 yrs)":"mid",
-            "Senior (6-9 yrs)":"senior","Senior / Lead (7-10 yrs)":"senior",
-            "Lead (8-12 yrs)":"lead","Principal / Architect (12+ yrs)":"principal"
-            }.get(_t_cfg.get("default_level","Senior"),"senior")
-        with st.spinner("Generating questions..."):
-            _t_res = _generate_questions(st.session_state.cv_text,
-                st.session_state.jd_text, st.session_state.candidate_name,
-                st.session_state.get("_q_difficulty", "medium"),
-                    st.session_state.get("selected_industry","IT & Software"))
-        if "error" not in _t_res:
-            st.session_state.questions = _t_res.get("questions",[])
-            st.session_state.notes = {}
-            st.session_state.curr_q = 0
-            save_session()
-            st.success(f"✅ {len(st.session_state.questions)} questions ready!")
-            st.rerun()
-        else:
-            st.error(f"Failed: {_t_res.get('error','')}")
-
-    # ── ACTION BAR ─────────────────────────────────────────────────────────
-    st.markdown("### 🎯 Interview Workflow")
-    _ab1, _ab2, _ab3 = st.columns([2, 2, 3])
-    with _ab1:
-        if st.button("📬 Check Gmail Now", use_container_width=True,
-            help="Check Gmail inbox NOW for new interview emails"):
-            with st.spinner("Checking Gmail..."):
-                try:
-                    import core.gmail_monitor as _gm_ab
-                    _ab_s = cfg.get_settings()
-                    _ab_e = _ab_s.get("sender_email","")
-                    _ab_p = _ab_s.get("gmail_app_password","")
-                    if _ab_e and _ab_p:
-                        import imaplib, email as _em3
-                        from email import policy as _ep3
-                        with imaplib.IMAP4_SSL("imap.gmail.com",993) as _im3:
-                            _im3.login(_ab_e, _ab_p)
-                            _im3.select("INBOX")
-                            _, _ms3 = _im3.search(None,"UNSEEN")
-                            _us3 = _ms3[0].split() if _ms3[0] else []
-                            _fn3 = 0
-                            for _u3 in _us3:
-                                _, _d3 = _im3.fetch(_u3,"(RFC822)")
-                                _mg3 = _em3.message_from_bytes(_d3[0][1],policy=_ep3.default)
-                                _sj3 = _mg3.get("Subject","")
-                                if _gm_ab._is_interview_email(_sj3):
-                                    _gm_ab._process_message(_mg3, _sj3)
-                                    _im3.store(_u3,"+FLAGS","\\Seen")
-                                    _fn3 += 1
-                        if _fn3:
-                            st.success(f"✅ {_fn3} email(s) loaded!")
-                            st.rerun()
-                        else:
-                            st.info("📭 No new interview emails.")
-                    else:
-                        st.warning("Set Gmail in Settings → Notifications first")
-                except Exception as _abe:
-                    st.error(f"Gmail check failed: {_abe}")
-    with _ab2:
-        _ab_can = (st.session_state.get("cv_text") and st.session_state.get("jd_text")
-                   and st.session_state.get("candidate_name") and apikey.is_valid())
-        if st.button("⚡ Generate Questions Now", use_container_width=True,
-            type="primary" if (_ab_can and not st.session_state.get("questions")) else "secondary",
-            disabled=not _ab_can,
-            help="Generate questions from loaded CV + JD"):
-            _ab_cfg = cfg.get_settings()
-            _ab_lk = {"Junior (0-2 yrs)":"junior","Mid-Level (3-5 yrs)":"mid",
-                "Senior (6-9 yrs)":"senior","Senior / Lead (7-10 yrs)":"senior",
-                "Lead (8-12 yrs)":"lead","Principal / Architect (12+ yrs)":"principal"
-                }.get(_ab_cfg.get("default_level","Senior"),"senior")
-            with st.spinner("Generating questions..."):
-                _ab_res = _generate_questions(st.session_state.cv_text,
-                    st.session_state.jd_text, st.session_state.candidate_name,
-                    _ab_cfg.get("default_questions",10), _ab_lk,
-                    st.session_state.get("_q_difficulty", "medium"))
-            if "error" not in _ab_res:
-                st.session_state.questions = _ab_res.get("questions",[])
-                st.session_state.notes = {}
-                st.session_state.curr_q = 0
-                save_session()
-                st.success(f"✅ {len(st.session_state.questions)} questions ready!")
-                st.rerun()
-            else:
-                st.error(f"Failed: {_ab_res.get('error','')}")
-    with _ab3:
-        _ab_st = []
-        if st.session_state.get("candidate_name"): _ab_st.append(f"👤 {st.session_state.candidate_name[:20]}")
-        if st.session_state.get("cv_text"):   _ab_st.append("📄 CV ✅")
-        if st.session_state.get("jd_text"):   _ab_st.append("📋 JD ✅")
-        if st.session_state.get("questions"): _ab_st.append(f"❓ {len(st.session_state.questions)}Q ✅")
-        if _ab_st:
-            st.markdown(
-                '<div style="background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2);'
-                'border-radius:6px;padding:8px 12px;font-size:11px;color:#00C9A7;'
-                'min-height:38px;display:flex;align-items:center;flex-wrap:wrap;gap:6px">'
-                + ' <span style="color:rgba(0,201,167,0.4)">·</span> '.join(_ab_st)
-                + '</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(
-                '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(0,201,167,0.08);'
-                'border-radius:6px;padding:8px 12px;font-size:11px;color:#4A6A80;'
-                'min-height:38px;display:flex;align-items:center">'
-                'Load .eml or fill CV + JD in Step 1 to start</div>',
-                unsafe_allow_html=True)
-    st.divider()
-
-
-    # ── AUTO-SESSION FROM GMAIL MONITOR ──────────────────────────
-    try:
-        import core.gmail_monitor as _gm_wf
-        _gm_running = _gm_wf.is_running()
-    except Exception:
-        _gm_running = False
-    try:
-        from auto_session import check_auto_session
-        _new_session_loaded = check_auto_session(ROOT, st.session_state)
-        if _new_session_loaded and st.session_state.questions:
-            _zoom = st.session_state.get("_zoom_link","") or st.session_state.get("_meet_link","")
-            _zoom_btn = ""
-            if _zoom:
-                _zoom_btn = ('<div style="margin-top:8px"><a href="' + _zoom +
-                    '" target="_blank" style="background:#00C9A7;color:#000;padding:6px 16px;'
-                    'border-radius:4px;font-weight:700;font-size:13px;text-decoration:none">'
-                    "Open Zoom / Meet</a></div>")
-            st.markdown(
-                '<div style="background:rgba(0,201,167,0.12);border:2px solid #00C9A7;'
-                'border-radius:8px;padding:14px 20px;margin-bottom:12px">'
-                '<div style="font-size:16px;font-weight:700;color:#00C9A7">'
-                "Interview Ready — " + st.session_state.candidate_name + "</div>"
-                '<div style="font-size:13px;color:#E8F2FF;margin-top:6px">'
-                + str(len(st.session_state.questions)) +
-                " questions pre-loaded from email. Go to Step 2 to start.</div>"
-                + _zoom_btn + "</div>",
-                unsafe_allow_html=True)
-        elif _new_session_loaded:
-            st.info("Email loaded for " + st.session_state.candidate_name + " — questions generating. Refresh in 30s.")
-        if _new_session_loaded:
-            cname  = st.session_state.get("candidate_name","")
-            etime  = st.session_state.get("_interview_time","")
-            zlink  = st.session_state.get("_zoom_link","")
-            skills = st.session_state.get("_email_skills",[])
-            cfolder= st.session_state.get("_candidate_folder","")
-
-            # ── AUTO-GENERATE QUESTIONS immediately ───────────────────────
-            _can_autogen = (
-                st.session_state.get("cv_text","") and
-                st.session_state.get("jd_text","") and
-                cname and
-                apikey.is_valid() and
-                not st.session_state.get("questions")
-            )
-
-            # Banner
-            st.markdown(
-                f'<div style="background:linear-gradient(135deg,rgba(0,176,80,0.1),rgba(0,201,167,0.05));'
-                f'border:2px solid #00B050;border-radius:10px;padding:16px 20px;margin-bottom:12px">'
-                f'<div style="font-size:14px;font-weight:700;color:#00B050;margin-bottom:8px">'
-                f'📧 Gmail Monitor — New Interview Email Auto-Loaded!</div>'
-                f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'
-                f'<div style="background:rgba(0,0,0,0.2);border-radius:4px;padding:8px 10px">'
-                f'<div style="font-size:10px;color:#4A6A80">CANDIDATE</div>'
-                f'<div style="font-size:13px;font-weight:700;color:#E8F2FF">{cname}</div></div>'
-                f'<div style="background:rgba(0,0,0,0.2);border-radius:4px;padding:8px 10px">'
-                f'<div style="font-size:10px;color:#4A6A80">INTERVIEW TIME</div>'
-                f'<div style="font-size:12px;color:#00C9A7;font-weight:600">{etime or "TBC"}</div></div>'
-                f'<div style="background:rgba(0,0,0,0.2);border-radius:4px;padding:8px 10px">'
-                f'<div style="font-size:10px;color:#4A6A80">STATUS</div>'
-                f'<div style="font-size:12px;color:#00C9A7">{"⚡ Generating questions..." if _can_autogen else "✅ Ready"}</div></div></div>'
-                + (f'<div style="font-size:11px;color:#8AABBF;margin-bottom:8px">🛠 Skills: {", ".join(skills[:6])}</div>' if skills else '')
-                + (f'<a href="{zlink}" target="_blank" style="background:#1565C0;color:#fff;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none">🔗 Open Zoom Room</a>' if zlink else '')
-                + (f'<div style="font-size:10px;color:#4A6A80;margin-top:6px">📁 {cfolder}</div>' if cfolder else '')
-                + f'</div>',
-                unsafe_allow_html=True)
-
-            # ── AUTO-GENERATE ─────────────────────────────────────────────
-            if _can_autogen:
-                _ag_settings = cfg.get_settings()
-                _ag_num_q = _ag_settings.get("default_questions", 10)
-                _ag_level = _ag_settings.get("default_level", "Senior")
-                _level_map = {
-                    "Junior (0-2 yrs)": "junior", "Mid-Level (3-5 yrs)": "mid",
-                    "Senior (6-9 yrs)": "senior", "Senior / Lead (7-10 yrs)": "senior",
-                    "Lead (8-12 yrs)": "lead", "Principal / Architect (12+ yrs)": "principal"
-                }
-                _ag_level_key = _level_map.get(_ag_level, "senior")
-                with st.spinner(f"⚡ Auto-generating {_ag_num_q} questions for {cname}..."):
-                    _ag_res = _generate_questions(
-                        st.session_state.cv_text,
-                        st.session_state.jd_text,
-                        cname, _ag_num_q, _ag_level_key,
-                        st.session_state.get("_q_difficulty", "medium"))
-                if "error" not in _ag_res:
-                    st.session_state.questions = _ag_res.get("questions", [])
-                    st.session_state.notes = {}
-                    st.session_state.curr_q = 0
-                    save_session()
-                    _n = len(st.session_state.questions)
-                    st.success(f"✅ {_n} questions auto-generated for {cname} — go to Step 2 to start interview!")
-                else:
-                    st.warning("⚠️ Auto-generate failed — click Generate Questions in Step 1 manually.")
-
-            save_session()
-    except Exception as _ase:
-        pass
-
-
-    # Resume banner
-    if st.session_state.candidate_name and st.session_state.questions:
-        noted=sum(1 for k,v in st.session_state.notes.items()
-                  if not k.startswith("score_") and isinstance(v,str) and v.strip())
-        rb1,rb2=st.columns([6,2])
-        rb1.success(f"✅ **Auto-saved session:** {st.session_state.candidate_name} · "
-                    f"{len(st.session_state.questions)} questions · {noted} notes")
-        if rb2.button("🗑 Clear & New",use_container_width=True):
-            for k in DEFAULTS: st.session_state[k]=DEFAULTS[k]
-            clear_session(); st.session_state["_loaded"]=True; st.rerun()
-
-    # ── ON-DEMAND ACTION BAR: removed duplicate (consolidated into action bar above) ──
-
-    # ── PERSISTENT QUESTION DOWNLOAD BAR (visible on all tabs) ─────────────
-    if st.session_state.get("questions"):
-        import json as _jdlp
-        _qdl1, _qdl2, _qdl3, _qdl4 = st.columns(4)
-        _cn_dl = st.session_state.candidate_name.replace(" ","_")
-        # TXT
-        _ql = ["IAS Questions — "+st.session_state.candidate_name, "="*50, ""]
-        for _q in st.session_state.questions:
-            _ak2 = _q.get("answer_key",{})
-            _ql += [f"Q{_q.get('num','')}. [{_q.get('type','').upper()}] {_q.get('skill','')}",
-                    f"   {_q.get('question','')}",
-                    f"   Expected: {_ak2.get('ideal_answer',_q.get('expected_answer',_q.get('expected','')))[:200]}", ""]
-        _qdl1.download_button("📥 Questions TXT", data="\n".join(_ql).encode(),
-            file_name=f"Questions_{_cn_dl}.txt", mime="text/plain", use_container_width=True)
-        # JSON
-        _qj = _jdlp.dumps({"candidate":st.session_state.candidate_name,
-            "date":date.today().isoformat(),"questions":st.session_state.questions},
-            indent=2, ensure_ascii=False)
-        _qdl2.download_button("📥 Questions JSON", data=_qj.encode(),
-            file_name=f"Questions_{_cn_dl}.json", mime="application/json", use_container_width=True)
-        # Answer keys TXT
-        _al = ["IAS Q+A Keys — "+st.session_state.candidate_name, "="*50, ""]
-        for _q in st.session_state.questions:
-            _ak2 = _q.get("answer_key",{})
-            _al += [f"Q{_q.get('num','')}. {_q.get('question','')}",
-                    f"IDEAL: {_ak2.get('ideal_answer','')}", f"5★: {_ak2.get('score_5','')}",
-                    f"3★: {_ak2.get('score_3','')}",""]
-        _qdl3.download_button("📥 Q + Answer Keys", data="\n".join(_al).encode(),
-            file_name=f"QA_Keys_{_cn_dl}.txt", mime="text/plain", use_container_width=True)
-        # Status
-        _qdl4.markdown(
-            f'<div style="background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2);'
-            f'border-radius:6px;padding:8px 12px;font-size:11px;color:#00C9A7;text-align:center">'
-            f'<b>{len(st.session_state.questions)} Questions Ready</b><br>'
-            f'<span style="color:#8AABBF">{st.session_state.candidate_name[:20]}</span></div>',
-            unsafe_allow_html=True)
+    with _hc2:
+        _role_tab = st.selectbox("Authority Level", ROLES,
+            index=ROLES.index(st.session_state.get("_dash_role", "CxO / Board")),
+            key="_dash_role_sel", label_visibility="collapsed")
+        st.session_state["_dash_role"] = _role_tab
+        st.markdown(f"""<div style="text-align:right;font-size:10px;color:#4A6A80;margin-top:4px">
+        Viewing as: <b style="color:#00C9A7">{_role_tab}</b></div>""", unsafe_allow_html=True)
 
     st.divider()
 
-    tab1,tab2,tab3,tab4=st.tabs([
-        "📋 Step 1 — Intake & Config",
-        "🎤 Step 2 — Live Interview",
-        "📊 Step 3 — Assessment",
-        "📄 Step 4 — Report & Delivery",
-    ])
+    # ════════════════════════════════════════════════════════════
+    # VIEW 1: CxO / BOARD — Big Picture · Strategic RAG
+    # ════════════════════════════════════════════════════════════
+    if _role_tab == "CxO / Board":
+        st.markdown("#### Strategic Hiring Health — Board View")
+        st.caption("RAG status across all hiring metrics · Drill down on RED/AMBER to see blockers and required interventions")
 
-    # ── TAB 1: INTAKE ────────────────────────────────────────────
-    with tab1:
-        st.markdown("### Candidate Intake & Interview Configuration")
+        # ── 4 RAG metric cards ────────────────────────────────
+        _r1,_r2,_r3,_r4 = st.columns(4)
+        for col, label, val, display, rag, target, action in [
+            (_r1, "Acceptance Rate",  _acc,   f"{_acc}%",       _rag_acc,   "Target: 60%",  "Review offer competitiveness + JD alignment"),
+            (_r2, "Time to Hire",     _tth,   f"{_tth}d",       _rag_tth,   "Target: <30d", "Reduce screening bottleneck + panel availability"),
+            (_r3, "Avg Quality Score",_avg,   f"{_avg}/5",      _rag_score, "Target: 3.5+", "Tighten JD–CV match criteria + Q-Bank calibration"),
+            (_r4, "Open Roles",       _open,  f"{_open} roles", _rag_open,  "Target: <20",  "Accelerate sourcing + activate backup hiring channels"),
+        ]:
+            rag_status, rag_color, rag_icon = rag
+            col.markdown(
+                f'<div style="background:{"rgba(255,60,60,0.08)" if rag_status=="RED" else "rgba(255,140,42,0.07)" if rag_status=="AMBER" else "rgba(0,201,167,0.07)"};'
+                f'border:1.5px solid {rag_color};border-radius:8px;padding:16px;'
+                f'border-top:3px solid {rag_color}">'
+                f'<div class="rag-label" style="color:{rag_color}">{rag_icon} {rag_status}</div>'
+                f'<div class="rag-metric" style="color:{rag_color}">{display}</div>'
+                f'<div style="font-size:12px;color:#E8F2FF;margin-top:4px;font-weight:600">{label}</div>'
+                f'<div class="rag-sub">{target}</div>'
+                f'</div>', unsafe_allow_html=True)
 
-        # ── FEATURE 2: EMAIL FILE PARSER ─────────────────────────
-        st.markdown("#### 📧 Quick Intake — Upload Empower Interview Email")
-        st.caption("Upload the .eml interview email from Empower Professionals. IAS will auto-extract candidate details, CV, skills, JD, and Zoom link in one step.")
+        st.markdown("&nbsp;")
 
-        # ── LICENCE GATE: Email Intake — show upgrade if not licensed ──
-        if _has_feature("email_intake"):
-            # ── AUTO-ACTION: Process immediately on file drop ─────────────
-            _ec1, _ec2 = st.columns([3, 1])
-            with _ec1:
-                st.markdown("<p style='font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#4A6A80;margin-bottom:4px'>📎 Drop .eml Interview Email</p>", unsafe_allow_html=True)
-                eml_file = st.file_uploader(
-                    "Drop .eml file",
-                    type=["eml"], key="eml_upload", label_visibility="hidden")
-            with _ec2:
+        # ── Drill-down panel ──────────────────────────────────
+        _drill_col, _action_col = st.columns([3, 2])
+
+        with _drill_col:
+            st.markdown("##### Drill-Down: From Big Picture → Root Cause")
+
+            DRILL_DATA = {
+                "Acceptance Rate": {
+                    "rag": _rag_acc[0], "color": _rag_acc[1],
+                    "big_picture":  f"Only {_acc}% of offers accepted — revenue impact: delayed headcount",
+                    "contributing": ["Offer salary below market benchmark", "Long time between interview and offer letter", "Competing offers from 3+ other companies"],
+                    "root_cause":   ["Compensation bands not reviewed since Q3 2024", "Approval process takes 12+ days", "No counter-offer strategy in place"],
+                    "risk":         ["Critical projects delayed by 2-3 sprints", "Candidate pipeline reputation risk", "Cost of re-hiring: ~$8,000 per role"],
+                    "intervention": ["CxO: Approve emergency salary band revision", "HR Head: Compress approval SLA to 3 days", "TA Lead: Deploy counter-offer playbook"],
+                },
+                "Time to Hire": {
+                    "rag": _rag_tth[0], "color": _rag_tth[1],
+                    "big_picture":  f"Average {_tth} days to hire — {max(0,_tth-30)} days over target",
+                    "contributing": ["Panel availability bottleneck (avg 8-day wait)", "Background check vendor SLA breach", "Multiple approval layers pre-offer"],
+                    "root_cause":   ["No dedicated interview slots in panel calendar", "BGV vendor contract not updated for SLA", "Finance approval required for all offers >X"],
+                    "risk":         ["Top candidates lost to faster-moving competitors", "Engineering velocity reduction", "Recruiter burnout — 4 reqs per recruiter"],
+                    "intervention": ["Ops Director: Block 2h/week per panel member for interviews", "Procurement: Issue BGV vendor SLA notice", "CFO: Delegate offer approval for standard bands"],
+                },
+                "Avg Quality Score": {
+                    "rag": _rag_score[0], "color": _rag_score[1],
+                    "big_picture":  f"Avg interview score {_avg}/5 — below 3.5 quality threshold",
+                    "contributing": ["JD requirements not aligned to actual role needs", "Interviewers not calibrated on scoring rubric", "Q-Bank not updated for 2026 skill requirements"],
+                    "root_cause":   ["JDs written by HR without engineering input", "No interviewer training in last 6 months", "Q-Bank last updated Q2 2025"],
+                    "risk":         ["Poor quality hires increase 90-day attrition", "Team performance degradation", "Client delivery risk for project roles"],
+                    "intervention": ["Engineering VP: Co-own JD review for all tech roles", "L&D: Schedule interviewer calibration sessions", "TA: Refresh Q-Bank with 2026 skills quarterly"],
+                },
+                "Open Roles": {
+                    "rag": _rag_open[0], "color": _rag_open[1],
+                    "big_picture":  f"{_open} open roles — {max(0,_open-20)} above healthy threshold",
+                    "contributing": ["Backfills not approved within 30-day SLA", "New headcount requests queued for budget approval", "Sourcing pipeline thin for niche skills"],
+                    "root_cause":   ["HC approval process bottlenecked at Finance", "JDs not published on all sourcing channels", "No talent pool pre-built for critical skills"],
+                    "risk":         ["Revenue targets at risk due to understaffing", "Current team overtime and burnout", "Client commitments at risk"],
+                    "intervention": ["CFO: Fast-track HC approvals >30 days pending", "TA Director: Activate all job boards + LinkedIn", "CHRO: Launch talent pool initiative for critical skills"],
+                },
+            }
+
+            _selected_metric = st.selectbox(
+                "Select metric to drill down",
+                list(DRILL_DATA.keys()),
+                key="_drill_metric")
+            dd = DRILL_DATA[_selected_metric]
+            rag_color = dd["color"]
+
+            # Big Picture
+            st.markdown(f'<div class="drill-item" style="border-color:{rag_color};background:{"rgba(255,60,60,0.06)" if dd["rag"]=="RED" else "rgba(255,140,42,0.06)" if dd["rag"]=="AMBER" else "rgba(0,201,167,0.06)"}"><b>Big Picture:</b> {dd["big_picture"]}</div>', unsafe_allow_html=True)
+
+            # Contributing factors
+            st.markdown("**Contributing Factors:**")
+            for f in dd["contributing"]:
+                st.markdown(f'<div class="drill-item" style="border-color:#FF8C2A;background:rgba(255,140,42,0.05)">⚡ {f}</div>', unsafe_allow_html=True)
+
+            # Root causes
+            st.markdown("**Root Causes:**")
+            for r in dd["root_cause"]:
+                st.markdown(f'<div class="drill-item" style="border-color:#FF3C3C;background:rgba(255,60,60,0.05)">🔍 {r}</div>', unsafe_allow_html=True)
+
+            # Risks
+            st.markdown("**Business Risks:**")
+            for r in dd["risk"]:
+                st.markdown(f'<div class="drill-item" style="border-color:#FF3C3C;background:rgba(255,60,60,0.04)">⛔ {r}</div>', unsafe_allow_html=True)
+
+        with _action_col:
+            st.markdown("##### Authority Actions Required")
+            dd = DRILL_DATA[_selected_metric]
+            for action in dd["intervention"]:
+                role_part, action_part = action.split(":", 1) if ":" in action else (action, "")
+                role_color = {"CxO":"#FF3C3C","CFO":"#FF3C3C","CHRO":"#FF3C3C","HR Head":"#FF8C2A","Engineering VP":"#FF8C2A","Ops Director":"#FF8C2A","Procurement":"#FF8C2A","TA Lead":"#00C9A7","TA Director":"#00C9A7","TA":"#00C9A7","L&D":"#00C9A7"}.get(role_part.strip(), "#00C9A7")
                 st.markdown(
-                    '<div style="background:rgba(0,201,167,0.06);border:1px solid rgba(0,201,167,0.2);'
-                    'border-radius:6px;padding:10px 12px;font-size:11px;color:#8AABBF">'
-                    '<b style="color:#00C9A7">Save as .eml:</b><br>'
-                    '<b>Gmail:</b> ⋮ → Download message<br>'
-                    '<b>Outlook:</b> File → Save As → .eml'
-                    '</div>', unsafe_allow_html=True)
+                    f'<div style="background:rgba(0,0,0,0.2);border:1px solid {role_color}33;'
+                    f'border-left:3px solid {role_color};border-radius:0 8px 8px 0;'
+                    f'padding:10px 14px;margin:6px 0">'
+                    f'<div style="font-size:10px;font-weight:700;color:{role_color};'
+                    f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">{role_part}</div>'
+                    f'<div style="font-size:13px;color:#E8F2FF">{action_part.strip()}</div>'
+                    f'</div>', unsafe_allow_html=True)
 
-            if eml_file:
-                if st.session_state.get("_eml_loaded") != eml_file.name:
-                    _p = st.progress(0, text="⚡ Auto-processing...")
-                    _p.progress(25, text="📨 Reading email...")
-                    parsed = _parse_email_file(eml_file)
-                    _p.progress(60, text="📄 Extracting candidate details...")
-                    if parsed["candidate_name"]: st.session_state.candidate_name = parsed["candidate_name"]
-                    if parsed["candidate_email"]: st.session_state.candidate_email = parsed["candidate_email"]
-                    if parsed["candidate_phone"]: st.session_state.candidate_phone = parsed["candidate_phone"]
-                    if parsed["cv_text"]: st.session_state.cv_text = parsed["cv_text"]
-                    if parsed["jd_text"]:
-                        st.session_state.jd_text = parsed["jd_text"]
-                        st.session_state["_jd_words"] = parsed["jd_text"]
-                    if parsed["dl_bytes"]:
-                        st.session_state["photo_id_ok"] = True
-                        st.session_state["photo_id_src"] = "Email attachment (DL)"
-                        st.session_state["photo_id_bytes"] = parsed["dl_bytes"]
-                    st.session_state["_parsed_email"] = parsed
-                    st.session_state["_eml_loaded"] = eml_file.name
-                    try:
-                        import re as _re2, json as _jse2
-                        _csafe = _re2.sub(r'[^\w\s-]','',parsed.get("candidate_name","Candidate")).strip().replace(' ','_')
-                        _cdir2 = ROOT / "output" / "candidates" / f"{date.today().strftime('%Y-%m-%d')}_{_csafe}"
-                        _cdir2.mkdir(parents=True, exist_ok=True)
-                        if parsed.get("cv_text"): (_cdir2/"cv_snapshot.txt").write_text(parsed["cv_text"][:5000],encoding="utf-8")
-                        if parsed.get("jd_text"): (_cdir2/"jd_snapshot.txt").write_text(parsed["jd_text"][:3000],encoding="utf-8")
-                        (_cdir2/"email_meta.json").write_text(_jse2.dumps(
-                            {k:v for k,v in parsed.items() if k not in ("dl_bytes","cv_text")},
-                            indent=2,ensure_ascii=False,default=str),encoding="utf-8")
-                        st.session_state["_candidate_folder"] = str(_cdir2)
-                    except Exception: pass
-                    _p.progress(95, text="💾 Saving..."); save_session()
-                    _p.progress(100, text="✅ Done!"); import time as _ti; _ti.sleep(0.3); _p.empty()
-                    st.rerun()
-
-            parsed = st.session_state.get("_parsed_email", {})
-            if parsed and st.session_state.get("_eml_loaded"):
-                _cn = parsed.get("candidate_name",""); _zm = parsed.get("zoom_link","")
-                _it = parsed.get("interview_time","TBC"); _sk = parsed.get("skills",[])
+            st.markdown("&nbsp;")
+            st.markdown("##### Pipeline Snapshot")
+            for stage, count, conv in [
+                ("Applied",     _pipe.get("applied",1250),    "—"),
+                ("Screened",    _pipe.get("screened",640),     f"{round(_pipe.get('screened',640)/_pipe.get('applied',1250)*100)}%"),
+                ("Interviewed", _pipe.get("interviewed",_total),f"{round(_pipe.get('interviewed',_total)/_pipe.get('screened',640)*100)}%"),
+                ("Shortlisted", _pipe.get("shortlisted",_sel),  f"{round(_pipe.get('shortlisted',_sel)/max(_pipe.get('interviewed',_total),1)*100)}%"),
+                ("Offered",     _pipe.get("offered",_offers),   f"{round(_pipe.get('offered',_offers)/max(_pipe.get('shortlisted',_sel),1)*100)}%"),
+                ("Joined",      _pipe.get("joined",12),          f"{round(_pipe.get('joined',12)/max(_pipe.get('offered',_offers),1)*100)}%"),
+            ]:
+                pct = min(100, int(str(conv).replace("%","")) if "%" in str(conv) else 100)
+                bar_c = "#00C9A7" if pct > 50 else "#FF8C2A" if pct > 25 else "#FF3C3C"
                 st.markdown(
-                    f'<div style="background:rgba(0,176,80,0.06);border:1.5px solid #00B050;border-radius:10px;padding:14px 18px;margin:4px 0">'
-                    f'<div style="font-size:13px;font-weight:700;color:#00B050;margin-bottom:10px">✅ Email Processed — Ready for Interview</div>'
-                    f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
-                    f'<div style="background:rgba(0,0,0,0.15);border-radius:4px;padding:8px 10px">'
-                    f'<div style="font-size:10px;color:#4A6A80">CANDIDATE</div>'
-                    f'<div style="font-size:13px;font-weight:700;color:#E8F2FF">{_cn}</div>'
-                    f'<div style="font-size:11px;color:#8AABBF">{parsed.get("candidate_email","")}</div></div>'
-                    f'<div style="background:rgba(0,0,0,0.15);border-radius:4px;padding:8px 10px">'
-                    f'<div style="font-size:10px;color:#4A6A80">INTERVIEW TIME</div>'
-                    f'<div style="font-size:12px;font-weight:600;color:#00C9A7">{_it}</div>'
-                    f'<div style="font-size:11px;color:#8AABBF">{parsed.get("candidate_phone","")}</div></div>'
-                    f'<div style="background:rgba(0,0,0,0.15);border-radius:4px;padding:8px 10px">'
-                    f'<div style="font-size:10px;color:#4A6A80">CV STATUS</div>'
-                    f'<div style="font-size:12px;color:#E8F2FF">{"✅ CV extracted" if parsed.get("cv_text") else "⚠️ No CV"}</div>'
-                    f'<div style="font-size:11px;color:#8AABBF">{"✅ DL attached" if parsed.get("dl_bytes") else ""}</div></div></div>'
-                    + (f'<div style="font-size:11px;color:#8AABBF;margin-bottom:8px"><b style="color:#00C9A7">Skills:</b> {", ".join(_sk[:8])}</div>' if _sk else '')
-                    + (f'<a href="{_zm}" target="_blank" style="background:#1565C0;color:#fff;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none;margin-right:8px">🔗 Open Zoom Room</a>' if _zm else '')
-                    + (f'<span style="font-size:10px;color:#00C9A7">📁 {st.session_state.get("_candidate_folder","")}</span>' if st.session_state.get("_candidate_folder") else '')
-                    + '</div>', unsafe_allow_html=True)
-                if parsed.get("special_instructions"):
-                    with st.expander("⚠️ Special Instructions from Empower"):
-                        for _instr in parsed["special_instructions"]: st.markdown(f"• {_instr}")
-                _ba1,_ba2 = st.columns(2)
-                if _ba1.button("🗑 Clear & Load New Email", use_container_width=True):
-                    for _kk in ["_parsed_email","_eml_loaded","_candidate_folder"]:
-                        st.session_state.pop(_kk, None)
-                    st.session_state.candidate_name=""; st.session_state.cv_text=""; st.session_state.jd_text=""
-                    st.rerun()
-                if _ba2.button("👇 Go to Generate Questions", use_container_width=True, type="primary"):
-                    st.info("Scroll down to 'Interview Configuration' → click Generate Questions")
+                    f'<div style="display:flex;align-items:center;gap:8px;margin:4px 0">'
+                    f'<span style="font-size:11px;color:#8AABBF;min-width:90px">{stage}</span>'
+                    f'<div style="flex:1;background:#112236;border-radius:2px;height:14px">'
+                    f'<div style="width:{pct}%;background:{bar_c};height:14px;border-radius:2px;'
+                    f'display:flex;align-items:center;padding:0 4px">'
+                    f'<span style="font-size:10px;color:white;font-weight:700">{count:,}</span></div></div>'
+                    f'<span style="font-size:10px;color:#4A6A80;min-width:30px">{conv}</span>'
+                    f'</div>', unsafe_allow_html=True)
 
-            st.divider()
-        else:
-            _licence_gate("email_intake")  # shows upgrade prompt
+    # ════════════════════════════════════════════════════════════
+    # VIEW 2: BUSINESS LEADERSHIP — P&L, Forecasts, Risks
+    # ════════════════════════════════════════════════════════════
+    elif _role_tab == "Business Leadership":
+        st.markdown("#### Business Leadership View — P&L Impact & Risk Register")
+        st.caption("Revenue impact of hiring gaps · Forecast accuracy · Escalation register")
 
-
-        d1,d2,d3=st.columns(3)
-        with d1:
-            _cname_val=st.text_input("Candidate Name *",
-                value=st.session_state.candidate_name,placeholder="Auto-filled from CV",key="_inp_cname")
-            if _cname_val != st.session_state.candidate_name: st.session_state.candidate_name=_cname_val
-        with d2:
-            _cemail_val=st.text_input("Email",
-                value=st.session_state.candidate_email,placeholder="Auto-filled from CV",key="_inp_cemail")
-            if _cemail_val != st.session_state.candidate_email: st.session_state.candidate_email=_cemail_val
-        with d3:
-            _cphone_val=st.text_input("Phone",
-                value=st.session_state.candidate_phone,placeholder="Auto-filled from CV",key="_inp_cphone")
-            if _cphone_val != st.session_state.candidate_phone: st.session_state.candidate_phone=_cphone_val
-
-        # ── CANDIDATE HISTORY LOOKUP ──────────────────────────────
-        _cname_lookup = st.session_state.candidate_name
-        if _cname_lookup and len(_cname_lookup) > 2:
-            _hist_results = [r for r in cfg.load_results("", True)
-                     if _cname_lookup.lower() in r.get("candidate_name","").lower()]
-            _hist = _hist_results
-            if _hist:
-                with st.expander(f"📋 {len(_hist)} previous interview(s) found for {_cname_lookup}", expanded=False):
-                    for _hr in sorted(_hist, key=lambda x: x.get("timestamp",""), reverse=True)[:5]:
-                        _hr_date  = str(_hr.get("timestamp",""))[:10]
-                        _hr_role  = _hr.get("job_role","Unknown role")
-                        _hr_score = _hr.get("overall_score", _hr.get("score","—"))
-                        _hr_verd  = _hr.get("verdict","—")
-                        _hr_col   = "#00C9A7" if "GO" in str(_hr_verd).upper() and "NO" not in str(_hr_verd).upper() else "#FF4444"
-                        st.markdown(
-                            f'<div style="background:rgba(255,255,255,0.03);border:1px solid '
-                            f'rgba(0,201,167,0.12);border-radius:6px;padding:8px 14px;margin:3px 0;font-size:12px">'
-                            f'📅 <b>{_hr_date}</b> &nbsp;·&nbsp; {_hr_role} &nbsp;·&nbsp; '
-                            f'Score: <b>{_hr_score}</b> &nbsp;·&nbsp; '
-                            f'<span style="color:{_hr_col};font-weight:700">{_hr_verd}</span></div>',
-                            unsafe_allow_html=True)
+        _b1,_b2,_b3,_b4 = st.columns(4)
+        for col,lbl,val,c,sub in [
+            (_b1,"Revenue at Risk",     "$2.4M",  "#FF3C3C","Due to 8 critical open roles"),
+            (_b2,"Cost per Hire",       "$4,200", "#FF8C2A","Industry avg: $3,800 — 10% over"),
+            (_b3,"Recruiter Capacity",  "87%",    "#00C9A7","4.2 interviews/day per recruiter"),
+            (_b4,"Offer Acceptance",    f"{_acc}%","#FF8C2A" if _acc < 60 else "#00C9A7","Target: 60%+"),
+        ]:
+            col.markdown(
+                f'<div style="background:#112236;border:1px solid rgba(0,201,167,0.15);'
+                f'border-top:2px solid {c};border-radius:6px;padding:14px">'
+                f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase">{lbl}</div>'
+                f'<div style="font-size:26px;font-weight:700;color:{c};font-family:monospace">{val}</div>'
+                f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">{sub}</div>'
+                f'</div>', unsafe_allow_html=True)
 
         st.divider()
-
-        # CV upload
-        st.markdown("#### 📄 Candidate CV")
-        cv_file=st.file_uploader("📎 Upload CV (PDF, DOCX or DOC)",type=["pdf","docx","doc"],
-                                  key="cv_upload")
-        if cv_file:
-            with st.spinner("Reading CV..."):
-                txt=_extract_text(cv_file)
-            if txt and not txt.startswith("Error"):
-                st.session_state.cv_text=txt
-                det=_extract_details(txt)
-                if det["name"]  and not st.session_state.candidate_name:
-                    st.session_state.candidate_name=det["name"]
-                if det["email"] and not st.session_state.candidate_email:
-                    st.session_state.candidate_email=det["email"]
-                if det["phone"] and not st.session_state.candidate_phone:
-                    st.session_state.candidate_phone=det["phone"]
-                save_session()
-                st.success(f"✅ CV loaded — {len(txt.split())} words · Name/email/phone auto-detected")
-                with st.expander("Preview CV (first 600 chars)"): st.text(txt[:600]+"...")
-            else:
-                st.error(f"Could not read CV: {txt}")
-
-        st.divider()
-
-        # JD input
-        st.markdown("#### 📋 Job Description")
-
-        jd_file = st.file_uploader(
-            "📎 Upload JD (PDF, DOCX, DOC or TXT)",
-            type=["pdf","docx","doc","txt"],
-            key="jd_upload",
-            help="Supports PDF, DOCX, and TXT files")
-
-        if jd_file is not None:
-            fkey = f"{jd_file.name}_{jd_file.size}"
-            if st.session_state.get("_jd_file_key") != fkey:
-                with st.spinner(f"Reading {jd_file.name}..."):
-                    jt = _extract_text(jd_file)
-                if jt and not jt.startswith("Error") and len(jt.strip()) > 20:
-                    st.session_state.jd_text       = jt
-                    st.session_state["_jd_file_key"]= fkey
-                    st.session_state["_jd_words"]   = jt
-                    save_session()
-                    st.success(f"✅ JD loaded from **{jd_file.name}** — {len(jt.split())} words extracted")
-                else:
-                    st.error(f"Could not extract text from {jd_file.name}. "
-                             f"Try copy-pasting the JD text below instead.")
-
-        # Text area — use a separate session key so it doesn't fight the file upload
-        if "jd_textarea_val" not in st.session_state:
-            st.session_state["jd_textarea_val"] = st.session_state.jd_text
-
-        # Sync text area with session state when file upload populates it
-        if st.session_state.jd_text != st.session_state["jd_textarea_val"]:
-            st.session_state["jd_textarea_val"] = st.session_state.jd_text
-
-        jd_paste = st.text_area(
-            "Or paste JD here",
-            value=st.session_state["jd_textarea_val"],
-            height=180,
-            placeholder="Paste the full job description here...\n\n"
-                        "Tip: You can also upload a PDF or DOCX file above.",
-            label_visibility="collapsed",
-            key="jd_paste_area")
-
-        # Sync paste changes back to session state
-        if jd_paste != st.session_state.jd_text and jd_paste.strip():
-            st.session_state.jd_text          = jd_paste
-            st.session_state["jd_textarea_val"]= jd_paste
-            st.session_state.pop("_jd_file_key", None)  # clear file key so paste takes priority
-            save_session()
-
-        st.divider()
-
-        # ── CONFIGURATION PANEL ──────────────────────────────────
-        st.markdown("#### ⚙️ Interview Configuration")
-        cc1,cc2,cc3,cc4=st.columns(4)
-
-        with cc1:
-            st.markdown("**Questions**")
-            num_q=st.slider("Count",min_value=7,max_value=15,value=15,step=1,
-                            label_visibility="collapsed")
-            n_code=max(1,round(num_q*0.2))
-            n_scen=num_q-n_code
-            st.caption(f"{n_scen} scenario + {n_code} coding")
-
-        with cc2:
-            st.markdown("**Vendor / Output Format**")
-            vendor=st.selectbox("Vendor",list(VENDORS.keys()),
-                                index=list(VENDORS.keys()).index(
-                                    st.session_state.get("vendor","Empower Professional")),
-                                label_visibility="collapsed")
-            st.session_state.vendor=vendor
-            vinfo=VENDORS[vendor]
-            st.caption(vinfo["desc"])
-
-        with cc3:
-            st.markdown("**Output Format**")
-            out_fmt=st.selectbox("Format",vinfo["formats"],label_visibility="collapsed")
-            st.caption(f"Color: {vinfo['color']}")
-
-        with cc4:
-            st.markdown("**Level**")
-            level_label=st.selectbox("Level",
-                ["Senior / Lead (7-10 yrs)","Mid-level (4-7 yrs)","Junior (0-3 yrs)"],
-                label_visibility="collapsed",
-                key="q_level_select")
-            level_key=("senior" if "Senior" in level_label
-                       else "mid" if "Mid" in level_label else "junior")
-            st.caption("Adjusts question depth")
-
-        # ── DIFFICULTY SELECTOR ───────────────────────────────────
-        st.markdown("**🎯 Question Difficulty**")
-        _diff_cols = st.columns(4)
-        _diff_opts = {
-            "🟢 Easy":   "easy",
-            "🟡 Medium": "medium",
-            "🔴 Hard":   "hard",
-            "🌈 Mixed":  "mixed",
-        }
-        _curr_diff = st.session_state.get("_q_difficulty", "medium")
-        for _di, (_dlabel, _dval) in enumerate(_diff_opts.items()):
-            with _diff_cols[_di]:
-                _is_sel = _curr_diff == _dval
-                if st.button(
-                    _dlabel,
-                    key=f"diff_btn_{_dval}",
-                    use_container_width=True,
-                    type="primary" if _is_sel else "secondary",
-                    help={
-                        "easy":   "Conceptual questions — definitions, basics, fundamentals",
-                        "medium": "Applied scenarios — hands-on experience required",
-                        "hard":   "Architecture, edge cases, system design at scale",
-                        "mixed":  "30% Easy + 50% Medium + 20% Hard — progressive difficulty"
-                    }[_dval]
-                ):
-                    st.session_state["_q_difficulty"] = _dval
-                    st.rerun()
-        _diff_captions = {
-            "easy":   "✅ Good for junior screening or warm-up rounds",
-            "medium": "✅ Standard for most technical interviews",
-            "hard":   "✅ Use for senior/lead/architect roles",
-            "mixed":  "✅ Recommended for full assessments"
-        }
-        st.caption(_diff_captions.get(_curr_diff, ""))
-
-        st.divider()
-
-        # Status + Generate
-        cv_ok=bool(st.session_state.cv_text)
-        jd_ok=len(st.session_state.jd_text.strip())>50
-        name_ok=bool(st.session_state.candidate_name.strip())
-
-        s1,s2,s3=st.columns(3)
-        s1.markdown(f"{'✅' if cv_ok else '⬜'} CV uploaded")
-        s2.markdown(f"{'✅' if jd_ok else '⬜'} JD provided")
-        s3.markdown(f"{'✅' if name_ok else '⬜'} Name entered")
-
-        if not (cv_ok and jd_ok and name_ok):
-            missing=[]
-            if not cv_ok: missing.append("upload CV")
-            if not jd_ok: missing.append("paste/upload JD")
-            if not name_ok: missing.append("enter candidate name")
-            st.info("Still needed: "+" · ".join(missing))
-
-        # ── CACHE CHECK: show existing questions instead of regenerating ──
-        _cache_key = f"_qcache_{st.session_state.candidate_name}_{num_q}_{level_key}"
-        _has_cached = (
-            bool(st.session_state.questions) and
-            st.session_state.get("_qcache_name") == st.session_state.candidate_name and
-            st.session_state.get("_qcache_count") == num_q
-        )
-        if _has_cached:
-            st.info(f"✅ {len(st.session_state.questions)} questions already generated for **{st.session_state.candidate_name}**. Scroll down to start interview or click Regenerate to create new questions.")
-            if st.button("🔄 Regenerate Questions (overwrite existing)", use_container_width=True):
-                st.session_state.questions = []
-                st.session_state.notes = {}
-                st.session_state.curr_q = 0
-                st.session_state.pop("_qcache_name", None)
-                st.session_state.pop("_qcache_count", None)
-                st.rerun()
-        if st.button(f"🔍 Generate {num_q} Questions + Answer Keys  [{vendor}]",
-                     type="primary",use_container_width=True,
-                     disabled=not(cv_ok and jd_ok and name_ok) or _has_cached):
-            with st.spinner(f"Generating {num_q} questions ({n_scen} scenario + {n_code} coding)..."):
-                res=_generate_questions(
-                    st.session_state.cv_text,st.session_state.jd_text,
-                    st.session_state.candidate_name,num_q,level_key,
-                    st.session_state.get("_q_difficulty", "medium"),
-                    st.session_state.get("selected_industry", "IT & Software"))
-            if "error" in res:
-                st.error(res["error"])
-                if res.get("raw"):
-                    with st.expander("Debug"): st.text(res["raw"][:400])
-            else:
-                st.session_state.questions=res.get("questions",[])
-                st.session_state.notes={}
-                st.session_state.curr_q=0
-                st.session_state["_qcache_name"]  = st.session_state.candidate_name
-                st.session_state["_qcache_count"] = num_q
-                save_session()
-                n=len(st.session_state.questions)
-                sc=sum(1 for q in st.session_state.questions if q.get("type")=="scenario")
-                co=sum(1 for q in st.session_state.questions if q.get("type")=="coding")
-
-                # ── AUTO-SAVE QUESTIONS TO CANDIDATE FOLDER (STARTER+) ──
-                if _has_feature("question_folder_save"):
-                  try:
-                    import json as _jsq
-                    # Use email-created folder if exists, else correct format
-                    _existing_folder = st.session_state.get("_candidate_folder", "")
-                    if _existing_folder and Path(_existing_folder).exists():
-                        _cand_dir = Path(_existing_folder)
-                    else:
-                        _cname_safe  = re.sub(r'[^\w\s-]','',st.session_state.candidate_name).strip().replace(' ','_')
-                        _int_date    = st.session_state.get("interview_date", date.today().strftime("%d-%b-%Y"))
-                        _duration    = st.session_state.get("interview_duration", "30 Minutes")
-                        _folder_name = f"{_cname_safe}_{_int_date}_{_duration}"
-                        _cand_dir    = ROOT / "output" / "candidates" / _folder_name
-                    _cand_dir.mkdir(parents=True, exist_ok=True)
-                    _pending = _cand_dir / "QUESTIONS_PENDING.txt"
-                    if _pending.exists(): _pending.unlink()
-
-                    # Save questions as JSON
-                    _q_json = _cand_dir / "questions.json"
-                    _q_json.write_text(_jsq.dumps({
-                        "candidate": st.session_state.candidate_name,
-                        "generated_at": date.today().isoformat(),
-                        "vendor": vendor,
-                        "level": level_key,
-                        "question_count": n,
-                        "questions": st.session_state.questions
-                    }, indent=2, ensure_ascii=False), encoding="utf-8")
-
-                    # Save questions as readable TXT
-                    _q_txt = _cand_dir / "questions.txt"
-                    _q_lines = [
-                        f"IAS — Interview Question Bank",
-                        f"Candidate: {st.session_state.candidate_name}",
-                        f"Generated: {date.today().strftime('%d %b %Y')}",
-                        f"Format: {vendor} | Level: {level_key} | Questions: {n}",
-                        "="*60, ""
-                    ]
-                    for _q in st.session_state.questions:
-                        _q_lines += [
-                            f"Q{_q.get('num','')}. [{_q.get('type','').upper()}] {_q.get('skill','')}",
-                            f"   {_q.get('question','')}",
-                            f"   Expected: {_q.get('expected_answer',_q.get('expected',''))[:120]}",
-                            ""
-                        ]
-                    _q_txt.write_text("\n".join(_q_lines), encoding="utf-8")
-
-                    # Save CV and JD snapshots
-                    if st.session_state.cv_text:
-                        (_cand_dir / "cv_snapshot.txt").write_text(
-                            st.session_state.cv_text[:5000], encoding="utf-8")
-                    if st.session_state.jd_text:
-                        (_cand_dir / "jd_snapshot.txt").write_text(
-                            st.session_state.jd_text[:3000], encoding="utf-8")
-
-                    st.session_state["_candidate_folder"] = str(_cand_dir)
-                    _folder_saved = True
-                  except Exception as _e:
-                    _folder_saved = False
-                else:
-                    _folder_saved = False
-
-                # ── Question Record ────────────────────────────────
-                import json as _jrec
-                _qrec_file = ROOT / "data" / "question_records.json"
-                try:
-                    _qrec_list = _jrec.loads(_qrec_file.read_text(encoding="utf-8")) if _qrec_file.exists() else []
-                except: _qrec_list = []
-                _qrec_list.append({
-                    "candidate":      st.session_state.candidate_name,
-                    "role":           st.session_state.get("_email_role", st.session_state.jd_text[:40].replace("\n"," ").strip()),
-                    "questions":      n,
-                    "scenario":       sc,
-                    "coding":         co,
-                    "format":         vendor,
-                    "level":          level_key,
-                    "generated_at":   date.today().strftime("%d-%b-%Y %H:%M"),
-                    "folder":         _cand_dir.name if _folder_saved else "",
-                })
-                try: _qrec_file.write_text(_jrec.dumps(_qrec_list, indent=2), encoding="utf-8")
-                except: pass
-
-                st.success(f"✅ {n} questions ready — {sc} scenario + {co} coding · Format: {vendor}")
-                if _folder_saved:
-                    st.info(f"Saved to: output/candidates/{_cand_dir.name}/")
-                st.balloons()
-                st.rerun()
-
-        if st.session_state.questions:
-            # ── DOWNLOAD BUTTONS ─────────────────────────────────────────
-            _dl1, _dl2, _dl3, _dl4 = st.columns(4)
-
-            # TXT download
-            _q_lines = [
-                f"IAS Question Bank — {st.session_state.candidate_name}",
-                f"Generated: {date.today().strftime('%d %b %Y')} | Questions: {len(st.session_state.questions)}",
-                "="*60, ""
+        _bl1, _bl2 = st.columns(2)
+        with _bl1:
+            st.markdown("##### Risk Register — Hiring Programme")
+            risks = [
+                ("CRITICAL","Headcount shortfall in Engineering — 12 open roles vs 8 approved",   "#FF3C3C","CxO approval needed for 4 additional HCs"),
+                ("HIGH",    "Offer acceptance rate declining — 21% vs 60% target",                "#FF8C2A","Salary band revision required — Finance + CHRO"),
+                ("HIGH",    "Time-to-hire 18d — 40% over 30d SLA target",                         "#FF8C2A","Panel availability blocks — Ops Director to resolve"),
+                ("MEDIUM",  "Q-Bank not updated — 2026 AI/ML skills not covered",                 "#FF8C2A","TA Lead to refresh Q-Bank within 2 weeks"),
+                ("LOW",     "BGV vendor SLA at 95% — monitor for breach",                         "#00C9A7","No action required — continue monitoring"),
             ]
-            for _qq in st.session_state.questions:
-                _q_lines += [
-                    f"Q{_qq.get('num','')}. [{_qq.get('type','').upper()}] {_qq.get('skill','')}",
-                    f"   {_qq.get('question','')}",
-                    f"   Expected: {_qq.get('expected_answer',_qq.get('expected',''))[:150]}",
-                    ""
-                ]
-            _dl1.download_button("Questions TXT",
-                data="\n".join(_q_lines).encode(),
-                file_name=f"Questions_{st.session_state.candidate_name.replace(' ','_')}.txt",
-                mime="text/plain", use_container_width=True)
-
-            # JSON download
-            import json as _jdl
-            _dl2.download_button("Questions JSON",
-                data=_jdl.dumps({"candidate":st.session_state.candidate_name,
-                    "generated":date.today().isoformat(),
-                    "questions":st.session_state.questions},indent=2).encode(),
-                file_name=f"Questions_{st.session_state.candidate_name.replace(' ','_')}.json",
-                mime="application/json", use_container_width=True)
-
-            # Q + Answer Keys TXT
-            _qa_lines = [
-                f"IAS Full Question Bank + Answer Keys — {st.session_state.candidate_name}",
-                f"Generated: {date.today().strftime('%d %b %Y')}", "="*60, ""
-            ]
-            for _qq in st.session_state.questions:
-                _ak = _qq.get("answer_key",{})
-                _qa_lines += [
-                    f"Q{_qq.get('num','')}. [{_qq.get('type','').upper()}] {_qq.get('skill','')}",
-                    f"Q: {_qq.get('question','')}",
-                    f"A: {_ak.get('ideal_answer',_qq.get('expected_answer',_qq.get('expected','')))}",
-                    f"5*: {_ak.get('score_5','')} | 3*: {_ak.get('score_3','')} | 1*: {_ak.get('score_1','')}", ""
-                ]
-            _dl3.download_button("Q + Answer Keys",
-                data="\n".join(_qa_lines).encode(),
-                file_name=f"QA_Keys_{st.session_state.candidate_name.replace(' ','_')}.txt",
-                mime="text/plain", use_container_width=True)
-
-            # ── NEW: Download Questions as DOCX ──────────────────
-            def _build_questions_docx(candidate, qs):
-                try:
-                    import subprocess, tempfile as _tf, json as _jj, os as _os, sys
-                    _safe = candidate.replace(" ","_").replace("/","_")
-                    _today = date.today().strftime("%d %b %Y")
-                    _js = f"""
-const {{Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
-        HeadingLevel,AlignmentType,BorderStyle,WidthType,ShadingType}}=require('docx');
-const fs=require('fs');
-const qs={_jj.dumps(qs)};
-const b={{style:BorderStyle.SINGLE,size:1,color:"CCCCCC"}};
-const bs={{top:b,bottom:b,left:b,right:b}};
-const NAVY="0D1B2A",TEAL="00C9A7",GRAY="444444";
-function cell(t,w,opts={{}}){{
-  return new TableCell({{borders:bs,width:{{size:w,type:WidthType.DXA}},
-    margins:{{top:80,bottom:80,left:120,right:120}},
-    shading:{{fill:opts.fill||"FFFFFF",type:ShadingType.CLEAR}},
-    children:[new Paragraph({{children:[new TextRun({{text:t,font:"Arial",
-      size:opts.size||18,bold:opts.bold||false,color:opts.color||GRAY}})]}})]
-  }});
-}}
-const rows=[new TableRow({{children:[
-  cell("Q#",600,{{fill:NAVY,color:"FFFFFF",bold:true,size:18}}),
-  cell("Type",900,{{fill:NAVY,color:"FFFFFF",bold:true,size:18}}),
-  cell("Skill",1800,{{fill:NAVY,color:"FFFFFF",bold:true,size:18}}),
-  cell("Question",3600,{{fill:NAVY,color:"FFFFFF",bold:true,size:18}}),
-  cell("Expected Answer",2460,{{fill:NAVY,color:"FFFFFF",bold:true,size:18}}),
-]}})];
-qs.forEach(q=>{{
-  const ak=q.answer_key||{{}};
-  const ans=ak.ideal_answer||q.expected_answer||q.expected||"";
-  rows.push(new TableRow({{children:[
-    cell("Q"+q.num,600),
-    cell((q.type||"").toUpperCase(),900),
-    cell(q.skill||"",1800),
-    cell(q.question||"",3600),
-    cell(ans.substring(0,200),2460),
-  ]}}));
-}});
-const doc=new Document({{
-  styles:{{default:{{document:{{run:{{font:"Arial",size:20}}}}}}}},
-  sections:[{{
-    properties:{{page:{{size:{{width:15840,height:12240}},
-      margin:{{top:720,right:720,bottom:720,left:720}},
-      orientation:"landscape"}}}},
-    children:[
-      new Paragraph({{spacing:{{before:0,after:120}},children:[
-        new TextRun({{text:"IAS v9 — Interview Question Bank",bold:true,size:32,color:NAVY,font:"Arial"}})]}}),
-      new Paragraph({{spacing:{{before:0,after:60}},children:[
-        new TextRun({{text:"Candidate: {candidate}  |  Generated: {_today}  |  Questions: "+qs.length,size:20,color:"666666",font:"Arial"}})]}}),
-      new Paragraph({{spacing:{{before:0,after:240}},children:[
-        new TextRun({{text:"GVS Technologies / Digitaliotai  |  gokul1978@gmail.com",size:18,color:"888888",italic:true,font:"Arial"}})]}}),
-      new Table({{width:{{size:14400,type:WidthType.DXA}},
-        columnWidths:[600,900,1800,3600,2460],rows:rows}}),
-    ]
-  }}]
-}});
-Packer.toBuffer(doc).then(buf=>{{fs.writeFileSync("{_safe}_Questions.docx",buf);console.log("OK");}});
-"""
-                    _out_dir = ROOT / "output"
-                    _out_dir.mkdir(parents=True, exist_ok=True)
-                    _js_file = _out_dir / f"{_safe}_qbank.js"
-                    _js_file.write_text(_js, encoding="utf-8")
-                    # Install docx if needed
-                    _pkg = _out_dir / "node_modules" / "docx"
-                    if not _pkg.exists():
-                        subprocess.run(["npm","install","docx"], cwd=str(_out_dir),
-                            capture_output=True, timeout=60)
-                    r = subprocess.run(["node", str(_js_file)], cwd=str(_out_dir),
-                        capture_output=True, timeout=30)
-                    _docx_path = _out_dir / f"{_safe}_Questions.docx"
-                    if _docx_path.exists():
-                        data = _docx_path.read_bytes()
-                        _js_file.unlink(missing_ok=True)
-                        return data, f"{_safe}_Questions.docx"
-                except Exception as _e:
-                    return None, str(_e)
-                return None, "Generation failed"
-
-            if _dl4.button("Download DOCX", use_container_width=True, type="primary"):
-                with st.spinner("Building DOCX..."):
-                    _docx_bytes, _docx_name = _build_questions_docx(
-                        st.session_state.candidate_name, st.session_state.questions)
-                if _docx_bytes:
-                    st.download_button("Download Questions DOCX",
-                        data=_docx_bytes, file_name=_docx_name,
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True)
-                else:
-                    st.warning(f"DOCX build failed: {_docx_name}")
-
-            # ── Question Records Table ────────────────────────────
-            import json as _jrt
-            _qrec_f = ROOT / "data" / "question_records.json"
-            if _qrec_f.exists():
-                try:
-                    _recs = _jrt.loads(_qrec_f.read_text(encoding="utf-8"))
-                    if _recs:
-                        import pandas as _pdrec
-                        st.markdown("#### Question Generation Records")
-                        _rec_df = _pdrec.DataFrame(_recs)[["candidate","role","questions","scenario","coding","format","level","generated_at"]]
-                        _rec_df.columns = ["Candidate","Role","Total Q","Scenario","Coding","Format","Level","Generated"]
-                        st.dataframe(_rec_df.tail(10), use_container_width=True, hide_index=True)
-                except: pass
-
-            # Preview
-            with st.expander(f"Preview {len(st.session_state.questions)} questions"):
-                for q in st.session_state.questions:
-                    t = "Coding" if q.get("type")=="coding" else "Scenario"
-                    st.markdown(f"**Q{q.get('num','')}** [{t}] `{q.get('skill','')}` — {q.get('question','')[:90]}...")
-
-    # ── TAB 2: LIVE INTERVIEW (Empower SOP Compliant) ────────────
-    with tab2:
-        # ── TIME LIMIT SETTING ────────────────────────────────────
-        if st.session_state.questions:
-            _tl_col1, _tl_col2, _tl_col3 = st.columns([1,1,4])
-            st.session_state["_q_time_limit"] = _tl_col1.number_input(
-                "⏱ Mins/question", min_value=1, max_value=15,
-                value=st.session_state.get("_q_time_limit", 5),
-                key="_tl_input", help="Timer resets on each question")
-            _total_flagged = sum(1 for i,q in enumerate(st.session_state.questions)
-                if st.session_state.get(f"_flagged_{q.get('num',i+1)}", False))
-            _total_noted = sum(1 for i,q in enumerate(st.session_state.questions)
-                if st.session_state.notes.get(str(q.get("num",i+1)),"").strip())
-            if _total_flagged:
-                _tl_col2.metric("Flagged", _total_flagged)
-            _tl_col3.markdown(
-                f'<div style="font-size:13px;color:#00C9A7;padding:8px 0">'
-                f'Noted: <b>{_total_noted}</b>/{len(st.session_state.questions)} '
-                f'| Flagged: <b>{_total_flagged}</b></div>',
-                unsafe_allow_html=True)
-        if not st.session_state.questions:
-            st.info("Complete Step 1 — upload CV + JD and generate questions first.")
-        else:
-            questions=st.session_state.questions
-            total=len(questions)
-            idx=max(0,min(st.session_state.curr_q,total-1))
-            q=questions[idx]
-            num=q.get("num",idx+1)
-            ak=q.get("answer_key") or {}
-            kps=ak.get("key_points",q.get("key_points",[])) or [s.strip() for s in ak.get("ideal_answer","").split(".") if len(s.strip())>20][:4]
-            nk=str(num)
-            qt=q.get("type","scenario")
-
-            noted=sum(1 for i in range(1,total+1)
-                      if st.session_state.notes.get(str(questions[i-1].get("num",i)),"").strip())
-
-            # ── EMPOWER PRE-INTERVIEW CHECKLIST ──────────────────
-            if not st.session_state.get("_checklist_done"):
-                st.markdown("### ✅ Pre-Interview Checklist — Empower Professionals SOP")
-                st.caption("Complete all items before starting the interview. SOP rules 2-6.")
-
-                # ── Select All helpers ───────────────────────────────
-                TECH_KEYS  = ["chk1","chk2","chk3","chk4","chk5"]
-                PROTO_KEYS = ["chk6","chk7","chk8"]
-                ALL_KEYS   = TECH_KEYS + PROTO_KEYS
-
-                # Initialise keys in session state on first load
-                for k in ALL_KEYS:
-                    if k not in st.session_state:
-                        st.session_state[k] = False
-
-                col_a, col_b = st.columns(2)
-
-                with col_a:
-                    sa1, sb1 = st.columns([3,1])
-                    sa1.markdown("**Technical Setup**")
-                    # Select All for Technical Setup
-                    all_tech = all(st.session_state[k] for k in TECH_KEYS)
-                    if sb1.button(
-                        "☑ Deselect all" if all_tech else "☑ Select all",
-                        key="sel_all_tech", use_container_width=True):
-                        for k in TECH_KEYS:
-                            st.session_state[k] = not all_tech
-                        st.rerun()
-
-                    chk1 = st.checkbox("Empower branded background active on Zoom",
-                                       key="chk1")
-                    chk2 = st.checkbox("Good lighting — my camera is bright and clear",
-                                       key="chk2")
-                    chk3 = st.checkbox("Gallery View enabled (View → Gallery) — both faces visible",
-                                       key="chk3")
-                    chk4 = st.checkbox("Candidate camera is bright (not dark)",
-                                       key="chk4")
-                    chk5 = st.checkbox("Zoom recording is running",
-                                       key="chk5")
-
-                with col_b:
-                    sa2, sb2 = st.columns([3,1])
-                    sa2.markdown("**Interview Protocol**")
-                    # Select All for Interview Protocol
-                    all_proto = all(st.session_state[k] for k in PROTO_KEYS)
-                    if sb2.button(
-                        "☑ Deselect all" if all_proto else "☑ Select all",
-                        key="sel_all_proto", use_container_width=True):
-                        for k in PROTO_KEYS:
-                            st.session_state[k] = not all_proto
-                        st.rerun()
-
-                    chk6 = st.checkbox("Delivered opening script to candidate",
-                                       key="chk6")
-                    chk7 = st.checkbox("Candidate confirmed recording consent",
-                                       key="chk7")
-                    chk8 = st.checkbox("Photo ID check completed — name + photo visible",
-                                       key="chk8")
-
-                    # Opening script box
-                    cname = st.session_state.candidate_name or "[Candidate Name]"
-                    role  = (st.session_state.jd_text[:60].replace("\n"," ").strip()
-                             if st.session_state.jd_text else "[Position]")
-                    st.markdown("**📢 Read this to the candidate:**")
-                    st.info(
-                        f"*\"Hello {cname}, nice to meet you. This interview is for the position of "
-                        f"{role} with Empower Professionals. Before getting started I wanted to let you know "
-                        f"this video is going to be recorded and wanted to ensure you are okay with that?\"*\n\n"
-                        f"→ Press **Record** in Zoom → confirm recording is active → then continue."
-                    )
-
-                # ── Select All (both columns at once) ────────────────
-                st.divider()
-                all_both = all(st.session_state[k] for k in ALL_KEYS)
-                bc1, bc2 = st.columns([1, 2])
-                with bc1:
-                    if st.button(
-                        "Deselect all items" if all_both else "Select all items",
-                        use_container_width=True, key="sel_all_both_chk"):
-                        for k in ALL_KEYS:
-                            st.session_state[k] = not all_both
-                        # Stay on Step 2 — do not navigate
-                        st.rerun()
-
-                all_checked = all([chk1,chk2,chk3,chk4,chk5,chk6,chk7,chk8])
-                with bc2:
-                    if all_checked:
-                        if st.button("▶ All checks done — Start Interview",
-                                     type="primary", use_container_width=True):
-                            st.session_state["_checklist_done"] = True
-                            st.session_state["started_at"] = datetime.now().isoformat()
-                            save_session()
-                            st.rerun()
-                    else:
-                        remaining = 8 - sum([chk1,chk2,chk3,chk4,chk5,chk6,chk7,chk8])
-                        st.warning(f"Complete {remaining} remaining item(s) to begin.")
-                st.stop()
-
-            # ── INTERVIEW HEADER ──────────────────────────────────
-            h1,h2,h3,h4=st.columns([3,1,1,1])
-            with h1:
-                _disp_name = st.session_state.candidate_name or "Candidate"
-                st.markdown(f"### 🎤 {_disp_name.upper()}")
-                st.progress(noted/total,text=f"Notes: {noted}/{total} · {st.session_state.vendor}")
-            with h2:
-                started=st.session_state.get("started_at",datetime.now().isoformat())
-                if isinstance(started,str):
-                    try: started=datetime.fromisoformat(started)
-                    except: started=datetime.now()
-                elapsed=(datetime.now()-started).seconds//60
-                # SOP: 30-45 mins
-                color="🟢" if elapsed<=30 else ("🟡" if elapsed<=45 else "🔴")
-                st.metric("Elapsed",f"{color} {elapsed} min")
-            with h3:
-                st.metric("Question",f"{idx+1}/{total}")
-            with h4:
-                if elapsed>45:
-                    st.error("⚠️ Over 45 min")
-                elif elapsed>30:
-                    st.warning("🕐 Wrap up soon")
-                else:
-                    st.success("✅ On time")
-
-            st.divider()
-            # Video issue warning (after divider to prevent bleed into notes)
-            with st.expander("⚠️ Video Issues? Follow SOP", expanded=False):
+            for sev, desc, c, mitigation in risks:
                 st.markdown(
-                    "**If candidate video is stuck, buffering or lagging:**\n"
-                    "1. Stop the interview\n"
-                    "2. Re-enter the Zoom room\n"
-                    "3. If issue persists → **End the interview**\n\n"
-                    "**SOP Rule 5** — Empower Professionals"
-                )
+                    f'<div style="background:{"rgba(255,60,60,0.08)" if sev=="CRITICAL" else "rgba(255,140,42,0.07)" if sev=="HIGH" else "rgba(0,201,167,0.05)"};'
+                    f'border-left:3px solid {c};border-radius:0 6px 6px 0;padding:10px 12px;margin:5px 0">'
+                    f'<div style="font-size:10px;font-weight:700;color:{c};letter-spacing:0.06em">{sev}</div>'
+                    f'<div style="font-size:13px;color:#E8F2FF;margin:3px 0">{desc}</div>'
+                    f'<div style="font-size:11px;color:#4A6A80">Mitigation: {mitigation}</div>'
+                    f'</div>', unsafe_allow_html=True)
 
-            # ── QUESTION DISPLAY ──────────────────────────────────
-            gl="🔴 GAP" if q.get("gap_question") else "🟢 VALIDATE"
-            tl="💻 CODING" if qt=="coding" else "🔵 SCENARIO"
-            st.markdown(
-                f'<div style="background:linear-gradient(135deg,#0D2A3A,#0E3A4A);'
-                f'padding:12px 18px;border-radius:10px 10px 0 0;border:2px solid #00C9A7;'
-                f'border-bottom:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
-                f'<span style="background:#00C9A7;color:#0D1B2A;padding:3px 14px;'
-                f'border-radius:12px;font-weight:700;font-size:13px">Q{num}/{total}</span>'
-                f'<span style="background:rgba(0,201,167,0.15);color:#00C9A7;padding:2px 10px;'
-                f'border-radius:8px;font-size:12px;border:1px solid rgba(0,201,167,0.3)">{tl}</span>'
-                f'<span style="color:#8AABBF;font-size:12px">{gl} · {q.get("skill","")}</span>'
-                f'<span style="color:#FF8C2A;font-size:11px;margin-left:auto">⚡ Practical / Scenario-based</span>'
-                f'</div>'
-                f'<div style="border:2px solid #00C9A7;border-top:none;'
-                f'border-radius:0 0 10px 10px;padding:16px 20px;'
-                f'font-size:15px;font-weight:500;color:#E8F2FF;background:#0D2A3A;'
-                f'line-height:1.6;margin-bottom:10px">{q.get("question",q.get("q","No question text"))}</div>',
-                unsafe_allow_html=True
-            )
-
-            # Backup visible question text (in case HTML not rendering)
-            # Difficulty badge
-            _q_diff = q.get("difficulty", st.session_state.get("_q_difficulty","medium"))
-            _dbadge = {"easy":"🟢 Easy","medium":"🟡 Medium","hard":"🔴 Hard"}.get(_q_diff,"🟡 Medium")
-            _dbg    = {"easy":"rgba(0,180,80,0.12)","medium":"rgba(245,166,35,0.12)","hard":"rgba(204,0,0,0.12)"}.get(_q_diff,"rgba(245,166,35,0.12)")
-            _dbc    = {"easy":"#00B050","medium":"#F5A623","hard":"#CC0000"}.get(_q_diff,"#F5A623")
-            st.markdown(
-                f'<div style="display:inline-block;background:{_dbg};border:1px solid {_dbc};'
-                f'border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;'
-                f'letter-spacing:0.06em;color:{_dbc};margin-bottom:6px">{_dbadge}</div>',
-                unsafe_allow_html=True)
-            st.markdown(f"**Question {num}:** {q.get('question', q.get('q', ''))}")
-            st.markdown("")
-
-            left,right=st.columns(2,gap="large")
-            with left:
-                st.markdown("##### 📝 Notes")
-                # Empower 5-star system
-                STAR_OPTS=[
-                    "1★ — Extremely poor",
-                    "2★ — Poor",
-                    "3★ — Average",
-                    "4★ — Very good",
-                    "5★ — Exceptional"
-                ]
-                sv=st.session_state.notes.get(f"score_{nk}","3★ — Average")
-                if sv not in STAR_OPTS:
-                    # migrate old format
-                    old_map={"1 — Poor":"1★ — Extremely poor","2 — Marginal":"2★ — Poor",
-                             "3 — Adequate":"3★ — Average","4 — Good":"4★ — Very good",
-                             "5 — Expert":"5★ — Exceptional"}
-                    sv=old_map.get(sv,"3★ — Average")
-                score=st.select_slider("Rating",options=STAR_OPTS,value=sv,
-                    key=f"sc_{idx}",label_visibility="collapsed")
-                st.session_state.notes[f"score_{nk}"]=score
-                sn=int(score[0])
-                STAR_COLORS={5:"#00B050",4:"#4CAF50",3:"#FF9800",2:"#FF5722",1:"#CC0000"}
-                STAR_LABELS={5:"Exceptional",4:"Very good",3:"Average",2:"Poor",1:"Extremely poor"}
-                STAR_BGS={5:"#e6f9ee",4:"#e8f5e9",3:"#fff8e1",2:"#fff3e0",1:"#fff0f0"}
-                st.markdown(
-                    f'<div style="text-align:center;background:{STAR_BGS[sn]};'
-                    f'color:{STAR_COLORS[sn]};padding:6px;border-radius:8px;font-weight:700">'
-                    f'{"★"*sn}{"☆"*(5-sn)} — {STAR_LABELS[sn]}</div>',
-                    unsafe_allow_html=True
-                )
-                note=st.text_area("Notes",value=st.session_state.notes.get(nk,""),
-                    height=150,key=f"nt_{idx}",label_visibility="collapsed",
-                    placeholder=(
-                        "Type candidate's response and your observations...\n\n"
-                        "Focus on: practical knowledge, real examples, depth of understanding.\n"
-                        "Avoid theoretical — note what they can actually DO.\n"
-                        "Auto-saved on every change."
-                    ))
-                st.session_state.notes[nk]=note
-                save_session()
-
-            with right:
-                st.markdown("##### 📋 Answer Key")
-                if ak.get("ideal_answer"):
-                    st.info(f"💡 **Ideal:** {ak['ideal_answer']}")
-                if kps:
-                    st.markdown("**✅ Practical points to cover:**")
-                    for kp in kps:
-                        if kp and str(kp).strip():
-                            st.markdown(
-                                f'<div style="background:rgba(0,176,240,0.08);border-left:3px solid #00B0F0;'
-                                f'padding:6px 12px;margin:3px 0;border-radius:0 6px 6px 0;'
-                                f'font-size:12px;color:#E8F2FF">✓ {kp}</div>',unsafe_allow_html=True)
-                elif ak.get("ideal_answer"):
-                    # fallback: show ideal answer points if kps empty
-                    _ia_pts = ak["ideal_answer"].split(".")
-                    for _iap in _ia_pts[:4]:
-                        if _iap.strip():
-                            st.markdown(
-                                f'<div style="background:rgba(0,176,240,0.08);border-left:3px solid #00B0F0;'
-                                f'padding:6px 12px;margin:3px 0;border-radius:0 6px 6px 0;'
-                                f'font-size:12px;color:#E8F2FF">✓ {_iap.strip()}</div>',unsafe_allow_html=True)
-                if qt=="coding" and ak.get("sample_solution"):
-                    st.code(ak["sample_solution"],language="python")
-                # Score rubrics - dark theme compatible
-                r1,r2,r3=st.columns(3)
-                for col,stars,key,col_color in [
-                    (r1,"5★ Expert","score_5","#00C9A7"),
-                    (r2,"3★ Average","score_3","#FF8C2A"),
-                    (r3,"1★ Poor","score_1","#FF4444")
-                ]:
-                    val = ak.get(key,"")
-                    col.markdown(
-                        f'<div style="background:rgba(0,0,0,0.3);border:1px solid {col_color};'
-                        f'border-top:3px solid {col_color};padding:8px 10px;border-radius:4px;'
-                        f'font-size:11px;color:#E8F2FF;min-height:60px">'
-                        f'<b style="color:{col_color}">{stars}</b><br>'
-                        f'{val if val else "—"}</div>',
-                        unsafe_allow_html=True)
-                # Follow-up and red flags
-                if ak.get("follow_up_probe"):
-                    st.markdown(
-                        f'<div style="background:rgba(0,176,240,0.08);border-left:3px solid #00B0F0;'
-                        f'padding:8px 12px;font-size:12px;margin-top:8px;color:#E8F2FF;'
-                        f'border-radius:0 6px 6px 0">🔍 <b style="color:#00B0F0">Follow-up:</b> {ak["follow_up_probe"]}</div>',
-                        unsafe_allow_html=True)
-                if ak.get("red_flags"):
-                    st.markdown(
-                        f'<div style="background:rgba(255,68,68,0.08);border-left:3px solid #FF4444;'
-                        f'padding:8px 12px;font-size:12px;margin-top:6px;color:#E8F2FF;'
-                        f'border-radius:0 6px 6px 0">⚠️ <b style="color:#FF4444">Red flags:</b> {ak["red_flags"]}</div>',
-                        unsafe_allow_html=True)
-
-            st.divider()
-
-            # ── PER-QUESTION TIMER ────────────────────────────────
-            import time as _time
-            _tkey = f"_q_start_{nk}"
-            if _tkey not in st.session_state:
-                st.session_state[_tkey] = _time.time()
-            _elapsed = int(_time.time() - st.session_state[_tkey])
-            _mins, _secs = divmod(_elapsed, 60)
-            _tlimit = st.session_state.get("_q_time_limit", 5)  # mins per question
-            _tover  = _elapsed > (_tlimit * 60)
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:12px;'
-                f'background:{"rgba(255,68,68,0.08)" if _tover else "rgba(0,201,167,0.06)"};'
-                f'border:1px solid {"rgba(255,68,68,0.3)" if _tover else "rgba(0,201,167,0.15)"};'
-                f'border-radius:6px;padding:8px 16px;margin:8px 0">'
-                f'<span style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
-                f'color:{"#FF4444" if _tover else "#00C9A7"};font-family:Barlow Condensed,sans-serif">'
-                f'⏱ {_mins:02d}:{_secs:02d} {"— TIME OVER" if _tover else f"/ {_tlimit}:00"}</span>'
-                f'<span style="font-size:10px;color:#4A6A80;margin-left:auto">'
-                f'Q{num}/{total} · {noted} noted</span></div>',
-                unsafe_allow_html=True)
-
-            # ── NAVIGATION + ACTIONS ──────────────────────────────
-            n1,n2,n3,n4,n5=st.columns([1,1,1,1,1])
-            with n1:
-                if st.button("Prev", disabled=idx==0, use_container_width=True,
-                             key=f"prev_btn_{idx}"):
-                    st.session_state.curr_q = idx-1; save_session(); st.rerun()
-            with n2:
-                if idx < total-1:
-                    if st.button("Next", type="primary", use_container_width=True,
-                                    key=f"next_btn_{idx}"):
-                        st.session_state.curr_q = idx + 1
-                        _nk_next = str(questions[idx+1].get("num", idx+2))
-                        st.session_state[f"_q_start_{_nk_next}"] = _time.time()
-                        save_session(); st.rerun()
-                else:
-                    if st.button("✅ End Interview", type="primary", use_container_width=True):
-                        save_session()
-                        st.success("Interview complete! Proceed to Step 3 — Assessment.")
-            with n3:
-                if st.button("🔄 Regenerate", use_container_width=True,
-                             help="Regenerate this question with a different angle"):
-                    with st.spinner("Regenerating..."):
-                        try:
-                            _regen_prompt = (
-                                f"Generate 1 new {qt}-type interview question for role: "
-                                f"{st.session_state.get('job_role','the position')}. "
-                                f"Difficulty: {st.session_state.get('_q_difficulty','medium').upper()}. Return JSON: "
-                                f'{{"num":{num},"type":"{qt}","question":"...","key_points":["..."],"ideal_answer":"..."}}'
-                            )
-                            _regen_client = apikey.get_client()
-                            _regen_resp   = _regen_client.messages.create(
-                                model=apikey.get_model(), max_tokens=500,
-                                messages=[{"role":"user","content":_regen_prompt}])
-                            import json as _rjson
-                            _regen_text = _regen_resp.content[0].text.strip()
-                            _regen_text = _regen_text.replace("```json","").replace("```","").strip()
-                            _regen_q    = _rjson.loads(_regen_text)
-                            _regen_q["num"] = num
-                            st.session_state.questions[idx] = _regen_q
-                            st.session_state[_tkey] = _time.time()
-                            save_session()
-                            st.rerun()
-                        except Exception as _re:
-                            st.warning(f"Regeneration failed: {_re}")
-            with n4:
-                _fkey = f"_flagged_{nk}"
-                _is_flagged = st.session_state.get(_fkey, False)
-                if st.button(
-                    "[Flagged]" if _is_flagged else "Flag",
-                    use_container_width=True,
-                    help="Flag this question for review"):
-                    st.session_state[_fkey] = not _is_flagged
-                    save_session(); st.rerun()
-            with n5:
-                if st.button("⏭ Skip", use_container_width=True,
-                             help="Skip to next unanswered question"):
-                    _skip_to = idx + 1
-                    while _skip_to < total-1:
-                        _snk = str(questions[_skip_to].get("num", _skip_to+1))
-                        if not st.session_state.notes.get(_snk,"").strip():
-                            break
-                        _skip_to += 1
-                    st.session_state.curr_q = _skip_to
-                    save_session(); st.rerun()
-            with n3:
-                jump=st.selectbox("Jump to Q",range(1,total+1),index=idx,
-                    format_func=lambda i:(
-                        f"Q{questions[i-1].get('num',i)} — "
-                        f"{questions[i-1].get('skill','')[:18]} "
-                        f"{'✅' if st.session_state.notes.get(str(questions[i-1].get('num',i)),'').strip() else '○'}"),
-                    label_visibility="collapsed")
-                if jump-1!=idx:
-                    st.session_state.curr_q=jump-1; save_session(); st.rerun()
-            with n4:
-                st.metric("Noted",f"{noted}/{total}")
-
-            # ── POST-INTERVIEW RECORDING INSTRUCTIONS ─────────────
-            if noted >= total//2:
-                st.divider()
-                with st.expander("📹 After Interview — Recording & File Instructions (SOP Rule 10)"):
-                    cname2=st.session_state.candidate_name
-                    today_str=date.today().strftime("%m/%d/%y")
-                    skill_str=", ".join(set(q.get("skill","") for q in questions[:3] if q.get("skill","")))
-                    suggested_name=f"{cname2} - {skill_str} - {today_str}"
-                    st.markdown(f"""
-**Step 1 — Rename the downloaded Zoom recording:**
-```
-{suggested_name}
-```
-*(Format: Candidate Full Name - Skillset - Date mm/dd/yy)*
-
-**Step 2 — Upload to Empower OneDrive:**
-[📁 Click here to upload](https://empowerprofessionals341-my.sharepoint.com/:f:/g/personal/anup_empowerprofessionals341_onmicrosoft_com/EqrbOLOCmcFBr4B3bE4cW5sBLiA3008H7mBi07q_RreOzg?e=DHVdml)
-
-**Step 3 — Go to Step 3 (Assessment) → then Step 4 (Report & Email)**
-""")
-
-            # Grid overview
-            st.divider()
-            st.markdown("**Question overview:**")
-            gcols=st.columns(5)
-            for i,qq in enumerate(questions):
-                nk2=str(qq.get("num",i+1))
-                has=bool(st.session_state.notes.get(nk2,"").strip())
-                ic="✅" if has else ("▶" if i==idx else "○")
-                with gcols[i%5]:
-                    if st.button(f"{ic} Q{qq.get('num',i+1)}\n{qq.get('skill','')[:10]}",
-                                 key=f"g_{i}",use_container_width=True):
-                        st.session_state.curr_q=i; save_session(); st.rerun()
-
-
-    # ── TAB 3: ASSESSMENT ─────────────────────────────────────────
-    with tab3:
-        if not st.session_state.questions:
-            st.info("Complete Steps 1–2 first.")
-        else:
-            st.markdown(f"### 📊 Assessment — {st.session_state.candidate_name}")
-            method=st.radio("Scoring method",[
-                "🎙 Audio/Video Transcript (Zoom/Meet/Teams)",
-                "🤖 AI scores from interview notes",
-                "✋ Manual scoring"
-            ],horizontal=True)
-
-            # ── AUDIO TRANSCRIPT ──────────────────────────────────
-            if "Audio" in method:
-                settings_cfg=cfg.get_settings()
-                av_src=settings_cfg.get("av_source","Zoom Cloud Recording (MP4)")
-                st.info(f"Configured source: **{av_src}** — upload recording below.")
-
-                ffp=_get_ffmpeg()
-                if not ffp:
-                    st.warning("⚠️ ffmpeg not found — required for audio transcription.")
-                    fa,fb=st.columns(2)
-                    with fa:
-                        if st.button("⬇️ Auto-Download ffmpeg",type="primary",use_container_width=True):
-                            try:
-                                ok,path=_install_ffmpeg()
-                                if ok: st.success(f"✅ Installed at {path}. Reload page."); st.rerun()
-                                else: st.error("Install failed. Try manual install.")
-                            except Exception as e: st.error(str(e))
-                    with fb:
-                        st.markdown(f"**Manual:** Download zip from gyan.dev/ffmpeg/builds, "
-                                    f"extract `ffmpeg.exe` to `{Path.home()/'ias_ffmpeg'}`")
-                    st.info("**Alternative:** Use 'AI scores from interview notes' — type notes in Step 2, score here.")
-                else:
-                    st.success(f"✅ ffmpeg ready")
-                    af=st.file_uploader("Upload recording (MP4/MP3/M4A/WAV)",
-                                        type=["mp4","mp3","m4a","wav"],key="audio_up")
-                    if af:
-                        if st.button("🎙 Transcribe + Validate All Answers",
-                                     type="primary",use_container_width=True):
-                            with st.spinner("Transcribing and scoring... (~60 sec)"):
-                                res=_transcribe_and_score(af,st.session_state.questions,
-                                    st.session_state.jd_text,st.session_state.candidate_name,ffp)
-                            if "error" in res:
-                                st.error(res["error"])
-                            else:
-                                st.session_state.scores=res["scores"]
-                                st.session_state.notes=res["notes"]
-                                save_session()
-                                wc=res.get("word_count",0)
-                                st.success(f"✅ Transcribed {wc} words · "
-                                           f"{len(st.session_state.questions)} questions scored · "
-                                           f"Go to Step 4.")
-                                with st.expander("Transcript"):
-                                    st.text(res["transcript"])
-
-            # ── AI FROM NOTES ─────────────────────────────────────
-            elif "notes" in method:
-                noted=sum(1 for k,v in st.session_state.notes.items()
-                          if not k.startswith("score_") and isinstance(v,str) and v.strip())
-                st.info(f"AI will score from your interview notes ({noted}/{len(st.session_state.questions)} noted).")
-                if st.button("🤖 Generate AI Assessment",type="primary",use_container_width=True):
-                    with st.spinner("AI scoring + project discussion + overall feedback..."):
-                        sc=_ai_score(st.session_state.notes,st.session_state.questions,
-                                     st.session_state.jd_text,st.session_state.candidate_name)
-                    if "error" in sc: st.error(sc["error"])
-                    else:
-                        st.session_state.scores=sc; save_session()
-                        st.success("✅ Assessment complete! Go to Step 4.")
-
-            # ── MANUAL ────────────────────────────────────────────
-            else:
-                for q in st.session_state.questions:
-                    num=q.get("num","")
-                    st.markdown(f"**Q{num}** `{q.get('skill','')}` — {q.get('question','')[:80]}...")
-                    opts=["1 — Poor","2 — Marginal","3 — Adequate","4 — Good","5 — Expert"]
-                    sv=st.session_state.notes.get(f"score_{num}","3 — Adequate")
-                    if sv not in opts: sv="3 — Adequate"
-                    sel=st.select_slider(f"Q{num}",options=opts,value=sv,
-                        key=f"ms_{num}",label_visibility="collapsed")
-                    st.session_state.notes[f"score_{num}"]=sel
-                if st.button("✅ Confirm Manual Scores",type="primary",use_container_width=True):
-                    qs2=[]; total2=0.0
-                    for q in st.session_state.questions:
-                        num=q.get("num",""); sv=st.session_state.notes.get(f"score_{num}","3 — Adequate")
-                        sn=int(sv[0]); total2+=sn
-                        qs2.append({"q_num":num,"question":q.get("question",""),
-                                    "score":sn,"summary":"Manually scored.","skill":q.get("skill","")})
-                    avg=round(total2/len(qs2),1) if qs2 else 3.0
-                    st.session_state.scores={
-                        "candidate":st.session_state.candidate_name,
-                        "role":st.session_state.jd_text[:60],"date":date.today().strftime("%d-%b-%Y"),
-                        "scores":qs2,"skill_scores":{},"overall_score":avg,
-                        "verdict":"SELECTED" if avg>=3.0 else "REJECTED",
-                        "project_discussion":"Manual assessment — no AI project discussion generated.",
-                        "overall_summary":f"Manual scoring. Average: {avg}/5."
-                    }
-                    save_session(); st.success("✅ Scores saved! Go to Step 4.")
-
-            # Result display
-            if st.session_state.scores:
-                sc=st.session_state.scores
-                v=sc.get("verdict","SELECTED").upper()
-                o=float(sc.get("overall_score",0))
-                stars="★"*round(o)+"☆"*(5-round(o))
-                col="#00B050" if "SELECT" in v else "#CC0000"
-                st.markdown(f"""<div style="text-align:center;padding:18px;
-                background:{'#e6f9ee' if 'SELECT' in v else '#fff0f0'};
-                border-radius:12px;margin:16px 0">
-                <div style="font-size:30px;font-weight:700;color:{col}">{v}</div>
-                <div style="font-size:24px;color:#FF6600">{stars}</div>
-                <div style="font-size:16px;color:#444;margin:6px 0">{o}/5</div>
-                </div>""",unsafe_allow_html=True)
-                if sc.get("project_discussion"):
-                    st.markdown(f"**Project Discussion:** {sc['project_discussion']}")
-                if sc.get("overall_summary"):
-                    st.markdown(f"**Overall Feedback:** {sc['overall_summary']}")
-                # ── Industry Rubric Scorecard ─────────────────────
-                _sc_industry = sc.get("industry", st.session_state.get("selected_industry","IT & Software"))
-                _dim_scores  = sc.get("dimension_scores",{})
-                _rubric_sc   = get_industry_rubric(_sc_industry)
-                _dims_sc     = _rubric_sc.get("dimensions",[])
-                if _dim_scores and _dims_sc:
-                    with st.expander(f"📊 {_sc_industry} — Rubric Scorecard", expanded=True):
-                        _w_sc = sc.get("weighted_score", calculate_weighted_score(_dim_scores, _sc_industry))
-                        _w_col = "#00B050" if _w_sc>=3.5 else "#F5A623" if _w_sc>=2.8 else "#CC0000"
-                        st.markdown(
-                            f'<div style="margin-bottom:10px"><span style="font-size:12px;color:#4A6A80">Weighted Score: </span>'                            f'<span style="font-size:20px;font-weight:700;color:{_w_col}">{_w_sc:.1f}/5.0</span></div>',
-                            unsafe_allow_html=True)
-                        for _dim_sc in _dims_sc:
-                            _ds = float(_dim_scores.get(_dim_sc["id"], 0) or 0)
-                            _bp = int(_ds/5*100)
-                            _dc = "#00B050" if _ds>=3.5 else "#F5A623" if _ds>=2.5 else "#CC0000"
-                            st.markdown(
-                                f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'                                f'<div style="width:155px;font-size:11px;color:#C8D8E4">{_dim_sc["label"]}</div>'                                f'<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:13px">'                                f'<div style="width:{_bp}%;background:{_dc};height:13px;border-radius:3px"></div></div>'                                f'<div style="width:36px;font-size:11px;font-weight:700;color:{_dc};text-align:right">{_ds:.1f}</div>'                                f'<div style="width:30px;font-size:10px;color:#4A6A80">{int(_dim_sc["weight"]*100)}%</div>'                                f'</div>', unsafe_allow_html=True)
-                        _gf = _rubric_sc.get("green_flags",[])
-                        _rf = _rubric_sc.get("red_flags",[])
-                        if _gf: st.markdown(f'<div style="font-size:11px;color:#00B050;margin-top:6px">✅ {" · ".join(_gf[:3])}</div>', unsafe_allow_html=True)
-                        if _rf: st.markdown(f'<div style="font-size:11px;color:#CC0000;margin-top:3px">⚠ {" · ".join(_rf[:3])}</div>', unsafe_allow_html=True)
-                with st.expander("Per-question scores", expanded=False):
-                    for s in sc.get("scores",[]):
-                        sn=s.get("score",3)
-                        st.markdown(f"Q{s.get('q_num','')} `{s.get('skill','')}` — "
-                                    f"{'★'*sn}{'☆'*(5-sn)} — {s.get('summary','')}")
-
-    # ── TAB 4: REPORT & DELIVERY (Empower SOP) ─────────────────
-    with tab4:
-        if not st.session_state.scores:
-            st.info("Complete Step 3 — Assessment first.")
-        else:
-            sc   = st.session_state.scores
-            v    = sc.get("verdict","SELECTED").upper()
-            o    = float(sc.get("overall_score",0))
-            sn   = round(o)
-            stars= "★"*sn + "☆"*(5-sn)
-            col  = "#00B050" if "SELECT" in v else "#CC0000"
-            STAR_MAP = {5:"Exceptional",4:"Very good",3:"Average",2:"Poor",1:"Extremely poor"}
-            cname     = st.session_state.candidate_name
-            today_str = date.today().strftime("%m/%d/%Y")
-            vend      = st.session_state.vendor
-            vinfo     = VENDORS.get(vend,VENDORS["Empower Professional"])
-
-            # Skill string for subject / file name
-            skill_str = ", ".join(set(
-                q.get("skill","") for q in st.session_state.questions[:4] if q.get("skill","")
-            ))
-
-            # Build full feedback from per-question scores
-            from collections import defaultdict
-            skill_notes = defaultdict(list)
-            for s in sc.get("scores",[]):
-                skill_notes[s.get("skill","General")].append(s.get("summary",""))
-            full_feedback = "\n\n".join(
-                f"{sk}: {' '.join(sm for sm in sms if sm)}"
-                for sk,sms in skill_notes.items()
-                if any(sm for sm in sms)
-            ) or sc.get("overall_summary","")
-
-            # Header
-            st.markdown(f"### 📄 Report & Delivery — {cname}")
-            _disp_email = cfg.get_settings().get("recruiter_email","interviews@empowerprofessionals.com")
-            st.info(f"**Vendor:** {vend} · **Recruiter email:** {_disp_email} *(editable below)*")
-            st.markdown(
-                f'<div style="background:{"#e6f9ee" if "SELECT" in v else "#fff0f0"};'
-                f'padding:12px 18px;border-radius:8px;font-size:18px;font-weight:700;color:{col}">'
-                f'{"SELECTED ✅" if "SELECT" in v else "REJECTED ❌"} · '
-                f'<span style="color:#FF6600">{stars}</span> '
-                f'({o}/5 — {STAR_MAP.get(sn,"Average")})</div>',
-                unsafe_allow_html=True
-            )
-            # Auto-fire WhatsApp / Slack notification on verdict
-            _notif_key = f"_notified_{cname}_{v}"
-            if not st.session_state.get(_notif_key):
-                _notify_whatsapp(
-                    "selected" if "SELECT" in v else "rejected",
-                    cname,
-                    st.session_state.jd_text[:60].replace("\n"," ").strip() or "Open Role",
-                    str(o))
-                st.session_state[_notif_key] = True
-            st.divider()
-
-            # Empower feedback preview
-            st.markdown("#### 📋 Empower Feedback Preview")
-            st.markdown(
-                f'<div style="background:#fff;border:2px solid #1F3864;border-radius:10px;'
-                f'padding:20px;font-family:Calibri,sans-serif">'
-                f'<p style="font-size:15px;font-weight:700;color:#1F3864">Overall Rating : {stars}</p>'
-                f'<p style="font-size:14px;font-weight:700;color:{col}">Verdict : {v}</p>'
-                f'<p style="font-size:13px;font-weight:700;color:#1F3864;margin-top:12px">2. Project Discussion</p>'
-                f'<p style="font-size:12px;color:#444">{sc.get("project_discussion","AI project discussion will appear after scoring.")}</p>'
-                f'<p style="font-size:13px;font-weight:700;color:#1F3864;margin-top:10px">Feedback :</p>'
-                f'<p style="font-size:12px;color:#444;white-space:pre-line">{full_feedback}</p>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
-            st.divider()
-
-            r_col,e_col = st.columns(2)
-
-            with r_col:
-                st.markdown("#### 📄 Generate DOCX Report")
-                settings_e = cfg.get_settings()
-                # ── REPORT PREVIEW ────────────────────────────────
-                with st.expander("Report Preview", expanded=False):
-                    st.markdown(
-                        f'<div style="background:#fff;border:2px solid #1F3864;border-radius:8px;'
-                        f'padding:16px;font-family:Calibri,sans-serif;color:#222;font-size:13px">'
-                        f'<p style="font-size:15px;font-weight:700;color:#1F3864;margin:0 0 8px">'
-                        f'Interview Feedback Report</p>'
-                        f'<p><b>Candidate:</b> {cname}</p>'
-                        f'<p><b>Date:</b> {today_str}</p>'
-                        f'<p><b>Role:</b> {skill_str or st.session_state.jd_text[:60].replace(chr(10)," ")}</p>'
-                        f'<p><b>Overall Score:</b> {stars} ({o}/5)</p>'
-                        f'<p><b>Verdict:</b> <span style="color:{col};font-weight:700">{v}</span></p>'
-                        f'<hr style="border:1px solid #ddd;margin:10px 0">'
-                        f'<p style="font-weight:700;color:#1F3864">Feedback Summary:</p>'
-                        f'<p style="white-space:pre-line;font-size:12px">{full_feedback[:600]}{"..." if len(full_feedback)>600 else ""}</p>'
-                        f'<hr style="border:1px solid #ddd;margin:10px 0">'
-                        f'<p style="font-size:11px;color:#888">Generated by IAS v9.0 | GVS Technologies | {settings_e.get("interviewer_name","Gokul Prakash T")}</p>'
-                        f'</div>',
-                        unsafe_allow_html=True)
-                if st.button("📄 Generate Empower Report",type="primary",use_container_width=True):
-                    rdata={
-                        "candidate":cname,"role":st.session_state.jd_text[:80].replace("\n"," "),
-                        "verdict":v,"overall_score":o,
-                        "overall_summary":sc.get("overall_summary",""),
-                        "project_discussion":sc.get("project_discussion",""),
-                        "full_feedback":full_feedback,
-                        "date":date.today().strftime("%d-%b-%Y"),
-                        "scores":sc.get("scores",[]),"skill_scores":sc.get("skill_scores",{}),
-                        "photo_id_ok":st.session_state.get("photo_id_ok",False),
-                        "vendor":vend,"template":vinfo["template"],
-                    }
-                    with st.spinner("Generating report..."):
-                        from reporter import generate_empower_report
-                        path,err=generate_empower_report(rdata)
-                    if path and Path(path).exists():
-                        st.session_state.report_path=path; save_session()
-                        st.success(f"✅ {Path(path).name}")
-                        try: cfg.save_result(rdata, docx_path=path,
-                                recruiter_email=cfg.get_settings().get("recruiter_email",""))
-                        except: pass
-                    else:
-                        st.error("Report failed."); 
-                        if err: st.code(err[:400])
-
-                if st.session_state.report_path and Path(st.session_state.report_path).exists():
-                    fn = f"{cname} - {skill_str} - {date.today().strftime('%m-%d-%y')}.docx"
-                    with open(st.session_state.report_path,"rb") as f:
-                        st.download_button("⬇️ Download",data=f.read(),file_name=fn,
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            use_container_width=True)
-                    st.caption(f"SOP Rule 10 filename: `{fn}`")
-
-            # ── Default recipient from Settings (editable) ────────────
-            settings_e     = cfg.get_settings()
-            DEFAULT_TO     = settings_e.get("recruiter_email",
-                             settings_e.get("empower_email",
-                             "interviews@empowerprofessionals.com"))
-            today_str_subj = date.today().strftime("%m/%d/%Y")
-            subj_default   = f"{today_str} - {cname} - {skill_str}"
-
-            with e_col:
-                st.markdown("#### 📧 Email to Recruiter")
-                st.caption("SOP Rule 12 — recipient, subject, and body are all editable below")
-
-                to_addr = st.text_input(
-                    "To (recruiter email) *",
-                    value=st.session_state.get("_email_to", DEFAULT_TO),
-                    placeholder="recruiter@company.com",
-                    key="email_to_field",
-                    help="Change this to any recruiter email. Saved for this session.")
-                st.session_state["_email_to"] = to_addr
-
-                subj = st.text_input(
-                    "Subject",
-                    value=st.session_state.get("_email_subj", subj_default),
-                    key="email_subj_field",
-                    help="Edit subject line as needed")
-                st.session_state["_email_subj"] = subj
-
-                sender_e2 = st.text_input(
-                    "Your Gmail",
-                    value=settings_e.get("sender_email",""),
-                    key="email_sender_field")
-                app_pwd2  = st.text_input(
-                    "App Password",
-                    value=settings_e.get("gmail_app_password",""),
-                    type="password", key="email_pwd_field")
-
-                body_e = (
-                    f"Date: {today_str}\nCandidate: {cname}\nPosition: {skill_str}\n\n"
-                    f"Overall Rating : {stars}\n\nVerdict : {v}\n\nFeedback :\n\n"
-                    f"{full_feedback}\n\n"
-                    f"---\nIAS v9.0 | GVS Technologies | "
-                    f"{settings_e.get('interviewer_name','Gokul Prakash T')}"
-                )
-                with st.expander("Preview / edit email body", expanded=False):
-                    body_e = st.text_area(
-                        "Email body (editable)",
-                        value=body_e, height=180,
-                        key="email_body_field",
-                        label_visibility="collapsed")
-
-                # Save recruiter email to settings for future sessions
-                if to_addr and to_addr != DEFAULT_TO:
-                    try:
-                        cfg.save_settings({"recruiter_email": to_addr})
-                    except: pass
-
-                can_send = bool(
-                    st.session_state.report_path
-                    and Path(st.session_state.report_path).exists()
-                    and app_pwd2
-                    and to_addr
-                )
-                if not st.session_state.report_path or \
-                   not Path(st.session_state.report_path or "").exists():
-                    st.info("Generate the DOCX report first, then send.")
-
-                if st.button("📧 Send Email",type="primary",
-                             use_container_width=True, disabled=not can_send):
-                    cfg.save_settings({
-                        "sender_email":   sender_e2,
-                        "gmail_app_password": app_pwd2,
-                        "recruiter_email": to_addr,
-                    })
-                    with st.spinner(f"Sending to {to_addr}..."):
-                        ok, msg = _send_email_custom(
-                            sender_e2, app_pwd2,
-                            to_addr, subj, body_e,
-                            st.session_state.report_path)
-                    if ok: st.success(f"✅ {msg}")
-                    else:  st.error(f"❌ {msg}")
-
-            # ── CANDIDATE FEEDBACK EMAIL ────────────────────────
-            st.divider()
-            with st.expander("📤 Send Feedback to Candidate", expanded=False):
-                st.caption("Send a professional feedback email directly to the candidate.")
-                _fb_to    = st.text_input("Candidate email",
-                    value=st.session_state.candidate_email, key="fb_cand_email")
-                _fb_type  = st.radio("Feedback type",
-                    ["Positive (Selected)", "Constructive (Rejected)", "Custom"],
-                    horizontal=True, key="fb_type")
-                if _fb_type == "Positive (Selected)":
-                    _fb_body = (
-                        f"Dear {cname},\n\n"
-                        f"Thank you for interviewing with us. We are pleased to inform you that "
-                        f"your interview performance was excellent.\n\n"
-                        f"Overall Rating: {stars} ({o}/5)\n\n"
-                        f"Your strengths: {sc.get('overall_summary', full_feedback[:200])}\n\n"
-                        f"We will be in touch shortly with next steps.\n\n"
-                        f"Best regards,\n{settings_e.get('interviewer_name','Gokul Prakash T')}\n"
-                        f"IAS v9.0 | GVS Technologies"
-                    )
-                elif _fb_type == "Constructive (Rejected)":
-                    _fb_body = (
-                        f"Dear {cname},\n\n"
-                        f"Thank you for your time and interest. After careful evaluation, "
-                        f"we will not be moving forward at this time.\n\n"
-                        f"Your rating: {stars} ({o}/5)\n\n"
-                        f"Areas to strengthen: {sc.get('overall_summary', full_feedback[:200])}\n\n"
-                        f"We encourage you to apply for future opportunities.\n\n"
-                        f"Best regards,\n{settings_e.get('interviewer_name','Gokul Prakash T')}\n"
-                        f"IAS v9.0 | GVS Technologies"
-                    )
-                else:
-                    _fb_body = f"Dear {cname},\n\n[Your custom feedback here]\n\nBest regards,\n{settings_e.get('interviewer_name','Gokul Prakash T')}"
-                _fb_body_edit = st.text_area("Feedback email body (editable)",
-                    value=_fb_body, height=150, key="fb_body_edit")
-                _fb_sender = settings_e.get("sender_email","")
-                _fb_pwd    = settings_e.get("gmail_app_password","")
-                if st.button("📤 Send Feedback to Candidate", type="primary",
-                             use_container_width=True,
-                             disabled=not(_fb_to and _fb_sender and _fb_pwd)):
-                    with st.spinner(f"Sending feedback to {_fb_to}..."):
-                        _fb_subj = f"Interview Feedback — {cname} — {skill_str or 'Position'}"
-                        _ok_fb, _msg_fb = _send_email_custom(
-                            _fb_sender, _fb_pwd, _fb_to, _fb_subj, _fb_body_edit)
-                    if _ok_fb:
-                        st.success(f"✅ Feedback sent to {_fb_to}")
-                    else:
-                        st.error(f"❌ {_msg_fb}")
-                if not (_fb_sender and _fb_pwd):
-                    st.caption("⚙️ Configure Gmail in Settings → Notifications to enable sending.")
-
-            # Recording upload instructions
-            st.divider()
-            with st.expander("📹 Recording Upload — SOP Rule 10"):
-                fn2 = f"{cname} - {skill_str} - {date.today().strftime('%m/%d/%y')}"
-                st.markdown(f"**Rename recording to:** `{fn2}`")
-                st.markdown("[📁 Upload to Empower OneDrive](https://empowerprofessionals341-my.sharepoint.com/:f:/g/personal/anup_empowerprofessionals341_onmicrosoft_com/EqrbOLOCmcFBr4B3bE4cW5sBLiA3008H7mBi07q_RreOzg?e=DHVdml)")
-
-            # One-click pipeline
-            st.divider()
-            st.markdown("#### ⚡ One-Click Full Pipeline — ZERO Touch")
-            st.caption("Zoom recording → Transcribe → Score → DOCX → Email to configured recruiter address")
-            pa,pb=st.columns(2)
-            _pipe_settings = cfg.get_settings()
-            _pipe_to_default = st.session_state.get("_email_to",
-                               _pipe_settings.get("recruiter_email",
-                               "interviews@empowerprofessionals.com"))
-            with pa:
-                pipe_audio=st.file_uploader("Zoom Recording",type=["mp4","mp3","m4a","wav"],key="pipe_a")
-                pipe_to=st.text_input("Email to (editable)",
-                    value=_pipe_to_default,
-                    key="pipe_to2",
-                    help="Change to any recruiter email")
-            with pb:
-                pipe_sender2=st.text_input("Your Gmail",value=_pipe_settings.get("sender_email",""),key="ps2")
-                pipe_pass2=st.text_input("App Password",value=_pipe_settings.get("gmail_app_password",""),type="password",key="pp2")
-            pipe_ok=bool(pipe_audio and pipe_pass2 and st.session_state.questions)
-            if not pipe_ok:
-                mp2=[]
-                if not st.session_state.questions: mp2.append("generate questions in Step 1")
-                if not pipe_audio: mp2.append("upload recording")
-                if not pipe_pass2: mp2.append("App password")
-                if mp2: st.info("Needed: "+" · ".join(mp2))
-            if st.button("⚡ RUN FULL PIPELINE — Transcribe → Score → Report → Email",
-                         type="primary",use_container_width=True,disabled=not pipe_ok):
-                # Save the email address chosen for this run
-                cfg.save_settings({"recruiter_email": pipe_to,
-                                   "sender_email": pipe_sender2})
-                prog=st.progress(0,"Starting...")
-                ffp3=_get_ffmpeg()
-                if not ffp3: st.error("ffmpeg missing — download in Step 3"); st.stop()
-                prog.progress(10,"Step 1/4 — Transcribing...")
-                r3=_transcribe_and_score(pipe_audio,st.session_state.questions,
-                    st.session_state.jd_text,cname,ffp3)
-                if "error" in r3: st.error(r3["error"]); st.stop()
-                sc3=r3["scores"]; v3=sc3.get("verdict","SELECTED").upper()
-                o3=float(sc3.get("overall_score",0))
-                st.session_state.scores=sc3; save_session()
-                prog.progress(35,f"Step 2/4 — {v3} ({o3}/5)")
-                # Build feedback
-                sn3=defaultdict(list)
-                for s in sc3.get("scores",[]): sn3[s.get("skill","")].append(s.get("summary",""))
-                fb3="\n\n".join(f"{sk}: {' '.join(sm for sm in sms if sm)}" for sk,sms in sn3.items() if any(sm for sm in sms))
-                rdata3={"candidate":cname,"role":st.session_state.jd_text[:80].replace("\n"," "),
-                    "verdict":v3,"overall_score":o3,
-                    "overall_summary":sc3.get("overall_summary",""),
-                    "project_discussion":sc3.get("project_discussion",""),
-                    "full_feedback":fb3,
-                    "date":date.today().strftime("%d-%b-%Y"),
-                    "scores":sc3.get("scores",[]),"skill_scores":sc3.get("skill_scores",{}),
-                    "photo_id_ok":st.session_state.get("photo_id_ok",False),
-                    "vendor":vend,"template":vinfo["template"]}
-                prog.progress(50,"Step 3/4 — Generating report...")
-                from reporter import generate_empower_report
-                p3,e3=generate_empower_report(rdata3)
-                if not p3 or not Path(p3).exists(): st.error(f"Report failed: {e3}"); st.stop()
-                st.session_state.report_path=p3; save_session()
-                try: cfg.save_result(rdata3,docx_path=p3,recruiter_email=pipe_to)
-                except: pass
-                prog.progress(75,f"Step 4/4 — Emailing {pipe_to}...")
-                sn3x=round(o3); stars3="★"*sn3x+"☆"*(5-sn3x)
-                body3=(f"Date: {today_str}\nCandidate: {cname}\nPosition: {skill_str}\n\n"
-                       f"Overall Rating : {stars3}\n\nVerdict : {v3}\n\nFeedback :\n\n{fb3}\n\n"
-                       f"---\nIAS — Interview Assessment System | {_pipe_settings.get('company_name','GVS Technologies')}")
-                ok3,msg3=_send_email_custom(pipe_sender2,pipe_pass2,pipe_to,
-                    f"{today_str} - {cname} - {skill_str}",body3,p3)
-                prog.progress(100,"✅ Done!")
-                c1,c2,c3=st.columns(3)
-                c1.success(f"✅ {v3} ({o3}/5)")
-                c2.success(f"✅ {Path(p3).name}")
-                c3.success(f"✅ {msg3}" if ok3 else f"❌ {msg3}")
-                fn3=f"{cname} - {skill_str} - {date.today().strftime('%m-%d-%y')}.docx"
-                with open(p3,"rb") as f:
-                    st.download_button("⬇️ Download",data=f.read(),file_name=fn3,
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True)
-                st.markdown("[📁 Upload to OneDrive](https://empowerprofessionals341-my.sharepoint.com/:f:/g/personal/anup_empowerprofessionals341_onmicrosoft_com/EqrbOLOCmcFBr4B3bE4cW5sBLiA3008H7mBi07q_RreOzg?e=DHVdml)")
-
-            st.divider()
-            if st.button("🔄 New Interview",use_container_width=True):
-                for k in DEFAULTS: st.session_state[k]=DEFAULTS[k]
-                st.session_state.pop("_checklist_done",None)
-                clear_session(); st.session_state["_loaded"]=True
-                st.session_state.page="workflow"; st.rerun()
-
-
-
-# ════════════════════════════════════════════════════════════════
-# ANALYTICS
-# ════════════════════════════════════════════════════════════════
-elif st.session_state.page=="analytics":
-    st.markdown("### 📊 Analytics Dashboard")
-    results=cfg.load_results("",True)
-    if not results:
-        st.info("No interviews yet.")
-    else:
-        stats=cfg.get_stats(results)
-        c1,c2,c3,c4=st.columns(4)
-        c1.metric("Total",stats["total"])
-        c2.metric("Selected",stats["selected"],
-                  delta=f"{round(stats['selected']/stats['total']*100)}%" if stats["total"] else None)
-        c3.metric("Rejected",stats["rejected"],
-                  delta=f"-{round(stats['rejected']/stats['total']*100)}%" if stats["total"] else None,
-                  delta_color="inverse")
-        c4.metric("Avg Score",f"{stats['avg_score']}/5")
-        st.divider()
-
-        # Candidate report table (Req #2)
-        from collections import defaultdict
-        import pandas as pd
-        cmap=defaultdict(list)
-        for r in results: cmap[r.get("candidate","Unknown")].append(r)
-        rows=[]
-        for cname,recs in sorted(cmap.items()):
-            ni=len(recs)
-            ns=sum(1 for r in recs if "SELECT" in r.get("verdict","").upper())
-            dates=", ".join(sorted(set(r.get("date","") for r in recs if r.get("date",""))))
-            rows.append({
-                "Candidate":cname,"Interviews":ni,
-                "Selected":ns,"Rejected":ni-ns,
-                "Last Score":f"{recs[-1].get('overall_score','—')}/5",
-                "Verdict":recs[-1].get("verdict","—").upper(),
-                "Dates":dates
+        with _bl2:
+            st.markdown("##### Quarterly Hiring Forecast")
+            import pandas as _pdbl
+            _qf = _pdbl.DataFrame({
+                "Quarter":      ["Q1 2026","Q2 2026","Q3 2026","Q4 2026"],
+                "Target Hires": [25, 32, 28, 20],
+                "Forecast":     [22, 28, 25, 18],
+                "Variance":     ["-3","-4","-3","-2"],
+                "Risk":         ["LOW","HIGH","MEDIUM","LOW"],
             })
-        df=pd.DataFrame(rows)
-        st.dataframe(df,use_container_width=True,hide_index=True)
-        csv=df.to_csv(index=False)
-        st.download_button("⬇️ Download CSV",data=csv,
-            file_name=f"IAS_Report_{date.today()}.csv",mime="text/csv")
+            st.dataframe(_qf, use_container_width=True, hide_index=True)
+            st.caption("Q2 HIGH risk — accelerate sourcing pipeline immediately")
 
-# ════════════════════════════════════════════════════════════════
-# SETTINGS
+            st.markdown("&nbsp;")
+            st.markdown("##### Budget Utilisation")
+            for dept, used, total in [("Engineering",78,100),("Product",45,60),("Sales",32,40),("Operations",18,25)]:
+                pct = round(used/total*100)
+                c = "#FF3C3C" if pct > 90 else "#FF8C2A" if pct > 70 else "#00C9A7"
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:8px;margin:5px 0">'
+                    f'<span style="font-size:12px;color:#E8F2FF;min-width:100px">{dept}</span>'
+                    f'<div style="flex:1;background:#112236;border-radius:2px;height:18px">'
+                    f'<div style="width:{pct}%;background:{c};height:18px;border-radius:2px;'
+                    f'display:flex;align-items:center;padding:0 6px">'
+                    f'<span style="font-size:10px;color:white;font-weight:700">{used}/{total} HC</span>'
+                    f'</div></div><span style="font-size:11px;color:{c};font-weight:700">{pct}%</span>'
+                    f'</div>', unsafe_allow_html=True)
+
+    # ════════════════════════════════════════════════════════════
+    # VIEW 3: OPERATIONAL LEADERSHIP — SLAs, Throughput, Bottlenecks
+    # ════════════════════════════════════════════════════════════
+    elif _role_tab == "Operational Leadership":
+        st.markdown("#### Operational Leadership View — SLA Performance & Throughput")
+        st.caption("Interview SLAs · Recruiter productivity · Process bottlenecks · Escalations requiring action")
+
+        _o1,_o2,_o3,_o4,_o5 = st.columns(5)
+        for col,lbl,val,c,tgt in [
+            (_o1,"Interviews Today",    "3",              "#00C9A7","Daily target: 5"),
+            (_o2,"SLA Compliance",      "78%",            "#FF8C2A","Target: 95%"),
+            (_o3,"Avg Q-Bank Gen",      "14.8s",          "#00C9A7","Target: <30s"),
+            (_o4,"Reports Pending",     "6",              "#FF8C2A","Target: 0"),
+            (_o5,"Panel Availability",  "62%",            "#FF3C3C","Target: 85%"),
+        ]:
+            col.markdown(
+                f'<div style="background:#112236;border:1px solid rgba(0,201,167,0.12);'
+                f'border-top:2px solid {c};border-radius:6px;padding:12px;text-align:center">'
+                f'<div style="font-size:10px;color:#4A6A80;text-transform:uppercase">{lbl}</div>'
+                f'<div style="font-size:22px;font-weight:700;color:{c};font-family:monospace">{val}</div>'
+                f'<div style="font-size:10px;color:#4A6A80">{tgt}</div></div>', unsafe_allow_html=True)
+
+        st.divider()
+        _op1, _op2 = st.columns(2)
+
+        with _op1:
+            st.markdown("##### Process Bottlenecks — Action Required")
+            bottlenecks = [
+                ("🔴","Panel scheduling","8-day avg wait", "Block 2h/week per panel member — Ops Director"),
+                ("🔴","Feedback submission","6 reports overdue","Escalate to Hiring Managers — 24h SLA"),
+                ("🟡","JD approval","Avg 5-day turnaround","Pre-approve standard JD templates"),
+                ("🟡","Offer letter generation","Manual process 2h/offer","IAS auto-generation — deploy now"),
+                ("🟢","CV screening","IAS AI — 20s per CV","No action — performing well"),
+            ]
+            for icon,process,metric,action in bottlenecks:
+                c = "#FF3C3C" if icon=="🔴" else "#FF8C2A" if icon=="🟡" else "#00C9A7"
+                st.markdown(
+                    f'<div style="border-left:3px solid {c};background:rgba(0,0,0,0.15);'
+                    f'border-radius:0 6px 6px 0;padding:9px 12px;margin:4px 0">'
+                    f'<div style="display:flex;justify-content:space-between">'
+                    f'<span style="font-size:13px;font-weight:600;color:#E8F2FF">{process}</span>'
+                    f'<span style="font-size:11px;color:{c};font-weight:700">{metric}</span></div>'
+                    f'<div style="font-size:11px;color:#4A6A80;margin-top:3px">Action: {action}</div>'
+                    f'</div>', unsafe_allow_html=True)
+
+        with _op2:
+            st.markdown("##### Recruiter Productivity")
+            import pandas as _pdop
+            _rp = _pdop.DataFrame({
+                "Recruiter":        ["Recruiter A","Recruiter B","Recruiter C","Recruiter D"],
+                "Interviews/Day":   [4.2, 3.8, 2.1, 4.0],
+                "SLA Compliance %": [95,  88,  61,  92],
+                "Pending Reports":  [0,   1,   4,   1],
+                "RAG":              ["GREEN","GREEN","RED","GREEN"],
+            })
+            def _rag_style(val):
+                return "color:#00C9A7;font-weight:700" if val=="GREEN" else "color:#FF3C3C;font-weight:700" if val=="RED" else "color:#FF8C2A;font-weight:700"
+            st.dataframe(_rp.style.applymap(_rag_style, subset=["RAG"]),
+                use_container_width=True, hide_index=True)
+            st.caption("Recruiter C — SLA breach. Assign buddy mentor. Escalate if no improvement in 5 days.")
+
+            st.markdown("&nbsp;")
+            st.markdown("##### Today's SLA Checklist")
+            sla_items = [
+                ("✅","CV screening — 12 CVs processed","Done"),
+                ("✅","Morning interview — 3 completed","Done"),
+                ("⚠️","4 feedback reports overdue","Escalate to HMs by 3pm"),
+                ("⚠️","Panel schedule for tomorrow — not confirmed","Action: confirm by 5pm"),
+                ("🔴","Offer letter for Candidate A — Day 3 pending","Escalate to Finance today"),
+            ]
+            for icon,task,note in sla_items:
+                c = "#00C9A7" if icon=="✅" else "#FF8C2A" if icon=="⚠️" else "#FF3C3C"
+                st.markdown(f'<div style="font-size:12px;color:{c};padding:4px 0">'
+                            f'{icon} <b>{task}</b> — <span style="color:#4A6A80">{note}</span></div>',
+                            unsafe_allow_html=True)
+
+    # ════════════════════════════════════════════════════════════
+    # VIEW 4: MANAGER / DIRECTOR — Team, Approvals, My Actions
+    # ════════════════════════════════════════════════════════════
+    elif _role_tab == "Manager / Director":
+        st.markdown("#### Manager / Director View — My Team Pipeline & Pending Actions")
+        st.caption("Candidates in my pipeline · Pending approvals · Interview schedule · Feedback required")
+
+        # My pending actions
+        st.markdown("##### Pending Actions — Requires Your Decision")
+        actions = [
+            ("🔴","URGENT",  "Approve Offer — Candidate: Prajeet Meka",        "Offer $85K — pending since 3 days","Approve / Reject"),
+            ("🔴","URGENT",  "Feedback overdue — Q3 Interview Panel",            "3 panel feedback forms missing","Submit feedback"),
+            ("🟡","TODAY",   "Interview scheduled — 2pm IST — Loka Kalyan Palla","ServiceNow FSM Architect — 45 min","Join Zoom"),
+            ("🟡","TODAY",   "JD Review — Cloud Architect role",                 "Review by EOD for posting","Review JD"),
+            ("🟢","THIS WEEK","Shortlist review — 8 CVs screened by IAS",        "AI-scored: 3 SELECTED, 5 REVIEW","View shortlist"),
+        ]
+        for icon,urgency,action,detail,cta in actions:
+            c = "#FF3C3C" if icon=="🔴" else "#FF8C2A" if icon=="🟡" else "#00C9A7"
+            st.markdown(
+                f'<div style="background:{"rgba(255,60,60,0.07)" if icon=="🔴" else "rgba(255,140,42,0.06)" if icon=="🟡" else "rgba(0,201,167,0.05)"};'
+                f'border:1px solid {c}33;border-left:3px solid {c};'
+                f'border-radius:0 8px 8px 0;padding:12px 16px;margin:6px 0;'
+                f'display:flex;align-items:center;justify-content:space-between">'
+                f'<div><div style="font-size:10px;font-weight:700;color:{c};letter-spacing:0.06em">{urgency}</div>'
+                f'<div style="font-size:14px;font-weight:600;color:#E8F2FF;margin:3px 0">{action}</div>'
+                f'<div style="font-size:11px;color:#4A6A80">{detail}</div></div>'
+                f'<div style="font-size:11px;font-weight:700;color:{c};white-space:nowrap;'
+                f'border:1px solid {c};padding:4px 10px;border-radius:4px;margin-left:12px">{cta}</div>'
+                f'</div>', unsafe_allow_html=True)
+
+        st.divider()
+        _m1, _m2 = st.columns(2)
+        with _m1:
+            st.markdown("##### My Team Pipeline")
+            import pandas as _pdmgr
+            _tp = _pdmgr.DataFrame({
+                "Candidate":    ["Prajeet Meka","Loka Kalyan Palla","Rupa Dangeti","Dega Rajesh","Suresh K"],
+                "Role":         ["AI Engineer","ServiceNow Arch","Salesforce QA","Cloud DevOps","Oracle DBA"],
+                "IAS Score":    ["4.1/5","3.8/5","3.2/5","4.2/5","2.8/5"],
+                "Stage":        ["Offer Pending","Interview Today","Assessment","Shortlisted","Screening"],
+                "Action":       ["APPROVE","JOIN ZOOM","REVIEW","SCHEDULE","WAIT"],
+            })
+            def _stage_color(val):
+                return "color:#FF8C2A;font-weight:700" if val=="Offer Pending" else "color:#00C9A7;font-weight:700" if "Today" in val else ""
+            def _action_color(val):
+                return "color:#FF3C3C;font-weight:700" if val=="APPROVE" else "color:#00C9A7;font-weight:700" if val=="JOIN ZOOM" else "color:#FF8C2A" if val=="REVIEW" else ""
+            st.dataframe(_tp.style.applymap(_stage_color, subset=["Stage"]).applymap(_action_color, subset=["Action"]),
+                use_container_width=True, hide_index=True)
+
+        with _m2:
+            st.markdown("##### This Week's Interview Schedule")
+            schedule = [
+                ("Today 2:00 PM",  "Loka Kalyan Palla",  "ServiceNow FSM Arch", "45 min", "Zoom", "#00C9A7"),
+                ("Today 4:30 PM",  "Team debrief",        "Q3 candidates review","30 min", "Teams","#00C9A7"),
+                ("Tomorrow 10 AM", "Prajeet Meka",        "Offer discussion",    "20 min", "Call", "#FF8C2A"),
+                ("Thu 11:00 AM",   "New candidate",        "Cloud Architect",     "60 min", "Zoom", "#4A6A80"),
+            ]
+            for time,cand,role,dur,mode,c in schedule:
+                st.markdown(
+                    f'<div style="border-left:3px solid {c};padding:8px 12px;margin:5px 0;'
+                    f'background:rgba(0,0,0,0.15);border-radius:0 6px 6px 0">'
+                    f'<div style="font-size:10px;color:{c};font-weight:700">{time} · {mode} · {dur}</div>'
+                    f'<div style="font-size:13px;color:#E8F2FF;font-weight:600">{cand}</div>'
+                    f'<div style="font-size:11px;color:#4A6A80">{role}</div></div>',
+                    unsafe_allow_html=True)
+
+            st.markdown("&nbsp;")
+            if st.button("Schedule New Interview", type="primary", use_container_width=True):
+                st.session_state.page = "calendar"; st.rerun()
+            if st.button("View All Candidates", use_container_width=True):
+                st.session_state.page = "portfolio"; st.rerun()
+
+
 elif st.session_state.page == "industry":
     # ════════════════════════════════════════════════════════════════════════
     # INDUSTRY FRAMEWORK — Multi-Industry Configuration Centre
