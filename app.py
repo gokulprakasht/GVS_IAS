@@ -2581,7 +2581,11 @@ def _transcribe_and_score(audio_file, questions, jd, name, ffmpeg_path=None):
         t.write(audio_file.read()); tp=t.name
     transcript=""; method="manual"
     try:
-        import whisper
+        try:
+            import whisper
+        except ImportError:
+            st.error("🎤 Audio transcription unavailable on cloud. Use '🤖 AI scores from interview notes' instead.")
+            st.stop()
         settings=cfg.get_settings()
         wmodel=settings.get("whisper_model","base")
         if ffmpeg_path and ffmpeg_path not in ("ffmpeg","ffmpeg.exe"):
