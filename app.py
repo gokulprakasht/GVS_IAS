@@ -4489,7 +4489,7 @@ elif st.session_state.page=="workflow":
 
                 st.success(f"✅ {n} questions ready — {sc} scenario + {co} coding · Format: {vendor}")
                 if _folder_saved:
-                    st.info(f"📁 Saved to: output/candidates/{_today_str}_{_cname_safe}/")
+                    st.info(f"Saved to: output/candidates/{_cand_dir.name}/")
                 st.balloons()
                 st.rerun()
 
