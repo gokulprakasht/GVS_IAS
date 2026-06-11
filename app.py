@@ -4359,10 +4359,19 @@ elif st.session_state.page=="workflow":
                 if _has_feature("question_folder_save"):
                   try:
                     import json as _jsq
-                    _cname_safe = re.sub(r'[^\w\s-]','',st.session_state.candidate_name).strip().replace(' ','_')
-                    _today_str  = date.today().strftime("%Y-%m-%d")
-                    _cand_dir   = ROOT / "output" / "candidates" / f"{_today_str}_{_cname_safe}"
+                    # Use email-created folder if exists, else correct format
+                    _existing_folder = st.session_state.get("_candidate_folder", "")
+                    if _existing_folder and Path(_existing_folder).exists():
+                        _cand_dir = Path(_existing_folder)
+                    else:
+                        _cname_safe  = re.sub(r'[^\w\s-]','',st.session_state.candidate_name).strip().replace(' ','_')
+                        _int_date    = st.session_state.get("interview_date", date.today().strftime("%d-%b-%Y"))
+                        _duration    = st.session_state.get("interview_duration", "30 Minutes")
+                        _folder_name = f"{_cname_safe}_{_int_date}_{_duration}"
+                        _cand_dir    = ROOT / "output" / "candidates" / _folder_name
                     _cand_dir.mkdir(parents=True, exist_ok=True)
+                    _pending = _cand_dir / "QUESTIONS_PENDING.txt"
+                    if _pending.exists(): _pending.unlink()
 
                     # Save questions as JSON
                     _q_json = _cand_dir / "questions.json"
