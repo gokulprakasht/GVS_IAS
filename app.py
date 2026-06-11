@@ -1939,6 +1939,13 @@ def _extract_text(f):
                 return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
             except Exception:
                 return "Error: .doc format not fully supported. Please save as .docx and re-upload."
+        elif nm.endswith(".doc"):
+            # Convert .doc via python-docx (works for most .doc files)
+            try:
+                from docx import Document
+                return "\n".join(pg.text for pg in Document(bio).paragraphs if pg.text.strip())
+            except Exception:
+                return "Error: .doc format not fully supported. Please save as .docx and re-upload."
         else:
             return "Error: unsupported type"
     except Exception as e:
@@ -2490,7 +2497,7 @@ def _parse_email_file(eml_file) -> dict:
 def _ai_score(notes, questions, jd, name):
     client=apikey.get_client()
     settings=cfg.get_settings()
-    quick={k.replace("score_",""):int(v.split(" — ")[0]) for k,v in notes.items()
+    quick={k.replace("score_",""):int("".join(ch for ch in v.split(" — ")[0] if ch.isdigit()) or "0") for k,v in notes.items()
            if k.startswith("score_") and v}
     qa="\n\n".join([
         f"Q{q.get('num',i+1)} [{q.get('skill','')}]: {q.get('question','')}\n"
