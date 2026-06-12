@@ -1,7 +1,20 @@
-services: 
-  - type: web 
-    name: gvs-ias 
-    runtime: python 
-    buildCommand: pip install -r requirements.txt 
-    startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true 
-    autoDeploy: true 
+services:
+  - type: web
+    name: gvs-ias
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true
+    autoDeploy: true
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: GCAL_EMAIL
+        sync: false
+      - key: GCAL_ID
+        sync: false
+      - key: INTERVIEWER_NAME
+        sync: false
