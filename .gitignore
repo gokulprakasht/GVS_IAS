@@ -1,0 +1,19 @@
+# Secrets - NEVER commit these
+api_key.txt
+.streamlit/secrets.toml
+google_credentials.json
+.env
+
+# Local data - regenerated at runtime
+data/
+output/
+__pycache__/
+*.pyc
+*.pyo
+core/__pycache__/
+*.log
+logs/
+
+# Windows artifacts
+Thumbs.db
+desktop.ini
